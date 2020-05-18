@@ -96,11 +96,13 @@ def runhypermodel(featsel='pca',featcount=[5,15,25],models=[['rf','svc','mlp'],[
 
     # balance classes
     from imblearn.over_sampling import SMOTE
+    from imblearn.under_sampling import RandomUnderSampler
     # from imblearn.over_sampling import ADASYN
     # from imblearn.over_sampling import BorderlineSMOTE
     # from imblearn.over_sampling import RandomOverSampler
     # from imblearn.over_sampling import SVMSMOTE
-    sm = SMOTE(random_state=27,sampling_strategy='not minority')
+#     sm = SMOTE(random_state=27,sampling_strategy='minority')
+    sm = RandomUnderSampler(random_state=27,sampling_strategy='majority')
     # sm = ADASYN(random_state=27)
     # sm = BorderlineSMOTE(random_state=27)
     # sm = RandomOverSampler(random_state=27)
