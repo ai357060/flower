@@ -785,6 +785,7 @@ def atr(prices, periods):
         resdf0['tr3'] = abs (prices['low'] - prices['close'].shift())
         resdf['tr'] = resdf0.max(axis=1)
         resdf['atr'] = resdf.tr.rolling(periods[i]).mean()
+        resdf['avgtr'] = resdf.tr.mean()
         ## slopes
         slopecolumnlist = ['tr','atr']
         sl = slopecolumns(resdf,slopeperiods,slopecolumnlist)
@@ -956,20 +957,30 @@ def historyD1(prices,periods):
     '''
     results = holder()
 
+    resdf0 = pd.DataFrame(index=prices.index)
+    resdf0['tr1'] = prices['high'] - prices['low']
+    resdf0['tr2'] = abs (prices['high'] - prices['close'].shift())
+    resdf0['tr3'] = abs (prices['low'] - prices['close'].shift())
+    resdf0['tr'] = resdf0.max(axis=1)
+    avgtr = resdf0.tr.mean()
+    
     df = pd.DataFrame(index=prices.index)
     for i in range(periods[0],0,-1):
 #         columnname_hist = 'D1hist_close_'+str(i)
         columnname_diff = 'D1hist_close_'+str(i)+'_diff'
 #         df[columnname_hist] = prices.close.shift(periods=i)
         df[columnname_diff] = prices.close.shift(periods=i)-prices.close
+        df[columnname_diff] = df[columnname_diff] / avgtr
 #         columnname_hist = 'D1hist_low_'+str(i)
         columnname_diff = 'D1hist_low_'+str(i)+'_diff'
 #         df[columnname_hist] = prices.low.shift(periods=i)
         df[columnname_diff] = prices.low.shift(periods=i)-prices.low
+        df[columnname_diff] = df[columnname_diff] / avgtr
 #         columnname_hist = 'D1hist_high_'+str(i)
         columnname_diff = 'D1hist_high_'+str(i)+'_diff'
 #         df[columnname_hist] = prices.high.shift(periods=i)
         df[columnname_diff] = prices.high.shift(periods=i)-prices.high
+        df[columnname_diff] = df[columnname_diff] / avgtr
         
     dict = {}
     dict[periods[0]] = df
@@ -980,6 +991,13 @@ def historyW1(prices,periods):
 
     results = holder()
 
+    resdf0 = pd.DataFrame(index=prices.index)
+    resdf0['tr1'] = prices['high'] - prices['low']
+    resdf0['tr2'] = abs (prices['high'] - prices['close'].shift())
+    resdf0['tr3'] = abs (prices['low'] - prices['close'].shift())
+    resdf0['tr'] = resdf0.max(axis=1)
+    avgtr = resdf0.tr.mean()    
+    
     W1df = pd.DataFrame()
 
     W1df['W1high'] = prices.groupby('weekID')['high'].max()    
@@ -1022,12 +1040,15 @@ def historyW1(prices,periods):
         columnname_hist = 'W1hist_close_'+str(i)
         columnname_hist_diff = 'W1hist_close_'+str(i)+'_diff'
         df[columnname_hist_diff] = df[columnname_hist] - df.W1close_c   
+        df[columnname_hist_diff] = df[columnname_hist_diff] / avgtr
         columnname_hist = 'W1hist_low_'+str(i)
         columnname_hist_diff = 'W1hist_low_'+str(i)+'_diff'
         df[columnname_hist_diff] = df[columnname_hist] - df.W1low_c   
+        df[columnname_hist_diff] = df[columnname_hist_diff] / avgtr
         columnname_hist = 'W1hist_high_'+str(i)
         columnname_hist_diff = 'W1hist_high_'+str(i)+'_diff'
         df[columnname_hist_diff] = df[columnname_hist] - df.W1high_c   
+        df[columnname_hist_diff] = df[columnname_hist_diff] / avgtr
 
     for i in range(periods[0],0,-1):
         columnname_hist = 'W1hist_close_'+str(i)
@@ -1047,6 +1068,13 @@ def historyW1(prices,periods):
 def historyM1(prices,periods):
 
     results = holder()
+
+    resdf0 = pd.DataFrame(index=prices.index)
+    resdf0['tr1'] = prices['high'] - prices['low']
+    resdf0['tr2'] = abs (prices['high'] - prices['close'].shift())
+    resdf0['tr3'] = abs (prices['low'] - prices['close'].shift())
+    resdf0['tr'] = resdf0.max(axis=1)
+    avgtr = resdf0.tr.mean()    
     
     M1df = pd.DataFrame()
 
@@ -1090,12 +1118,15 @@ def historyM1(prices,periods):
         columnname_hist = 'M1hist_close_'+str(i)
         columnname_hist_diff = 'M1hist_close_'+str(i)+'_diff'
         df[columnname_hist_diff] = df[columnname_hist] - df.M1close_c   
+        df[columnname_hist_diff] = df[columnname_hist_diff] / avgtr
         columnname_hist = 'M1hist_low_'+str(i)
         columnname_hist_diff = 'M1hist_low_'+str(i)+'_diff'
         df[columnname_hist_diff] = df[columnname_hist] - df.M1low_c   
+        df[columnname_hist_diff] = df[columnname_hist_diff] / avgtr
         columnname_hist = 'M1hist_high_'+str(i)
         columnname_hist_diff = 'M1hist_high_'+str(i)+'_diff'
         df[columnname_hist_diff] = df[columnname_hist] - df.M1high_c   
+        df[columnname_hist_diff] = df[columnname_hist_diff] / avgtr
 
     for i in range(periods[0],0,-1):
         columnname_hist = 'M1hist_close_'+str(i)

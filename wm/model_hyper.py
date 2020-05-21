@@ -14,11 +14,43 @@ from model_collection import *
 
 pd.options.display.max_columns = None
 
-def runhypermodel(featsel='pca',featcount=[5,15,25],models=[['rf','svc','mlp'],['rf','svc','mlp'],['rf','svc','mlp']]):
+def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','mlp'],['rf','svc','mlp'],['rf','svc','mlp']]):
 
-    fver = 'v13'
+#     fver = 'v14'
     masterframe = loaddata_master('../Data/mf_UJ1440_'+fver+'.csv')
 
+
+    # Prepare Y
+    Rtp=1
+    Rsl=1
+    masterframe['y'] = -1
+#     n = 5
+    i = 0
+    while i < len(masterframe) - 1:   
+        j = 1
+        yy = False
+        while j <= len(masterframe) - i - 1:
+            #if (masterframe.low.iloc[i+j] < masterframe.close.iloc[i]-Rsl*masterframe.atr14avgtr.iloc[i]):
+            if (masterframe.low.iloc[i+j] < masterframe.low.iloc[i]-Rsl*masterframe.atr14avgtr.iloc[i]):
+                yy = False
+                break
+            #if (masterframe.high.iloc[i+j] > masterframe.close.iloc[i]+Rtp*masterframe.atr14avgtr.iloc[i]):
+            if (masterframe.high.iloc[i+j] > masterframe.high.iloc[i]+Rtp*masterframe.atr14avgtr.iloc[i]):
+                yy = True
+                break
+            j = j + 1
+
+        if yy == True:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 1            
+            #masterframe.iloc[i+1:i+j+1,masterframe.columns.get_loc('y')]=0      #nochain
+            #i = i + j                                                           #nochain 
+            i = i + 1   #chain
+
+        else:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
+            i = i + 1
+
+    '''
     # Prepare Y
     Rtp=1
     Rsl=1
@@ -48,7 +80,8 @@ def runhypermodel(featsel='pca',featcount=[5,15,25],models=[['rf','svc','mlp'],[
         else:
             masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
             i = i + 1
-        
+    '''  
+    
     '''      
     # Prepare Y
     Rtp=0
@@ -136,74 +169,75 @@ def runhypermodel(featsel='pca',featcount=[5,15,25],models=[['rf','svc','mlp'],[
     
     if featsel != 'all':
         for i in featcount:
-            print('FEATSEL:'+featsel+str(i)+'________________________________________________________________________________________')
+            if (('rf' in modeltype[i]) | ('svc' in modeltype[i]) | ('mlp' in modeltype[i])):
+                print('FEATSEL:'+featsel+str(i)+'________________________________________________________________________________________')
 
-            if featsel == 'rf':
-                select = RFE(RandomForestClassifier(n_estimators=100,random_state=2,n_jobs=1),n_features_to_select=i)
-                select.fit(X_train, y_train)
-                X_train_rfe= select.transform(X_train) 
-                X_test_rfe= select.transform(X_test)
-                X_train_sc_rfe= select.transform(X_train_sc)  
-                X_test_sc_rfe= select.transform(X_test_sc)    
+                if featsel == 'rf':
+                    select = RFE(RandomForestClassifier(n_estimators=100,random_state=2,n_jobs=1),n_features_to_select=i)
+                    select.fit(X_train, y_train)
+                    X_train_rfe= select.transform(X_train) 
+                    X_test_rfe= select.transform(X_test)
+                    X_train_sc_rfe= select.transform(X_train_sc)  
+                    X_test_sc_rfe= select.transform(X_test_sc)    
 
-            if featsel == 'svc':
-                select = RFE(SVC(kernel='linear')            ,n_features_to_select=i)
-                select.fit(X_train_sc, y_train)
-                X_train_rfe= select.transform(X_train) 
-                X_test_rfe= select.transform(X_test)
-                X_train_sc_rfe= select.transform(X_train_sc)  
-                X_test_sc_rfe= select.transform(X_test_sc)  
+                if featsel == 'svc':
+                    select = RFE(SVC(kernel='linear')            ,n_features_to_select=i)
+                    select.fit(X_train_sc, y_train)
+                    X_train_rfe= select.transform(X_train) 
+                    X_test_rfe= select.transform(X_test)
+                    X_train_sc_rfe= select.transform(X_train_sc)  
+                    X_test_sc_rfe= select.transform(X_test_sc)  
 
-            if featsel == 'pca':
-                select = PCA(n_components=i, whiten=True, random_state=2)
-                select.fit(X_train)
-                X_train_rfe= select.transform(X_train) 
-                X_test_rfe= select.transform(X_test)
-                X_train_sc_rfe= X_train_rfe
-                X_test_sc_rfe= X_test_rfe
+                if featsel == 'pca':
+                    select = PCA(n_components=i, whiten=True, random_state=2)
+                    select.fit(X_train)
+                    X_train_rfe= select.transform(X_train) 
+                    X_test_rfe= select.transform(X_test)
+                    X_train_sc_rfe= X_train_rfe
+                    X_test_sc_rfe= X_test_rfe
 
-        #     select = PCA(n_components=i, whiten=False, random_state=2)
-        #     select.fit(X_train_sc)
-        #     X_train_rfe= select.transform(X_train) 
-        #     X_test_rfe= select.transform(X_test)
-        #     X_train_sc_rfe= select.transform(X_train_sc)
-        #     X_test_sc_rfe= select.transform(X_test_sc)
-        #     featsel = 'pca_nw'
+            #     select = PCA(n_components=i, whiten=False, random_state=2)
+            #     select.fit(X_train_sc)
+            #     X_train_rfe= select.transform(X_train) 
+            #     X_test_rfe= select.transform(X_test)
+            #     X_train_sc_rfe= select.transform(X_train_sc)
+            #     X_test_sc_rfe= select.transform(X_test_sc)
+            #     featsel = 'pca_nw'
 
-            if testone == True:
-                featsel = 'temp_'+featsel
+                if testone == True:
+                    featsel = 'temp_'+featsel
 
-            # visualize the selected features:
-            #mask = select.get_support()
-            #plt.matshow(mask.reshape(1, -1), cmap='gray_r')
-            #plt.xlabel("Sample index")
-            #print(X_df.iloc[:2,mask])
-            #print("Test score: {:.3f}".format(select.score(X_test_sc, y_test)))
-            #print("Test score: {:.3f}".format(select.score(X_test, y_test)))
+                # visualize the selected features:
+                #mask = select.get_support()
+                #plt.matshow(mask.reshape(1, -1), cmap='gray_r')
+                #plt.xlabel("Sample index")
+                #print(X_df.iloc[:2,mask])
+                #print("Test score: {:.3f}".format(select.score(X_test_sc, y_test)))
+                #print("Test score: {:.3f}".format(select.score(X_test, y_test)))
 
-            #lin_resdf = ExamineLogisticRegression(orygframe,X_test[:,0],X_train_rfe, y_train,X_test_rfe, y_test,featurenames,testone=False,plot=False)
-            #lin_resdf.to_csv(sep=';',path_or_buf='Resu/'+fver+'_'+featsel+str(i)+'_LogisticRegression'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
+                #lin_resdf = ExamineLogisticRegression(orygframe,X_test[:,0],X_train_rfe, y_train,X_test_rfe, y_test,featurenames,testone=False,plot=False)
+                #lin_resdf.to_csv(sep=';',path_or_buf='Resu/'+fver+'_'+featsel+str(i)+'_LogisticRegression'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
 
-            #lin_resdf = ExamineLinearSVC(orygframe,X_test[:,0],X_train_rfe, y_train,X_test_rfe, y_test,featurenames,testone=False,plot=False)
-            #lin_resdf.to_csv(sep=';',path_or_buf='Resu/'+fver+'_'+featsel+str(i)+'_LinearSVC'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
+                #lin_resdf = ExamineLinearSVC(orygframe,X_test[:,0],X_train_rfe, y_train,X_test_rfe, y_test,featurenames,testone=False,plot=False)
+                #lin_resdf.to_csv(sep=';',path_or_buf='Resu/'+fver+'_'+featsel+str(i)+'_LinearSVC'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
 
 
-            if 'rf' in modeltype[i]:
-                print('FEATSEL:'+featsel+str(i)+'_model_rf___________________________________________________________________________')
-                forest_resdf = ExamineRandomForest(orygframe, X_test[:,0], X_train_rfe, y_train,X_test_rfe, y_test, featurenames, testone=testone, plot=False, automaxfeat=True)
-                forest_resdf.to_csv(sep=';', path_or_buf='../Resu/'+fver+'_'+featsel+str(i)+'_RandomForest'+str(int(time.time()))+'.csv', date_format="%Y-%m-%d", index = False)
+                if 'rf' in modeltype[i]:
+                    print('FEATSEL:'+featsel+str(i)+'_model_rf___________________________________________________________________________')
+                    forest_resdf = ExamineRandomForest(orygframe, X_test[:,0], X_train_rfe, y_train,X_test_rfe, y_test, featurenames, testone=testone, plot=False, automaxfeat=True)
+                    forest_resdf.to_csv(sep=';', path_or_buf='../Resu/'+fver+'_'+featsel+str(i)+'_RandomForest'+str(int(time.time()))+'.csv', date_format="%Y-%m-%d", index = False)
 
-            if 'svc' in modeltype[i]:
-                print('FEATSEL:'+featsel+str(i)+'_model_svc___________________________________________________________________________')
-                svc_resdf = ExamineSVC(orygframe,X_test[:,0], X_train_sc_rfe, y_train, X_test_sc_rfe, y_test,featurenames, testone=testone, plot=False)
-                svc_resdf.to_csv(sep=';', path_or_buf='../Resu/'+fver+'_'+featsel+str(i)+'_SVC'+str(int(time.time()))+'.csv', date_format="%Y-%m-%d", index = False)
+                if 'svc' in modeltype[i]:
+                    print('FEATSEL:'+featsel+str(i)+'_model_svc___________________________________________________________________________')
+                    svc_resdf = ExamineSVC(orygframe,X_test[:,0], X_train_sc_rfe, y_train, X_test_sc_rfe, y_test,featurenames, testone=testone, plot=False)
+                    svc_resdf.to_csv(sep=';', path_or_buf='../Resu/'+fver+'_'+featsel+str(i)+'_SVC'+str(int(time.time()))+'.csv', date_format="%Y-%m-%d", index = False)
 
-            if 'mlp' in modeltype[i]:
-                print('FEATSEL:'+featsel+str(i)+'_model_mlp___________________________________________________________________________')
-                mlp_resdf = ExamineMLP(orygframe,X_test[:,0],X_train_sc_rfe, y_train, X_test_sc_rfe, y_test, featurenames, testone=testone, plot=False)
-                mlp_resdf.to_csv(sep=';', path_or_buf='../Resu/'+fver+'_'+featsel+str(i)+'_MLP'+str(int(time.time()))+'.csv', date_format="%Y-%m-%d", index = False)
+                if 'mlp' in modeltype[i]:
+                    print('FEATSEL:'+featsel+str(i)+'_model_mlp___________________________________________________________________________')
+                    mlp_resdf = ExamineMLP(orygframe,X_test[:,0],X_train_sc_rfe, y_train, X_test_sc_rfe, y_test, featurenames, testone=testone, plot=False)
+                    mlp_resdf.to_csv(sep=';', path_or_buf='../Resu/'+fver+'_'+featsel+str(i)+'_MLP'+str(int(time.time()))+'.csv', date_format="%Y-%m-%d", index = False)
 
-        print('FEATSEL________________finished________________________________________________________________________________')
+            print('FEATSEL________________finished________________________________________________________________________________')
 
         
     if featsel == 'all':
