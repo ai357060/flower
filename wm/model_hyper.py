@@ -237,8 +237,8 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
                     mlp_resdf = ExamineMLP(orygframe,X_test[:,0],X_train_sc_rfe, y_train, X_test_sc_rfe, y_test, featurenames, testone=testone, plot=False)
                     mlp_resdf.to_csv(sep=';', path_or_buf='../Resu/'+fver+'_'+featsel+str(i)+'_MLP'+str(int(time.time()))+'.csv', date_format="%Y-%m-%d", index = False)
 
-            print('FEATSEL________________finished________________________________________________________________________________')
-
+        print('FEATSEL________________finished________________________________________________________________________________')
+            
         
     if featsel == 'all':
         print('ALL_____________rf___________________________________________________________________________')
