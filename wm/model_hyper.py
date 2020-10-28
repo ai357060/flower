@@ -14,7 +14,7 @@ from model_collection import *
 
 pd.options.display.max_columns = None
 
-def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','mlp'],['rf','svc','mlp'],['rf','svc','mlp']]):
+def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','mlp'],['rf','svc','mlp'],['rf','svc','mlp']],testone=False):
 
 #     fver = 'v14'
     masterframe = loaddata_master('../Data/mf_UJ1440_'+fver+'.csv')
@@ -153,7 +153,7 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     
     modeltype = {}
     # featcount = []
-    testone=False
+#     testone=False
     # featsel = 'rf'
     # featsel = 'svc'
     # featsel = 'pca'

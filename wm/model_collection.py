@@ -290,9 +290,9 @@ def ExamineSVC(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,t
     timeout = 5
     
     if testone == True:
-        kernel = ['rbf'] 
-        C = [100]
-        gamma = [0.01]   
+        C = [10]
+        gamma = ['auto']   
+        kernel = ['poly'] 
         max_iter = [-1]  
         degree = [2]
         timeout = 5
