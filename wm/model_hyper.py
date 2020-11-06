@@ -24,23 +24,41 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     #pre-prepare data
     orygframe = masterframe.copy()
     masterframe = masterframe.drop(['volume'],1)
+# tu można usunąć z masterframe: fulldate	year	month	day	open	high	low	close
+    masterframe = masterframe.drop(['fulldate'],1)
+    masterframe = masterframe.drop(['year'],1)
+    masterframe = masterframe.drop(['month'],1)
+    masterframe = masterframe.drop(['day'],1)
+    masterframe = masterframe.drop(['open'],1)
+    masterframe = masterframe.drop(['high'],1)
+    masterframe = masterframe.drop(['low'],1)
+    masterframe = masterframe.drop(['close'],1)
+    masterframe = masterframe.drop(['atr14tr'],1)
+    masterframe = masterframe.drop(['atr14atr'],1)
+    masterframe = masterframe.drop(['atr14avgtr'],1)
+
     masterframe.dropna(inplace=True)
 
     # split data
     # masterframe = masterframe[-3600:] ###testowo
     masterframe = masterframe.drop(masterframe[masterframe.y==-1].index,axis=0)
-    X_df = masterframe.iloc[:, 2:-1] 
+    X_df = masterframe.iloc[:, :-1] # tu było 2:-1 aby pominąć fulldate i year, ale teraz powyżej usuwam te kolumny plus inne
     y_df = masterframe.iloc[:, -1] 
-    featurenames = masterframe.iloc[:, 2:-1].columns.values
+    featurenames = masterframe.iloc[:, :-1].columns.values
 
     X = X_df.values
     y = y_df.values
     y = y.astype('int')
     X = X.astype('float')
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=testsize, shuffle = False)
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=testsize, shuffle = True)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=None, test_size=testsize, shuffle = False)
+    
+# tu można usunąć z Xtrain i Xtest: id!!!
+    Xintex = X_test[:,0]
+    X_test = X_test[:,1:]
+    X_train = X_train[:,1:]
 
-    # balance classes
+# balance classes
     from imblearn.over_sampling import SMOTE
     from imblearn.under_sampling import RandomUnderSampler
     # from imblearn.over_sampling import ADASYN
@@ -128,26 +146,26 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
                 #print("Test score: {:.3f}".format(select.score(X_test_sc, y_test)))
                 #print("Test score: {:.3f}".format(select.score(X_test, y_test)))
 
-                #lin_resdf = ExamineLogisticRegression(orygframe,X_test[:,0],X_train_rfe, y_train,X_test_rfe, y_test,featurenames,testone=False,plot=False)
+                #lin_resdf = ExamineLogisticRegression(orygframe,Xintex,X_train_rfe, y_train,X_test_rfe, y_test,featurenames,testone=False,plot=False)
                 #lin_resdf.to_csv(sep=';',path_or_buf='Resu/'+fver+'_'+featsel+str(i)+'_LogisticRegression'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
 
-                #lin_resdf = ExamineLinearSVC(orygframe,X_test[:,0],X_train_rfe, y_train,X_test_rfe, y_test,featurenames,testone=False,plot=False)
+                #lin_resdf = ExamineLinearSVC(orygframe,Xintex,X_train_rfe, y_train,X_test_rfe, y_test,featurenames,testone=False,plot=False)
                 #lin_resdf.to_csv(sep=';',path_or_buf='Resu/'+fver+'_'+featsel+str(i)+'_LinearSVC'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
 
 
                 if 'rf' in modeltype[i]:
                     print('FEATSEL:'+featsel+str(i)+'_model_rf___________________________________________________________________________')
-                    forest_resdf = ExamineRandomForest(orygframe, X_test[:,0], X_train_rfe, y_train,X_test_rfe, y_test, featurenames, testone=testone, plot=False, automaxfeat=True)
+                    forest_resdf = ExamineRandomForest(orygframe, Xintex, X_train_rfe, y_train,X_test_rfe, y_test, featurenames, testone=testone, plot=False, automaxfeat=True)
                     forest_resdf.to_csv(sep=';', path_or_buf='../Resu/'+fver+'_'+featsel+str(i)+'_RandomForest'+str(int(time.time()))+'.csv', date_format="%Y-%m-%d", index = False)
 
                 if 'svc' in modeltype[i]:
                     print('FEATSEL:'+featsel+str(i)+'_model_svc___________________________________________________________________________')
-                    svc_resdf = ExamineSVC(orygframe,X_test[:,0], X_train_sc_rfe, y_train, X_test_sc_rfe, y_test,featurenames, testone=testone, plot=False)
+                    svc_resdf = ExamineSVC(orygframe,Xintex, X_train_sc_rfe, y_train, X_test_sc_rfe, y_test,featurenames, testone=testone, plot=False)
                     svc_resdf.to_csv(sep=';', path_or_buf='../Resu/'+fver+'_'+featsel+str(i)+'_SVC'+str(int(time.time()))+'.csv', date_format="%Y-%m-%d", index = False)
 
                 if 'mlp' in modeltype[i]:
                     print('FEATSEL:'+featsel+str(i)+'_model_mlp___________________________________________________________________________')
-                    mlp_resdf = ExamineMLP(orygframe,X_test[:,0],X_train_sc_rfe, y_train, X_test_sc_rfe, y_test, featurenames, testone=testone, plot=False)
+                    mlp_resdf = ExamineMLP(orygframe,Xintex,X_train_sc_rfe, y_train, X_test_sc_rfe, y_test, featurenames, testone=testone, plot=False)
                     mlp_resdf.to_csv(sep=';', path_or_buf='../Resu/'+fver+'_'+featsel+str(i)+'_MLP'+str(int(time.time()))+'.csv', date_format="%Y-%m-%d", index = False)
 
         print('FEATSEL________________finished________________________________________________________________________________')
@@ -157,19 +175,19 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
         if 'rf' in modeltype[0]:
             print('ALL_____________rf___________________________________________________________________________')
             featsel = 'all_RandomForest' if testone == False else 'temp_all_RandomForest'
-            forest_resdf = ExamineRandomForest(orygframe,X_test[:,0],X_train, y_train,X_test, y_test,featurenames,testone=testone,plot=False,automaxfeat=False)
+            forest_resdf = ExamineRandomForest(orygframe,Xintex,X_train, y_train,X_test, y_test,featurenames,testone=testone,plot=False,automaxfeat=False)
             forest_resdf.to_csv(sep=';',path_or_buf='../Resu/'+fver+'_'+featsel+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
 
         if 'svc' in modeltype[0]:
             print('ALL_____________svc___________________________________________________________________________')
             featsel = 'all_SVC' if testone == False else 'temp_all_SVC'
-            svc_resdf = ExamineSVC(orygframe,X_test[:,0],X_train_sc, y_train,X_test_sc, y_test,featurenames,testone=testone,plot=False)
+            svc_resdf = ExamineSVC(orygframe,Xintex,X_train_sc, y_train,X_test_sc, y_test,featurenames,testone=testone,plot=False)
             svc_resdf.to_csv(sep=';',path_or_buf='../Resu/'+fver+'_'+featsel+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
 
         if 'mlp' in modeltype[0]:
             print('ALL_____________mlp___________________________________________________________________________')
             featsel = 'all_MLP' if testone == False else 'temp_all_MLP'
-            mlp_resdf = ExamineMLP(orygframe,X_test[:,0],X_train_sc, y_train,X_test_sc, y_test,featurenames,testone=testone,plot=False)
+            mlp_resdf = ExamineMLP(orygframe,Xintex,X_train_sc, y_train,X_test_sc, y_test,featurenames,testone=testone,plot=False)
             mlp_resdf.to_csv(sep=';',path_or_buf='../Resu/'+fver+'_'+featsel+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
 
         print('ALL________________finished________________________________________________________________________________')
