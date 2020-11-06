@@ -14,100 +14,12 @@ from model_collection import *
 
 pd.options.display.max_columns = None
 
-def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','mlp'],['rf','svc','mlp'],['rf','svc','mlp']],testone=False):
+def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','mlp'],['rf','svc','mlp'],['rf','svc','mlp']],testone=False,has_y=False,testsize=0.25):
 
-#     fver = 'v14'
     masterframe = loaddata_master('../Data/mf_UJ1440_'+fver+'.csv')
 
-
-    # Prepare Y
-    Rtp=1
-    Rsl=1
-    masterframe['y'] = -1
-#     n = 5
-    i = 0
-    while i < len(masterframe) - 1:   
-        j = 1
-        yy = False
-        while j <= len(masterframe) - i - 1:
-            #if (masterframe.low.iloc[i+j] < masterframe.close.iloc[i]-Rsl*masterframe.atr14avgtr.iloc[i]):
-            if (masterframe.low.iloc[i+j] < masterframe.low.iloc[i]-Rsl*masterframe.atr14avgtr.iloc[i]):
-                yy = False
-                break
-            #if (masterframe.high.iloc[i+j] > masterframe.close.iloc[i]+Rtp*masterframe.atr14avgtr.iloc[i]):
-            if (masterframe.high.iloc[i+j] > masterframe.high.iloc[i]+Rtp*masterframe.atr14avgtr.iloc[i]):
-                yy = True
-                break
-            j = j + 1
-
-        if yy == True:
-            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 1            
-            #masterframe.iloc[i+1:i+j+1,masterframe.columns.get_loc('y')]=0      #nochain
-            #i = i + j                                                           #nochain 
-            i = i + 1   #chain
-
-        else:
-            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
-            i = i + 1
-
-    '''
-    # Prepare Y
-    Rtp=1
-    Rsl=1
-    masterframe['y'] = -1
-    n = 5
-    i = 0
-    while i < len(masterframe) - n:   
-        j = 1
-        yy = False
-        while j <= n:
-            #if (masterframe.low.iloc[i+j] < masterframe.close.iloc[i]-Rsl*masterframe.atr14atr.iloc[i]):
-            if (masterframe.low.iloc[i+j] < masterframe.low.iloc[i]-Rsl*masterframe.atr14atr.iloc[i]):
-                yy = False
-                break
-            #if (masterframe.high.iloc[i+j] > masterframe.close.iloc[i]+Rtp*masterframe.atr14atr.iloc[i]):
-            if (masterframe.high.iloc[i+j] > masterframe.high.iloc[i]+Rtp*masterframe.atr14atr.iloc[i]):
-                yy = True
-                break
-            j = j + 1
-
-        if yy == True:
-            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 1            
-            #masterframe.iloc[i+1:i+j+1,masterframe.columns.get_loc('y')]=0      #nochain
-            #i = i + j                                                           #nochain 
-            i = i + 1   #chain
-
-        else:
-            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
-            i = i + 1
-    '''  
-    
-    '''      
-    # Prepare Y
-    Rtp=0
-    Rsl=0
-    masterframe['y'] = -1
-    n = 1
-    i = 0
-    while i < len(masterframe) - n:   
-        j = 1
-        yy = False
-        while j <= n:
-            if (masterframe.high.iloc[i+j] > masterframe.high.iloc[i]):
-                yy = True
-                break
-            j = j + 1
-
-        if yy == True:
-            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 1            
-            #masterframe.iloc[i+1:i+j+1,masterframe.columns.get_loc('y')]=0      #nochain
-            #i = i + j                                                           #nochain 
-            i = i + 1   #chain
-
-        else:
-            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
-            i = i + 1
-    '''
+    if has_y == False:
+        prepare_y(masterframe)
 
     #pre-prepare data
     orygframe = masterframe.copy()
@@ -116,16 +28,17 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
 
     # split data
     # masterframe = masterframe[-3600:] ###testowo
-    X_df = masterframe.iloc[:-1, 2:-1] 
-    y_df = masterframe.iloc[:-1, -1] 
-    featurenames = masterframe.iloc[:-1, 2:-1].columns.values
+    masterframe = masterframe.drop(masterframe[masterframe.y==-1].index,axis=0)
+    X_df = masterframe.iloc[:, 2:-1] 
+    y_df = masterframe.iloc[:, -1] 
+    featurenames = masterframe.iloc[:, 2:-1].columns.values
 
     X = X_df.values
     y = y_df.values
     y = y.astype('int')
     X = X.astype('float')
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=0.25, shuffle = False)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=None, test_size=0.25, shuffle = False)
+    # X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=testsize, shuffle = False)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=None, test_size=testsize, shuffle = False)
 
     # balance classes
     from imblearn.over_sampling import SMOTE
@@ -241,21 +154,130 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
             
         
     if featsel == 'all':
-        print('ALL_____________rf___________________________________________________________________________')
-        featsel = 'all_RandomForest' if testone == False else 'temp_all_RandomForest'
-        forest_resdf = ExamineRandomForest(orygframe,X_test[:,0],X_train, y_train,X_test, y_test,featurenames,testone=testone,plot=False,automaxfeat=False)
-        forest_resdf.to_csv(sep=';',path_or_buf='../Resu/'+fver+'_'+featsel+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
+        if 'rf' in modeltype[0]:
+            print('ALL_____________rf___________________________________________________________________________')
+            featsel = 'all_RandomForest' if testone == False else 'temp_all_RandomForest'
+            forest_resdf = ExamineRandomForest(orygframe,X_test[:,0],X_train, y_train,X_test, y_test,featurenames,testone=testone,plot=False,automaxfeat=False)
+            forest_resdf.to_csv(sep=';',path_or_buf='../Resu/'+fver+'_'+featsel+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
 
-        print('ALL_____________svc___________________________________________________________________________')
-        featsel = 'all_SVC' if testone == False else 'temp_all_SVC'
-        svc_resdf = ExamineSVC(orygframe,X_test[:,0],X_train_sc, y_train,X_test_sc, y_test,featurenames,testone=testone,plot=False)
-        svc_resdf.to_csv(sep=';',path_or_buf='../Resu/'+fver+'_'+featsel+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
+        if 'svc' in modeltype[0]:
+            print('ALL_____________svc___________________________________________________________________________')
+            featsel = 'all_SVC' if testone == False else 'temp_all_SVC'
+            svc_resdf = ExamineSVC(orygframe,X_test[:,0],X_train_sc, y_train,X_test_sc, y_test,featurenames,testone=testone,plot=False)
+            svc_resdf.to_csv(sep=';',path_or_buf='../Resu/'+fver+'_'+featsel+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
 
-        print('ALL_____________mlp___________________________________________________________________________')
-        featsel = 'all_MLP' if testone == False else 'temp_all_MLP'
-        mlp_resdf = ExamineMLP(orygframe,X_test[:,0],X_train_sc, y_train,X_test_sc, y_test,featurenames,testone=testone,plot=False)
-        mlp_resdf.to_csv(sep=';',path_or_buf='../Resu/'+fver+'_'+featsel+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
+        if 'mlp' in modeltype[0]:
+            print('ALL_____________mlp___________________________________________________________________________')
+            featsel = 'all_MLP' if testone == False else 'temp_all_MLP'
+            mlp_resdf = ExamineMLP(orygframe,X_test[:,0],X_train_sc, y_train,X_test_sc, y_test,featurenames,testone=testone,plot=False)
+            mlp_resdf.to_csv(sep=';',path_or_buf='../Resu/'+fver+'_'+featsel+str(int(time.time()))+'.csv',date_format="%Y-%m-%d",index = False)
 
         print('ALL________________finished________________________________________________________________________________')
+    
+    return
+
+
+def prepare_y(masterframe):
+    
+    # Prepare Y
+    Rtp=1
+    Rsl=1
+    masterframe['y'] = -1
+#     n = 5
+    i = 0
+    while i < len(masterframe) - 1:   
+        j = 1
+        yy = False
+        while j <= len(masterframe) - i - 1:
+            #if (masterframe.low.iloc[i+j] < masterframe.close.iloc[i]-Rsl*masterframe.atr14avgtr.iloc[i]):
+            if (masterframe.low.iloc[i+j] < masterframe.low.iloc[i]-Rsl*masterframe.atr14avgtr.iloc[i]):
+                yy = False
+                break
+            #if (masterframe.high.iloc[i+j] > masterframe.close.iloc[i]+Rtp*masterframe.atr14avgtr.iloc[i]):
+            if (masterframe.high.iloc[i+j] > masterframe.high.iloc[i]+Rtp*masterframe.atr14avgtr.iloc[i]):
+                yy = True
+                break
+            j = j + 1
+
+        if yy == True:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 1            
+            #masterframe.iloc[i+1:i+j+1,masterframe.columns.get_loc('y')]=0      #nochain
+            #i = i + j                                                           #nochain 
+            i = i + 1   #chain
+
+        else:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
+            i = i + 1
+
+    '''
+    # Prepare Y
+    Rtp=1
+    Rsl=1
+    masterframe['y'] = -1
+    n = 5
+    i = 0
+    while i < len(masterframe) - n:   
+        j = 1
+        yy = False
+        while j <= n:
+            #if (masterframe.low.iloc[i+j] < masterframe.close.iloc[i]-Rsl*masterframe.atr14atr.iloc[i]):
+            if (masterframe.low.iloc[i+j] < masterframe.low.iloc[i]-Rsl*masterframe.atr14atr.iloc[i]):
+                yy = False
+                break
+            #if (masterframe.high.iloc[i+j] > masterframe.close.iloc[i]+Rtp*masterframe.atr14atr.iloc[i]):
+            if (masterframe.high.iloc[i+j] > masterframe.high.iloc[i]+Rtp*masterframe.atr14atr.iloc[i]):
+                yy = True
+                break
+            j = j + 1
+
+        if yy == True:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 1            
+            #masterframe.iloc[i+1:i+j+1,masterframe.columns.get_loc('y')]=0      #nochain
+            #i = i + j                                                           #nochain 
+            i = i + 1   #chain
+
+        else:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
+            i = i + 1
+    '''  
+    
+    '''      
+    # Prepare Y
+    Rtp=0
+    Rsl=0
+    masterframe['y'] = -1
+    n = 1
+    i = 0
+    while i < len(masterframe) - n:   
+        j = 1
+        yy = False
+        while j <= n:
+            if (masterframe.high.iloc[i+j] > masterframe.high.iloc[i]):
+                yy = True
+                break
+            j = j + 1
+
+        if yy == True:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 1            
+            #masterframe.iloc[i+1:i+j+1,masterframe.columns.get_loc('y')]=0      #nochain
+            #i = i + j                                                           #nochain 
+            i = i + 1   #chain
+
+        else:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
+            i = i + 1
+    '''
+    
+    return
+
+def dumpdatawithy(datafile):
+
+    masterframe = loaddata_master('../Data/'+datafile+'.csv')
+
+    prepare_y(masterframe)
+    
+    masterframe = masterframe.drop(['id'],1)
+    
+    masterframe.to_csv(sep=';',path_or_buf='../Data/y_'+datafile+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     
     return
