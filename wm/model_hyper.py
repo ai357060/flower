@@ -24,11 +24,17 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     #pre-prepare data
     orygframe = masterframe.copy()
     masterframe = masterframe.drop(['volume'],1)
-# tu można usunąć z masterframe: fulldate	year	month	day	open	high	low	close
     masterframe = masterframe.drop(['fulldate'],1)
     masterframe = masterframe.drop(['year'],1)
-    masterframe = masterframe.drop(['month'],1)
-    masterframe = masterframe.drop(['day'],1)
+# tu można usunąć z masterframe: fulldate	year	month	day	open	high	low	close
+    try:
+        masterframe = masterframe.drop(['month'],1)
+    except:
+        pass
+    try:
+        masterframe = masterframe.drop(['day'],1)
+    except:
+        pass
     masterframe = masterframe.drop(['open'],1)
     masterframe = masterframe.drop(['high'],1)
     masterframe = masterframe.drop(['low'],1)
