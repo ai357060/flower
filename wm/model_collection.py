@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from pandas.api.types import CategoricalDtype
 import warnings
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
@@ -13,12 +14,16 @@ import datetime
 import multiprocessing
 import time
 import os
-# from fastai.tabular import *
 import glob
 
 #import threading 
 #import ctypes 
 #import time 
+
+from fastai import *
+from fastai.metrics import *
+from fastai.tabular import *
+
 
 def loaddata_master(datafile):
     df = pd.read_csv(datafile,sep=';')
@@ -55,7 +60,7 @@ def plot_feature_importances(X_test,feature_importances,feature_names):
     plt.ylabel("Feature")
     plt.ylim(-1, n_features)        
         
-def ExamineLogisticRegression(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,testone,plot):
+def ExamineLogisticRegression(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,atr,testone,plot):
 #logistics regresion (classification)
 #default C=1;  lower values of C correspond to more regularization. Regularization means explicitly restricting a model to avoid overfitting.
 #solver = ‘liblinear’  {‘newton-cg’, ‘lbfgs’, ‘liblinear’, ‘sag’, ‘saga’}
@@ -77,7 +82,6 @@ def ExamineLogisticRegression(masterframe,Xintex,X_train, y_train,X_test, y_test
         CC = [0.0001]  #[0.001,0.01,0.1,1,10,100]
         max_iters = [100]                 #[100,1000,10000]
     
-    atr = masterframe.atr14tr.mean()    
     for penalty in range(0,len(penaltynames)):
         for solver in solvers[penalty]:
             for C in CC:                
@@ -123,7 +127,7 @@ def ExamineLogisticRegression(masterframe,Xintex,X_train, y_train,X_test, y_test
 
     return linear_resdf
 
-def ExamineLinearSVC(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,testone,plot):
+def ExamineLinearSVC(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,atr,testone,plot):
     linear_resdf = pd.DataFrame(columns=['proctime','penalty','C','max_iter','loss','Tr acc','Te acc','Te_cal','Mess'
                                          ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Te_cnt'
 ,'Te_0_50','Te_0_50_cnt','Te_0_60','Te_0_60_cnt','Te_0_70','Te_0_70_cnt','Te_0_80','Te_0_80_cnt','Te_0_90','Te_0_90_cnt'
@@ -141,7 +145,6 @@ def ExamineLinearSVC(masterframe,Xintex,X_train, y_train,X_test, y_test,featuren
         max_iters = [100]                 #[100,1000,10000]
     
     
-    atr = masterframe.atr14tr.mean()    
     for penalty in range(0,len(penaltynames)):
         for loss in loss[penalty]:
             for C in CC:                
@@ -191,7 +194,7 @@ def ExamineLinearSVC(masterframe,Xintex,X_train, y_train,X_test, y_test,featuren
     return linear_resdf
 
 
-def ExamineRandomForest(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,testone,plot,automaxfeat=False):
+def ExamineRandomForest(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,atr,testone,plot,automaxfeat=False):
     # n_estimators - the more the better
     # max_features - default=sqrt(n_features)
     # max_depth 
@@ -218,7 +221,6 @@ def ExamineRandomForest(masterframe,Xintex,X_train, y_train,X_test, y_test,featu
     if (automaxfeat == True):
         max_features = [None]
 
-    atr = masterframe.atr14tr.mean()    
     for i_max_features in max_features:
         for i_n_estimators in n_estimators:
             for i_max_depth in max_depth:                
@@ -270,7 +272,7 @@ def ExamineRandomForest(masterframe,Xintex,X_train, y_train,X_test, y_test,featu
 
 
 
-def ExamineSVC(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,testone,plot):
+def ExamineSVC(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,atr,testone,plot):
     # n_estimators - the more the better
     # max_features - default=sqrt(n_features)
     # max_depth 
@@ -297,7 +299,6 @@ def ExamineSVC(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,t
         degree = [2]
         timeout = 5
     
-    atr = masterframe.atr14tr.mean()    
     for i_kernel in kernel:
         for i_C in C:
             for i_gamma in gamma:                
@@ -356,7 +357,7 @@ def ExamineSVC(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,t
                    
     return linear_resdf
 
-def ExamineMLP(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,testone,plot):
+def ExamineMLP(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,atr,testone,plot):
     # n_estimators - the more the better
     # max_features - default=sqrt(n_features)
     # max_depth 
@@ -398,7 +399,6 @@ def ExamineMLP(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,t
         alpha = [0.01]#,0.01,0.1,1]  #'auto'
         max_iter= [1000]    
     
-    atr = masterframe.atr14tr.mean()    
     for i_solver in solver:
         for i_hidden_layer_sizes in hidden_layer_sizes:
             for i_activation in activation:                
@@ -451,38 +451,59 @@ def ExamineMLP(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,t
 #                                                                        ,str(endtime - starttime)))
     return linear_resdf
 
-def ExamineNN(masterframe,Xintex,datamasterframe,featurenames,testone,plot):
+def ExamineNN(masterframe,Xintex,datamasterframe,featurenames,atr,testone,plot):
 
     cwd = os.getcwd()
     path = cwd
-    dep_var = datamasterframe.columns[-1]
-    cat_names = []
-    cont_names = datamasterframe.columns[1:-1]
-#     dep_var = 'y'
-#     cat_names = ['month__1','month__2','month__3','month__4','month__5','month__6','month__7','month__8','month__9','month__10','month__11','month__12','day__1','day__2','day__3','day__4','day__5','day__6','day__7','day__8','day__9','day__10','day__11','day__12','day__13','day__14','day__15','day__16','day__17','day__18','day__19','day__20','day__21','day__22','day__23','day__24','day__25','day__26','day__27','day__28','day__29','day__30','day__31','weekday__1','weekday__2','weekday__3','weekday__4','weekday__6','weekday__7']
-#     cont_names = set(featurenames) - set(cat_names)
+    bin_type = CategoricalDtype(categories=[0, 1])
+    datamasterframe['y'] = datamasterframe['y'].astype(bin_type)
+    dep_var = ['y']
+    cat_names = ['y']
+    cont_names = datamasterframe.columns[1:-1] # bez id oraz bez y
     procs = [FillMissing, Categorify, Normalize]
 
-    linear_resdf = pd.DataFrame(columns=['proctime','emb_drop','layers','lr','wd','epoch','Tr acc','Te acc','Te_cal','Mess'
+    linear_resdf = pd.DataFrame(columns=['proctime','emb_drop','layers','lr','wd','epoch','metrics','Tr acc','Te acc','Te_cal','Mess'
                                          ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Te_cnt'
 ,'Te_0_50','Te_0_50_cnt','Te_0_60','Te_0_60_cnt','Te_0_70','Te_0_70_cnt','Te_0_80','Te_0_80_cnt','Te_0_90','Te_0_90_cnt'
 ,'Te_1_50','Te_1_50_cnt','Te_1_60','Te_1_60_cnt','Te_1_70','Te_1_70_cnt','Te_1_80','Te_1_80_cnt','Te_1_90','Te_1_90_cnt'])
     
+    datamasterframe['is_valid'] = False
+    datamasterframe.iloc[(datamasterframe.iloc[:, 0].isin(Xintex.astype(int))).values,datamasterframe.columns.get_loc('is_valid')] = True
+#     datamasterframe = datamasterframe.drop(['id'],1) #usuwam id
     data = (TabularList.from_df(datamasterframe, path=path, cat_names=cat_names, cont_names=cont_names, procs=procs)
 #                            .split_by_rand_pct(valid_pct=0.25, seed=42)
 #                            .split_by_idx(list(range(3000,4115)))
-                           .split_by_idx(datamasterframe[datamasterframe[0].isin(Xintex.astype(int))].index)
+#                           .split_by_idx(datamasterframe[datamasterframe.iloc[:, 0].isin(Xintex.astype(int))].index)
+                           .split_from_df('is_valid')
                            .label_from_df(cols=dep_var)
                            .databunch(bs=64))
     
+    print(dep_var)
+    
     emb_drop = [0.2,0.5,0.7]
-    hidden_layer_sizes = [[10],[100],[400],[800]
-                          ,[10,10],[100,100],[400,400],[800,800]
-                          ,[10,10,10],[100,100,100],[400,400,400],[800,800,800]
-                          ,[10,10,10,10],[100,100,100,100],[400,400,400,400],[800,800,800,800]]
+#     hidden_layer_sizes = [[10],[100],[400],[800]
+#                           ,[10,10],[100,100],[400,400],[800,800]
+#                           ,[10,10,10],[100,100,100],[400,400,400],[800,800,800]
+#                           ,[10,10,10,10],[100,100,100,100],[400,400,400,400],[800,800,800,800]]
+    hidden_layer_sizes = [[300],[600],[900]
+                          ,[300,300],[600,600],[900,900]
+                          ,[300,300,300],[600,600,600],[900,900,900]
+                          ,[300,300,300,300],[600,600,600,600],[900,900,900,900]]
     lr = [1e-4,1e-3,1e-2]
     wd = [0.5,0.1,0.01]
-    epoch = [3,6,9]
+    epoch = [6]
+#     metrics = [accuracy_score, precision_score, recall_score, f1_score, fbeta_score, log_loss, roc_auc_score]
+    metrics = [accuracy, Precision(), Recall(),AUROC(),FBeta()]
+
+# test one model
+    if testone == True:
+        emb_drop = [0.5]
+        hidden_layer_sizes = [[300]]
+        lr = [1e-4]
+        wd = [0.01]
+        epoch = [1]
+        metrics = [Precision()]
+    
     
 #     learn = tabular_learner(data, layers=[400,200,100], metrics=accuracy, emb_drop=0.7,wd=0.01, silent = False)
 #     learn.lr_find(end_lr=100)
@@ -490,59 +511,174 @@ def ExamineNN(masterframe,Xintex,datamasterframe,featurenames,testone,plot):
     
 
     
-    atr = masterframe.atr14tr.mean()    
     for i_emb_drop in emb_drop:
         for i_hidden_layer_sizes in hidden_layer_sizes:
             for i_lr in lr:                
                 for i_wd in wd:  
                     for i_epoch in epoch:
-                        try:
-                            with warnings.catch_warnings(record=True) as efitwarn:
-                                starttime = datetime.datetime.now()
-                                print(starttime,i_emb_drop,i_hidden_layer_sizes,i_lr,i_wd,i_epoch)
-#                                 logreg = MLPClassifier(solver=i_solver,hidden_layer_sizes=[10,10]
-#                                                        ,activation=i_activation, alpha=i_alpha
-#                                                        ,max_iter = i_max_iter, random_state=0)
-#                                 logreg.fit(X_train, y_train)
-                                logreg = tabular_learner(data, emb_drop=i_emb_drop, layers=i_hidden_layer_sizes, wd=i_wd, metrics=accuracy, silent = False)
-                                logreg.fit(i_epoch,lr=i_lr)
+                        for i_metrics in metrics:
+                            try:
+                                with warnings.catch_warnings(record=True) as efitwarn:
+                                    starttime = datetime.datetime.now()
+                                    print(starttime,i_emb_drop,i_hidden_layer_sizes,i_lr,i_wd,i_epoch)
+    #                                 logreg = MLPClassifier(solver=i_solver,hidden_layer_sizes=[10,10]
+    #                                                        ,activation=i_activation, alpha=i_alpha
+    #                                                        ,max_iter = i_max_iter, random_state=0)
+    #                                 logreg.fit(X_train, y_train)
+                                    logreg = tabular_learner(data, emb_drop=i_emb_drop, layers=i_hidden_layer_sizes, wd=i_wd, metrics=i_metrics, silent = False)
+                                    logreg.fit(i_epoch,lr=i_lr)
+                                    endtime = datetime.datetime.now()
+                                    if len(efitwarn) > 0: 
+                                        fitwarn = efitwarn[-1].message
+                                        print(fitwarn)
+                                    else: 
+                                        fitwarn = ''
+                            except Exception as e:
+                                print('Exception: ',e)
                                 endtime = datetime.datetime.now()
-                                if len(efitwarn) > 0: 
-                                    fitwarn = efitwarn[-1].message
-                                    print(fitwarn)
-                                else: 
-                                    fitwarn = ''
-                        except Exception as e:
-                            print('Exception: ',e)
-                            endtime = datetime.datetime.now()
-                            linear_resdf = linear_resdf.append({
-                                'proctime':str(endtime - starttime),
-                                'solver':i_solver,
-                                'layers':i_hidden_layer_sizes,
-                                'activation':i_activation,
-                                'alpha':i_alpha,
-                                'max_iter':i_max_iter,
-                                'Mess':str(e)
-                            },ignore_index=True)                        
-                            continue
-                            
-                        if plot: plot_feature_importances(X_test,logreg.feature_importances_,featurenames)
-                            
-                        linear_resdf1 = {
-                            'proctime':str(endtime - starttime),
-                            'solver':i_solver,
-                            'layers':i_hidden_layer_sizes,
-                            'activation':i_activation,
-                            'alpha':i_alpha,
-                            'max_iter':i_max_iter
-                        }
-                        linear_resdf2 = PrepareResults(masterframe,logreg,X_train,X_test,y_train,y_test,Xintex,testone,fitwarn,atr,str(endtime - starttime))
-                        linear_resdf1.update(linear_resdf2)
-                        linear_resdf = linear_resdf.append(linear_resdf1 ,ignore_index=True)
-    
-    
-    return linear_resdf
+                                linear_resdf = linear_resdf.append({
+                                    'proctime':str(endtime - starttime),
+                                    'emb_drop':i_emb_drop,
+                                    'layers':i_hidden_layer_sizes,
+                                    'lr':i_lr,
+                                    'wd':i_wd,
+                                    'epoch':i_epoch,
+                                    'metrics':i_metrics,
+                                    'Mess':str(e)
+                                },ignore_index=True)                        
+                                continue
 
+                            if plot: plot_feature_importances(X_test,logreg.feature_importances_,featurenames)
+
+                            linear_resdf1 = {
+                                'proctime':str(endtime - starttime),
+                                'emb_drop':i_emb_drop,
+                                'layers':i_hidden_layer_sizes,
+                                'lr':i_lr,
+                                'wd':i_wd,
+                                'epoch':i_epoch,
+                                'metrics':i_metrics
+                            }
+                            linear_resdf2 = PrepareResultsNN(masterframe,datamasterframe,logreg,Xintex,testone,fitwarn,atr,str(endtime - starttime))
+                            linear_resdf1.update(linear_resdf2)
+                            linear_resdf = linear_resdf.append(linear_resdf1 ,ignore_index=True)
+    
+    return linear_resdf,logreg
+
+def PrepareResultsNN(masterframe,datamasterframe,logreg,Xintex,testone,fitwarn,atr,proctime):
+#     X_test =  datamasterframe.iloc[(datamasterframe.is_valid==True).values]    
+#     y_test = X_test.y
+    
+    preds, y = logreg.get_preds(ds_type=DatasetType.Valid)
+    Testscore = accuracy(preds, y).item()*100
+    y_test = y.numpy()
+    preds = preds.numpy()
+    proba0 = preds[:,0]
+    proba1 = preds[:,1]
+
+    preds, y = logreg.get_preds(ds_type=DatasetType.Train)
+    Trainscore =  accuracy(preds, y).item()*100
+    y_train = y.numpy()
+#     print(y_train_predict.shape)
+#     print(y_train.shape)
+    
+#     def proba_test(x):
+#         row, predict, proba = logreg.predict(x)
+#         print(x.id,predict.item(), proba[0].item(), proba[1].item())
+#         return pd.Series([predict.item(), proba[0].item(), proba[1].item()], index=['pre', 'p0', 'p1'])    
+    
+#     pre = X_test.apply(proba_test,axis=1)
+#     y_test_predict = pre.pre
+#     proba0 = pre.p0
+#     proba1 = pre.p1
+
+    test_size = y_test.shape[0]
+#     print(test_size)
+#     hit = np.sum((y_test == 0) & (proba0 > 0.5)) + np.sum((y_test == 1) & (proba1 >= 0.5))
+#     Testscore = hit/test_size*100
+    
+    zerocnt50 = np.sum( proba0 > 0.5) 
+    zerohit50 = np.sum((y_test == 0) & (proba0 > 0.5))
+    zerocnt60 = np.sum( proba0 > 0.6) 
+    zerohit60 = np.sum((y_test == 0) & (proba0 > 0.6))
+    zerocnt70 = np.sum( proba0 > 0.7) 
+    zerohit70 = np.sum((y_test == 0) & (proba0 > 0.7))
+    zerocnt80 = np.sum( proba0 > 0.8) 
+    zerohit80 = np.sum((y_test == 0) & (proba0 > 0.8))
+    zerocnt90 = np.sum( proba0 > 0.9) 
+    zerohit90 = np.sum((y_test == 0) & (proba0 > 0.9))
+
+    onecnt50 = np.sum( proba1 >= 0.5) 
+    onehit50 = np.sum((y_test == 1) & (proba1 >= 0.5))
+    onecnt60 = np.sum( proba1 >= 0.6) 
+    onehit60 = np.sum((y_test == 1) & (proba1 >= 0.6))
+    onecnt70 = np.sum( proba1 >= 0.7) 
+    onehit70 = np.sum((y_test == 1) & (proba1 >= 0.7))
+    onecnt80 = np.sum( proba1 >= 0.8) 
+    onehit80 = np.sum((y_test == 1) & (proba1 >= 0.8))
+    onecnt90 = np.sum( proba1 >= 0.9) 
+    onehit90 = np.sum((y_test == 1) & (proba1 >= 0.9))
+
+    tecal = (zerocnt70+onecnt70)/len(y_test)*100
+    res1, profitdf1 = ExamineProfit1(masterframe, Xintex, y_test, proba0,proba1,0,tecal,atr)
+    res2, profitdf2 = ExamineProfit2(masterframe, Xintex, y_test, proba0,proba1,0,tecal,atr)
+    res3, profitdf3 = ExamineProfit3(masterframe, Xintex, y_test, proba0,proba1,0,tecal,atr)
+    res4, profitdf4 = ExamineProfit4(masterframe, Xintex, y_test, proba0,proba1,0,tecal,atr)
+    if testone == True:
+        profitdf1.to_csv(sep=';',path_or_buf='../Resu/temp_EP1_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d")
+        profitdf2.to_csv(sep=';',path_or_buf='../Resu/temp_EP2_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d")
+        profitdf3.to_csv(sep=';',path_or_buf='../Resu/temp_EP3_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d")
+        profitdf4.to_csv(sep=';',path_or_buf='../Resu/temp_EP4_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d")
+
+    linear_resdict = {
+        'Tr acc': "{:10.1f}".format(Trainscore),
+        'Te acc': "{:10.1f}".format(Testscore),
+        'Te_cal': "{:10.1f}".format(tecal),
+        'Mess': fitwarn,
+        'Tr_1_cnt': "{:10.1f}".format(len(y_train[y_train==1])/len(y_train)*100),
+#         'Tr_0_acc': "{:10.1f}".format((y_train_predict[y_train==0]).tolist().count(0)/len(y_train[y_train==0])*100),
+#         'Tr_1_acc': "{:10.1f}".format((y_train_predict[y_train==1]).tolist().count(1)/len(y_train[y_train==1])*100),
+        'Tr_0_acc': "{:10.1f}".format(0),
+        'Tr_1_acc': "{:10.1f}".format(0),
+        'Te_1_cnt': "{:10.1f}".format((y_test == 1).tolist().count(True)/len(y_test)*100),
+        'Te_cnt': "{:10.0f}".format(test_size),
+        'Te_0_50' : "{:10.1f}".format(zerohit50/zerocnt50*100 if zerocnt50>0 else 0),
+        'Te_0_50_cnt' : "{:10.0f}".format(zerocnt50/test_size*100),
+        'Te_0_60' : "{:10.1f}".format(zerohit60/zerocnt60*100 if zerocnt60>0 else 0),
+        'Te_0_60_cnt' : "{:10.0f}".format(zerocnt60/test_size*100),
+        'Te_0_70' : "{:10.1f}".format(zerohit70/zerocnt70*100 if zerocnt70>0 else 0),
+        'Te_0_70_cnt' : "{:10.0f}".format(zerocnt70/test_size*100),
+        'Te_0_80' : "{:10.1f}".format(zerohit80/zerocnt80*100 if zerocnt80>0 else 0),
+        'Te_0_80_cnt' : "{:10.0f}".format(zerocnt80/test_size*100),
+        'Te_0_90' : "{:10.1f}".format(zerohit90/zerocnt90*100 if zerocnt90>0 else 0),
+        'Te_0_90_cnt' : "{:10.0f}".format(zerocnt90/test_size*100),
+        'Te_1_50' : "{:10.1f}".format(onehit50/onecnt50*100 if onecnt50>0 else 0),
+        'Te_1_50_cnt' : "{:10.0f}".format(onecnt50/test_size*100),
+        'Te_1_60' : "{:10.1f}".format(onehit60/onecnt60*100 if onecnt60>0 else 0),
+        'Te_1_60_cnt' : "{:10.0f}".format(onecnt60/test_size*100),
+        'Te_1_70' : "{:10.1f}".format(onehit70/onecnt70*100 if onecnt70>0 else 0),
+        'Te_1_70_cnt' : "{:10.0f}".format(onecnt70/test_size*100),
+        'Te_1_80' : "{:10.1f}".format(onehit80/onecnt80*100 if onecnt80>0 else 0),
+        'Te_1_80_cnt' : "{:10.0f}".format(onecnt80/test_size*100),
+        'Te_1_90' : "{:10.1f}".format(onehit90/onecnt90*100 if onecnt90>0 else 0),
+        'Te_1_90_cnt' : "{:10.0f}".format(onecnt90/test_size*100)
+#         'Str1_0.5':res1[0.5],'Str1_0.6':res1[0.6],'Str1_0.7':res1[0.7],'Str1_0.8':res1[0.8],'Str1_0.9':res1[0.9],
+#         'Str2_0.5':res2[0.5],'Str2_0.6':res2[0.6],'Str2_0.7':res2[0.7],'Str2_0.8':res2[0.8],'Str2_0.9':res2[0.9],
+#         'Str3_0.5':res3[0.5],'Str3_0.6':res3[0.6],'Str3_0.7':res3[0.7],'Str3_0.8':res3[0.8],'Str3_0.9':res3[0.9],
+#         'Str4_0.5':res4[0.5],'Str4_0.6':res4[0.6],'Str4_0.7':res4[0.7],'Str4_0.8':res4[0.8],'Str4_0.9':res4[0.9]
+    }
+    linear_resdict.update(res1)
+    linear_resdict.update(res2)
+    linear_resdict.update(res3)
+    linear_resdict.update(res4)
+    
+    print('train: {:10.1f} | test: {:10.1f} | cal: {:10.1f} | proctime: {}'.format(Trainscore
+                                                    , Testscore
+                                                    , tecal
+                                                   ,proctime))
+    
+    return linear_resdict
+    
 
 def PrepareResults(masterframe,logreg,X_train,X_test,y_train,y_test,Xintex,testone,fitwarn,atr,proctime):
     y_train_predict = logreg.predict(X_train)
@@ -643,7 +779,6 @@ def ExamineProfit1(masterframe, Xintex, y_test, proba0, proba1, trade_cnt_th ,te
 #     sl = high - close
 #     tp  = close - nextclose
 
-#     atr = masterframe.atr14tr.mean()
     minslratio = 0.05 
     strname = 'S1_'
     profitdf = pd.DataFrame({'id':(Xintex).astype(int),'y_test':y_test,'proba0':proba0,'proba1':proba1})
@@ -683,7 +818,6 @@ def ExamineProfit2(masterframe, Xintex, y_test, proba0, proba1, trade_cnt_th,tec
 #     prediction OK  profit =  high - close
 #     prediction BAD  loss = sl if nextlow<low  else close - nextclose
 
-#     atr = masterframe.atr14tr.mean()
     minslratio = 0.05 
     strname = 'S2_'
     profitdf = pd.DataFrame({'id':(Xintex).astype(int),'y_test':y_test,'proba0':proba0,'proba1':proba1})
@@ -726,7 +860,6 @@ def ExamineProfit3(masterframe, Xintex, y_test, proba0, proba1, trade_cnt_th,tec
 #     prediction OK  profit =  nextclose - close
 #     prediction BAD  loss = sl if nextlow<low  else close - nextclose
 
-#     atr = masterframe.atr14tr.mean()
     minslratio = 0.05 
     strname = 'S3_'
     profitdf = pd.DataFrame({'id':(Xintex).astype(int),'y_test':y_test,'proba0':proba0,'proba1':proba1})
@@ -769,7 +902,6 @@ def ExamineProfit4(masterframe, Xintex, y_test, proba0, proba1, trade_cnt_th,tec
 #     prediction OK  profit =  close+(close-low)-close
 #     prediction BAD  loss = sl if nextlow<low  else close - nextclose
 
-#     atr = masterframe.atr14tr.mean()
     minslratio = 0.05 
     strname = 'S4_'
     profitdf = pd.DataFrame({'id':(Xintex).astype(int),'y_test':y_test,'proba0':proba0,'proba1':proba1})
