@@ -966,11 +966,6 @@ def historyD1(prices,periods):
     
     df = pd.DataFrame(index=prices.index)
     for i in range(periods[0],0,-1):
-#         columnname_hist = 'D1hist_close_'+str(i)
-        columnname_diff = 'D1hist_close_'+str(i)+'_diff'
-#         df[columnname_hist] = prices.close.shift(periods=i)
-        df[columnname_diff] = prices.close.shift(periods=i)-prices.close
-        df[columnname_diff] = df[columnname_diff] / avgtr
 #         columnname_hist = 'D1hist_low_'+str(i)
         columnname_diff = 'D1hist_low_'+str(i)+'_diff'
 #         df[columnname_hist] = prices.low.shift(periods=i)
@@ -981,11 +976,16 @@ def historyD1(prices,periods):
 #         df[columnname_hist] = prices.high.shift(periods=i)
         df[columnname_diff] = prices.high.shift(periods=i)-prices.high
         df[columnname_diff] = df[columnname_diff] / avgtr
+#         columnname_hist = 'D1hist_close_'+str(i)
+        columnname_diff = 'D1hist_close_'+str(i)+'_diff'
+#         df[columnname_hist] = prices.close.shift(periods=i)
+        df[columnname_diff] = prices.close.shift(periods=i)-prices.close
+        df[columnname_diff] = df[columnname_diff] / avgtr        
 
-    df['D1high_c'] = (prices.high - prices.close) / avgtr
-    df['D1low_c'] =  (prices.low - prices.close) / avgtr
-    df['D1open_c'] = (prices.open - prices.close) / avgtr
-    
+    df['D1hist_low_c_diff'] =  (prices.low - prices.close) / avgtr
+    df['D1hist_high_c_diff'] = (prices.high - prices.close) / avgtr
+    df['D1hist_close_c_diff'] = (prices.close - prices.close) / avgtr
+
     dict = {}
     dict[periods[0]] = df
     results.df = dict
@@ -1004,8 +1004,8 @@ def historyW1(prices,periods):
     
     W1df = pd.DataFrame()
 
-    W1df['W1high'] = prices.groupby('weekID')['high'].max()    
     W1df['W1low'] = prices.groupby('weekID')['low'].min()    
+    W1df['W1high'] = prices.groupby('weekID')['high'].max()    
     W1df['W1open_day'] = prices.groupby('weekID')['dayID'].min()    
     other = prices[['dayID','open']]
     W1df = W1df.join(other.set_index('dayID'),on='W1open_day', how='inner')
@@ -1030,8 +1030,8 @@ def historyW1(prices,periods):
     
     df = pd.DataFrame(index=prices.index)
     df['weekID'] = prices.weekID
-    df['W1high_c'] = prices.groupby('weekID')['high'].cummax()    
     df['W1low_c'] = prices.groupby('weekID')['low'].cummin()    
+    df['W1high_c'] = prices.groupby('weekID')['high'].cummax()    
     df['W1close_c'] = prices.close
     df['W1open_day'] = prices.groupby('weekID')['dayID'].cummin()    
     other = prices[['dayID','open']]
@@ -1041,10 +1041,6 @@ def historyW1(prices,periods):
     
     df = df.join(Histdf,on='weekID', rsuffix='_other')
     for i in range(periods[0],0,-1):
-        columnname_hist = 'W1hist_close_'+str(i)
-        columnname_hist_diff = 'W1hist_close_'+str(i)+'_diff'
-        df[columnname_hist_diff] = df[columnname_hist] - df.W1close_c   
-        df[columnname_hist_diff] = df[columnname_hist_diff] / avgtr
         columnname_hist = 'W1hist_low_'+str(i)
         columnname_hist_diff = 'W1hist_low_'+str(i)+'_diff'
         df[columnname_hist_diff] = df[columnname_hist] - df.W1low_c   
@@ -1052,6 +1048,10 @@ def historyW1(prices,periods):
         columnname_hist = 'W1hist_high_'+str(i)
         columnname_hist_diff = 'W1hist_high_'+str(i)+'_diff'
         df[columnname_hist_diff] = df[columnname_hist] - df.W1high_c   
+        df[columnname_hist_diff] = df[columnname_hist_diff] / avgtr
+        columnname_hist = 'W1hist_close_'+str(i)
+        columnname_hist_diff = 'W1hist_close_'+str(i)+'_diff'
+        df[columnname_hist_diff] = df[columnname_hist] - df.W1close_c   
         df[columnname_hist_diff] = df[columnname_hist_diff] / avgtr
 
     for i in range(periods[0],0,-1):
@@ -1063,12 +1063,15 @@ def historyW1(prices,periods):
         df = df.drop([columnname_hist],1)
 
         
-    df = df.drop(['weekID'],1)
-    df.W1high_c = (df.W1high_c - df.W1close_c) / avgtr
-    df.W1low_c = (df.W1low_c - df.W1close_c) / avgtr
-    df.W1open_c = (df.W1open_c - df.W1close_c) / avgtr
-    df = df.drop(['W1close_c'],1)
+    df['W1hist_low_c_diff'] = (df.W1low_c - df.W1close_c) / avgtr
+    df['W1hist_high_c_diff'] = (df.W1high_c - df.W1close_c) / avgtr
+    df['W1hist_close_c_diff'] = (df.W1close_c - df.W1close_c) / avgtr
 
+    df = df.drop(['weekID'],1)
+    df = df.drop(['W1open_c'],1)
+    df = df.drop(['W1low_c'],1)
+    df = df.drop(['W1high_c'],1)
+    df = df.drop(['W1close_c'],1)
     
     dict = {}
     dict[periods[0]] = df
@@ -1115,8 +1118,8 @@ def historyM1(prices,periods):
     
     df = pd.DataFrame(index=prices.index)
     df['monthID'] = prices.monthID
-    df['M1high_c'] = prices.groupby('monthID')['high'].cummax()    
     df['M1low_c'] = prices.groupby('monthID')['low'].cummin()    
+    df['M1high_c'] = prices.groupby('monthID')['high'].cummax()    
     df['M1close_c'] = prices.close
     df['M1open_day'] = prices.groupby('monthID')['dayID'].cummin()    
     other = prices[['dayID','open']]
@@ -1126,10 +1129,6 @@ def historyM1(prices,periods):
 
     df = df.join(Histdf,on='monthID', rsuffix='_other')
     for i in range(periods[0],0,-1):
-        columnname_hist = 'M1hist_close_'+str(i)
-        columnname_hist_diff = 'M1hist_close_'+str(i)+'_diff'
-        df[columnname_hist_diff] = df[columnname_hist] - df.M1close_c   
-        df[columnname_hist_diff] = df[columnname_hist_diff] / avgtr
         columnname_hist = 'M1hist_low_'+str(i)
         columnname_hist_diff = 'M1hist_low_'+str(i)+'_diff'
         df[columnname_hist_diff] = df[columnname_hist] - df.M1low_c   
@@ -1137,6 +1136,10 @@ def historyM1(prices,periods):
         columnname_hist = 'M1hist_high_'+str(i)
         columnname_hist_diff = 'M1hist_high_'+str(i)+'_diff'
         df[columnname_hist_diff] = df[columnname_hist] - df.M1high_c   
+        df[columnname_hist_diff] = df[columnname_hist_diff] / avgtr
+        columnname_hist = 'M1hist_close_'+str(i)
+        columnname_hist_diff = 'M1hist_close_'+str(i)+'_diff'
+        df[columnname_hist_diff] = df[columnname_hist] - df.M1close_c   
         df[columnname_hist_diff] = df[columnname_hist_diff] / avgtr
 
     for i in range(periods[0],0,-1):
@@ -1147,12 +1150,16 @@ def historyM1(prices,periods):
         columnname_hist = 'M1hist_high_'+str(i)
         df = df.drop([columnname_hist],1)
 
+    df['M1hist_low_c_diff'] = (df.M1low_c - df.M1close_c) / avgtr
+    df['M1hist_high_c_diff'] = (df.M1high_c - df.M1close_c) / avgtr
+    df['M1hist_close_c_diff'] = (df.M1close_c - df.M1close_c) / avgtr
+
     df = df.drop(['monthID'],1)
-    df.M1high_c = (df.M1high_c - df.M1close_c) / avgtr
-    df.M1low_c = (df.M1low_c - df.M1close_c) / avgtr
-    df.M1open_c = (df.M1open_c - df.M1close_c) / avgtr
+    df = df.drop(['M1open_c'],1)
+    df = df.drop(['M1low_c'],1)
+    df = df.drop(['M1high_c'],1)
     df = df.drop(['M1close_c'],1)
-        
+    
     dict = {}
     dict[periods[0]] = df
     results.df = dict

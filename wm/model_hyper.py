@@ -40,10 +40,25 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     masterframe = masterframe.drop(['high'],1)
     masterframe = masterframe.drop(['low'],1)
     masterframe = masterframe.drop(['close'],1)
-    masterframe = masterframe.drop(['atr14tr'],1)
-    masterframe = masterframe.drop(['atr14atr'],1)
-    masterframe = masterframe.drop(['atr14avgtr'],1)
+    
+    if fver=='v16':
+        masterframe = masterframe.drop(['atr14tr'],1)
+        masterframe = masterframe.drop(['atr14atr'],1)
+        masterframe = masterframe.drop(['atr14avgtr'],1)
+        masterframe = masterframe.drop(['atr14tr_slope3'],1)
+        masterframe = masterframe.drop(['atr14tr_slope4'],1)  
+        masterframe = masterframe.drop(['atr14tr_slope5'],1)  
+        masterframe = masterframe.drop(['atr14tr_slope10'],1) 
+        masterframe = masterframe.drop(['atr14tr_slope20'],1) 
+        masterframe = masterframe.drop(['atr14tr_slope30'],1) 
+        masterframe = masterframe.drop(['atr14atr_slope3'],1) 
+        masterframe = masterframe.drop(['atr14atr_slope4'],1) 
+        masterframe = masterframe.drop(['atr14atr_slope5'],1) 
+        masterframe = masterframe.drop(['atr14atr_slope10'],1)
+        masterframe = masterframe.drop(['atr14atr_slope20'],1)
+        masterframe = masterframe.drop(['atr14atr_slope30'],1)    
 
+    
     masterframe.dropna(inplace=True)
 
     # split data
