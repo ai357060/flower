@@ -13,6 +13,7 @@ import datetime as dt
 from statsmodels.tsa.arima_model import ARIMA
 import statsmodels.api as sm
 from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import MinMaxScaler
 
 class holder:
     1
@@ -73,7 +74,20 @@ def loaddata_nodateindex(datafile='uj_d.csv'):
     df['weekID'] = np.where((df.month==1) & ((df.week == 52)|(df.week == 53)),weekid_minus1,np.where((df.month==12) & (df.week == 1),weekid_plus1,weekid))
     
     return df
-    
+
+
+def normalize_separate(df):
+    scaler = MinMaxScaler()
+    norm_df = scaler.fit_transform(df)
+    return norm_df
+
+def normalize_together(df):
+    scaler = MinMaxScaler()
+    one_column = df.values.reshape([-1,1])
+    result_one_column = scaler.fit_transform(one_column)
+    norm_df = result_one_column.reshape(df.shape)
+    return norm_df
+
 #Momentum
 def momentum(prices,periods):
     '''
@@ -90,6 +104,8 @@ def momentum(prices,periods):
         resdf['close'] = prices.close.diff(periods=periods[i])
         resdf['open_div'] = 100 * prices.open / prices.open.shift(periods=periods[i])
         resdf['close_div'] =100 *  prices.close / prices.close.shift(periods=periods[i])
+        resdf[['open','close']] = normalize_together(resdf[['open','close']])
+        resdf[['open_div','close_div']] = normalize_together(resdf[['open_div','close_div']])
         dict[periods[i]] = resdf
     
     results.df = dict
@@ -118,7 +134,7 @@ def stochastic(prices, periods,InpSlowing=3):
             
         stoch['D'] = stoch.K.rolling(3).mean()
         stoch['HistKD'] = stoch['K'] - stoch['D']
-
+        
         ## slopes
         slopecolumnlist = ['K','HistKD']
         sl = slopecolumns(stoch,slopeperiods,slopecolumnlist)
@@ -127,6 +143,12 @@ def stochastic(prices, periods,InpSlowing=3):
                 sscolID = slopecolumnlist[kk]+'_slope' + str(slopeperiods[ss])
                 stoch[sscolID]=sl.df[slopeperiods[ss]][sscolID];
                 
+        stoch = stoch.drop(['C','H','L'],1)
+        stoch[['CL','HL']] = normalize_together(stoch[['CL','HL']])
+        stoch[['rCL','rHL']] = normalize_together(stoch[['rCL','rHL']])
+        stoch[['K','D']] = normalize_together(stoch[['K','D']])
+        stoch[['HistKD']] = normalize_separate(stoch[['HistKD']])
+        
         dict[periods[i]] = stoch
     results.df = dict
     return results
@@ -153,7 +175,10 @@ def williams(prices, periods):
     
             w = w.append({'date':prices.index[j],'C':C,'H':H,'L':L,'R':R},ignore_index=True)
         w = w.set_index(w.date)
-        w = w[['C','H','L','R']]
+        w = w[['H','L','R']]
+        w[['H','L']] = normalize_together(w[['H','L']])
+        w[['R']] = normalize_separate(w[['R']])
+        
         dict[periods[i]] = w
     results.df = dict
     return results
@@ -174,6 +199,7 @@ def proc(prices,periods):
         close['tp3'] = prices[['close','high','low']].mean(axis = 1) 
         close['tp3logdiff'] = np.log(close['tp3']).diff(periods=periods[i]-1) 
         close = close[['close_pct','tp3logdiff']]
+        close[['close_pct','tp3logdiff']] = normalize_separate(close[['close_pct','tp3logdiff']])
         dict[periods[i]] = close
     
     results.df = dict
@@ -214,6 +240,7 @@ def wadl(prices,periods):
                 sscolID = slopecolumnlist[kk]+'_slope' + str(slopeperiods[ss])
                 WAD[sscolID]=sl.df[slopeperiods[ss]][sscolID];
 
+        WAD[['wad']] = normalize_separate(WAD[['wad']])
         dict[periods[i]] = WAD
     results.df = dict
     return results
@@ -268,6 +295,7 @@ def macd(prices,periods):
     :return; macd
     '''
     results = holder()
+    dict = {}
     
     EMA1 = prices.close.ewm(span=periods[0]).mean()
     EMA2 = prices.close.ewm(span=periods[1]).mean()
@@ -282,8 +310,9 @@ def macd(prices,periods):
         for ss in range(0,len(slopeperiods)):
             sscolID = slopecolumnlist[kk]+'_slope' + str(slopeperiods[ss])
             macddf[sscolID]=sl.df[slopeperiods[ss]][sscolID];    
-    
-    dict = {}
+
+    macddf[['MACD','SigMACD']] = normalize_together(macddf[['MACD','SigMACD']])
+    macddf[['HistMACD']] = normalize_separate(macddf[['HistMACD']])
     dict[periods[0]] = macddf
     results.df = dict
     return results
@@ -318,6 +347,8 @@ def cci(prices, periods):
                 sscolID = slopecolumnlist[kk]+'_slope' + str(slopeperiods[ss])
                 ccidf[sscolID]=sl.df[slopeperiods[ss]][sscolID];         
 
+        ccidf[['tp','tpmean']] = normalize_together(ccidf[['tp','tpmean']])
+        ccidf[['tpdiff','cci']] = normalize_separate(ccidf[['tpdiff','cci']])
         dict[periods[i]] = ccidf
     results.df = dict
     return results
@@ -349,6 +380,8 @@ def bollinger(prices, periods):
                 sscolID = slopecolumnlist[kk]+'_slope' + str(slopeperiods[ss])
                 bbdf[sscolID]=sl.df[slopeperiods[ss]][sscolID];         
                 
+        bbdf[['mid','upper','lower']] = normalize_together(bbdf[['mid','upper','lower']])
+        bbdf[['Histmid','Histupper','Histlower']] = normalize_together(bbdf[['Histmid','Histupper','Histlower']])
         dict[periods[i]] = bbdf
         
         
@@ -385,6 +418,7 @@ def heikenashi(prices,periods):
                 sscolID = slopecolumnlist[kk]+'_slope' + str(slopeperiods[ss])
                 resdf[sscolID]=sl.df[slopeperiods[ss]][sscolID];         
         
+        resdf[['HAopen','HAhigh','HAlow','HAclose']] = normalize_together(resdf[['HAopen','HAhigh','HAlow','HAclose']])
         dict[periods[i]] = resdf
     
     results.df=dict
@@ -406,6 +440,7 @@ def OHLCresample(prices, period):
         a.RShigh[j] = prices.high[j]
         a.RSlow[j] = prices.low[j]    
     
+    a[['RSopen','RShigh','RSlow','RSclose']] = normalize_together(a[['RSopen','RShigh','RSlow','RSclose']])
     results.df = a
     return results
 
@@ -477,7 +512,7 @@ def paverages(prices, periods):
             for ss in range(0,len(slopeperiods)):
                 sscolID = slopecolumnlist[kk]+'_slope' + str(slopeperiods[ss])
                 bbdf[sscolID]=sl.df[slopeperiods[ss]][sscolID];         
-        
+        bbdf[['avg_close','avg_open','avg_low','avg_high','tp4','weightedtp4','highlow','tp4mean','highlowmean']] = normalize_together(bbdf[['avg_close','avg_open','avg_low','avg_high','tp4','weightedtp4','highlow','tp4mean','highlowmean']])
         dict[periods[i]] = bbdf
         
     results.df = dict
@@ -564,7 +599,10 @@ def slopecolumns(xprices, periods, scolumns):
                 yh = prices[scolumns[k]].iloc[j-periods[i]+1:j+1].values
                 resh = stats.linregress(x,yh)
                 slopeh = resh.slope
-
+                slopeh = math.atan(slopeh)  # slope angle in radians
+                slopeh = math.degrees(slopeh)  # slope angle in degrees      
+                slopeh = (slopeh+90)/180 # normalize 0-1 
+                
                 if (plot == True and plotcount>0):
                     plotcount -= 1
                     print(periods[i])
@@ -709,6 +747,7 @@ def fourier(prices, periods):
         resdf = resdf.set_index(resdf.date)
         resdf = resdf[['a0','a1','b1','w']]
         #resdf = resdf.fillna(0) #df = df.fillna(method='bfill')
+        resdf[['a0','a1','b1','w']] = normalize_separate(resdf[['a0','a1','b1','w']])
         dict[periods[i]]=resdf
     results.df = dict
     return results
@@ -769,6 +808,7 @@ def sine(prices, periods, method = 'difference'):
         resdf = resdf.set_index(resdf.date)
         resdf = resdf[['a0','b1','w']]
         #resdf = resdf.fillna(0) #df = df.fillna(method='bfill')
+        resdf[['a0','b1','w']] = normalize_separate(resdf[['a0','b1','w']])
         dict[periods[i]]=resdf
     results.df = dict
     return results
@@ -793,7 +833,8 @@ def atr(prices, periods):
             for ss in range(0,len(slopeperiods)):
                 sscolID = slopecolumnlist[kk]+'_slope' + str(slopeperiods[ss])
                 resdf[sscolID]=sl.df[slopeperiods[ss]][sscolID];
-        
+
+        resdf[['tr','atr','avgtr']] = normalize_together(resdf[['tr','atr','avgtr']])
         dict[periods[i]] = resdf
     
     results.df = dict
@@ -849,6 +890,7 @@ def TSA(prices,periods,order = [0,1,0],plot = False):
                 sscolID = slopecolumnlist[kk]+'_slope' + str(slopeperiods[ss])
                 resdf[sscolID]=sl.df[slopeperiods[ss]][sscolID];#tu zmienić
         
+        resdf[['log_close','returns','arima_h1','garch_h1','garch_mean','arima_prediction']] = normalize_separate(resdf[['log_close','returns','arima_h1','garch_h1','garch_mean','arima_prediction']])
         dict[periods[i]] = resdf
     
         if plot == True:

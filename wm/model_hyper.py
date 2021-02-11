@@ -18,7 +18,10 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
 
     masterframe = loaddata_master('../Data/mf_UJ1440_'+fver+'.csv')
 
-    atr = masterframe.atr14tr.mean()
+#     atr = masterframe.atr14tr.mean()
+#     print(atr)
+    atr = calculate_atr(masterframe)
+    print(atr)
     if has_y == False:
         prepare_y(masterframe,atr)
 
@@ -40,24 +43,6 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     masterframe = masterframe.drop(['high'],1)
     masterframe = masterframe.drop(['low'],1)
     masterframe = masterframe.drop(['close'],1)
-    
-    if fver=='v16':
-        masterframe = masterframe.drop(['atr14tr'],1)
-        masterframe = masterframe.drop(['atr14atr'],1)
-        masterframe = masterframe.drop(['atr14avgtr'],1)
-        masterframe = masterframe.drop(['atr14tr_slope3'],1)
-        masterframe = masterframe.drop(['atr14tr_slope4'],1)  
-        masterframe = masterframe.drop(['atr14tr_slope5'],1)  
-        masterframe = masterframe.drop(['atr14tr_slope10'],1) 
-        masterframe = masterframe.drop(['atr14tr_slope20'],1) 
-        masterframe = masterframe.drop(['atr14tr_slope30'],1) 
-        masterframe = masterframe.drop(['atr14atr_slope3'],1) 
-        masterframe = masterframe.drop(['atr14atr_slope4'],1) 
-        masterframe = masterframe.drop(['atr14atr_slope5'],1) 
-        masterframe = masterframe.drop(['atr14atr_slope10'],1)
-        masterframe = masterframe.drop(['atr14atr_slope20'],1)
-        masterframe = masterframe.drop(['atr14atr_slope30'],1)    
-
     
     masterframe.dropna(inplace=True)
 
@@ -100,10 +85,17 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     # X_test_df.to_csv(sep=';',path_or_buf='../Data/x_pre.csv',date_format="%Y-%m-%d",index = False)
     
     #Scale
-    scaler = MinMaxScaler()
-    scaler.fit(X_train)
-    X_train_sc = scaler.transform(X_train)
-    X_test_sc = scaler.transform(X_test)
+#     Dla v10 nie trzeba skalować to już skalowanie jest w danych
+#     Dla v14 i v16 trzeba skalować historię - do zrobienia
+    if fver=='v10b':
+        X_train_sc = X_train
+        X_test_sc = X_test
+        print('tutu')
+    else:    
+        scaler = MinMaxScaler()
+        scaler.fit(X_train)
+        X_train_sc = scaler.transform(X_train)
+        X_test_sc = scaler.transform(X_test)
     
     modeltype = {}
     # featcount = []
@@ -117,7 +109,8 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     # featcount.append(15);modeltype[15] = ['rf','svc','mlp']
     # featcount.append(20);modeltype[20] = ['rf','svc','mlp']
     # featcount.append(25);modeltype[25] = ['rf','svc','mlp']    
-
+    
+    model = []
     for i in range(0,len(featcount)):
         modeltype[featcount[i]] = models[i]
     
@@ -225,6 +218,16 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     
     return masterframe, model
 
+def calculate_atr(prices):
+
+    resdf = pd.DataFrame(index=prices.index)
+    resdf0 = pd.DataFrame(index=prices.index)
+    resdf0['tr1'] = prices['high'] - prices['low']
+    resdf0['tr2'] = abs (prices['high'] - prices['close'].shift())
+    resdf0['tr3'] = abs (prices['low'] - prices['close'].shift())
+    resdf['tr'] = resdf0.max(axis=1)
+    atr = resdf.tr.mean()
+    return atr
 
 def prepare_y(masterframe, atr):
     
