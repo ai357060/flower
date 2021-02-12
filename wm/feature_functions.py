@@ -14,6 +14,7 @@ from statsmodels.tsa.arima_model import ARIMA
 import statsmodels.api as sm
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
+from datetime import timedelta
 
 class holder:
     1
@@ -55,6 +56,8 @@ def loaddata_nodateindex(datafile='uj_d.csv'):
         df.date=pd.to_datetime(df.date,format='%d.%m.%Y %H:%M:%S.%f')    
 
     df=df[df.volume!=0]
+    
+    df.date = df.date + timedelta(days=1) # w oryginale jest godzina 22:00 więc to już następny dzień
     
     df['year'] = pd.DatetimeIndex(df['date']).year
     df['month'] = pd.DatetimeIndex(df['date']).month
@@ -1205,5 +1208,4 @@ def historyM1(prices,periods):
     dict = {}
     dict[periods[0]] = df
     results.df = dict
-    return results    
-
+    return results

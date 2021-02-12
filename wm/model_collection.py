@@ -458,7 +458,7 @@ def ExamineNN(masterframe,Xintex,datamasterframe,featurenames,atr,testone,plot):
     bin_type = CategoricalDtype(categories=[0, 1])
     datamasterframe['y'] = datamasterframe['y'].astype(bin_type)
     dep_var = ['y']
-    cat_names = ['y']
+    cat_names = []
     cont_names = datamasterframe.columns[1:-1] # bez id oraz bez y
     procs = [FillMissing, Categorify, Normalize]
 
@@ -478,8 +478,6 @@ def ExamineNN(masterframe,Xintex,datamasterframe,featurenames,atr,testone,plot):
                            .label_from_df(cols=dep_var)
                            .databunch(bs=64))
     
-    print(dep_var)
-    
     emb_drop = [0.2,0.5,0.7]
 #     hidden_layer_sizes = [[10],[100],[400],[800]
 #                           ,[10,10],[100,100],[400,400],[800,800]
@@ -497,12 +495,12 @@ def ExamineNN(masterframe,Xintex,datamasterframe,featurenames,atr,testone,plot):
 
 # test one model
     if testone == True:
-        emb_drop = [0.5]
+        emb_drop = [0.2]
         hidden_layer_sizes = [[300]]
-        lr = [1e-4]
-        wd = [0.01]
-        epoch = [1]
-        metrics = [Precision()]
+        lr = [1e-3]
+        wd = [0.1]
+        epoch = [6]
+        metrics = [accuracy]
     
     
 #     learn = tabular_learner(data, layers=[400,200,100], metrics=accuracy, emb_drop=0.7,wd=0.01, silent = False)
