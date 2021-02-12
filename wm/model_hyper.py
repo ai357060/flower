@@ -58,8 +58,8 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     y = y_df.values
     y = y.astype('int')
     X = X.astype('float')
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=testsize, shuffle = True)
-#     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=None, test_size=testsize, shuffle = False)
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=testsize, shuffle = True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=None, test_size=testsize, shuffle = False)
     
 # tu można usunąć z Xtrain i Xtest: id!!!
     Xintex = X_test[:,0]     # tylko kolumna id
