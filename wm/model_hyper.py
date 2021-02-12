@@ -50,6 +50,27 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     # masterframe = masterframe[-3600:] ###testowo
     masterframe = masterframe.drop(masterframe[masterframe.y==-1].index,axis=0)
 
+    
+    #Scale
+#     Dla v10 nie trzeba skalować to już skalowanie jest w danych
+#     Dla v14 i v16 trzeba skalować historię - do zrobienia
+    if fver.startswith('v10'):
+        print('sc_10')
+        # wszystko już wyskalowane
+    elif fver.startswith('v14'):    
+        print('sc_14')
+        columns=masterframe.filter(regex='^hD|^hW|^hM').columns
+        masterframe[columns] = normalize_together(masterframe[columns])
+    else:
+        print('sc_16')
+        columns=masterframe.filter(regex='^hD|^hW|^hM').columns
+        masterframe[columns] = normalize_together(masterframe[columns])
+#         scaler = MinMaxScaler()
+#         scaler.fit(X_train)
+#         X_train_sc = scaler.transform(X_train)
+#         X_test_sc = scaler.transform(X_test)    
+    
+    
     X_df = masterframe.iloc[:, :-1] # tu było 2:-1 aby pominąć fulldate i year, ale teraz powyżej usuwam te kolumny plus inne
     y_df = masterframe.iloc[:, -1] 
     featurenames = masterframe.iloc[:, :-1].columns.values
@@ -58,6 +79,7 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     y = y_df.values
     y = y.astype('int')
     X = X.astype('float')
+    
 #     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=testsize, shuffle = True)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=None, test_size=testsize, shuffle = False)
     
@@ -81,21 +103,9 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     # sm = SVMSMOTE(random_state=27)
     X_train, y_train = sm.fit_sample(X_train, y_train)
 
-    # X_test_df = pd.DataFrame(X_test)
-    # X_test_df.to_csv(sep=';',path_or_buf='../Data/x_pre.csv',date_format="%Y-%m-%d",index = False)
-    
-    #Scale
-#     Dla v10 nie trzeba skalować to już skalowanie jest w danych
-#     Dla v14 i v16 trzeba skalować historię - do zrobienia
-    if fver=='v10b':
-        X_train_sc = X_train
-        X_test_sc = X_test
-        print('tutu')
-    else:    
-        scaler = MinMaxScaler()
-        scaler.fit(X_train)
-        X_train_sc = scaler.transform(X_train)
-        X_test_sc = scaler.transform(X_test)
+    X_train_sc = X_train
+    X_test_sc = X_test
+
     
     modeltype = {}
     # featcount = []

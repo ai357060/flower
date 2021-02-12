@@ -15,6 +15,7 @@ import multiprocessing
 import time
 import os
 import glob
+from sklearn.preprocessing import MinMaxScaler
 
 #import threading 
 #import ctypes 
@@ -59,7 +60,22 @@ def plot_feature_importances(X_test,feature_importances,feature_names):
     plt.xlabel("Feature importance")
     plt.ylabel("Feature")
     plt.ylim(-1, n_features)        
-        
+
+    
+def normalize_separate(df):
+    scaler = MinMaxScaler()
+    norm_df = scaler.fit_transform(df)
+    return norm_df
+
+def normalize_together(df):
+    scaler = MinMaxScaler()
+    one_column = df.values.reshape([-1,1])
+    result_one_column = scaler.fit_transform(one_column)
+    norm_df = result_one_column.reshape(df.shape)
+#     norm_df=(df-df.min())/(df.max()-df.min())
+#     norm_df=(df-df.mean())/df.std()
+    return norm_df    
+
 def ExamineLogisticRegression(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,atr,testone,plot):
 #logistics regresion (classification)
 #default C=1;  lower values of C correspond to more regularization. Regularization means explicitly restricting a model to avoid overfitting.
@@ -461,6 +477,7 @@ def ExamineNN(masterframe,Xintex,datamasterframe,featurenames,atr,testone,plot):
     cat_names = []
     cont_names = datamasterframe.columns[1:-1] # bez id oraz bez y
     procs = [FillMissing, Categorify, Normalize]
+#     procs = [FillMissing, Categorify]
 
     linear_resdf = pd.DataFrame(columns=['proctime','emb_drop','layers','lr','wd','epoch','metrics','Tr acc','Te acc','Te_cal','Mess'
                                          ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Te_cnt'
@@ -500,7 +517,7 @@ def ExamineNN(masterframe,Xintex,datamasterframe,featurenames,atr,testone,plot):
         hidden_layer_sizes = [[300]]
         lr = [1e-3]
         wd = [0.1]
-        epoch = [6]
+        epoch = [1]
         metrics = [accuracy]
     
     
