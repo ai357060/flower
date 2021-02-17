@@ -410,9 +410,9 @@ def ExamineMLP(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,a
 # test one model
     if testone == True:
         solver = ['lbfgs']#,'lbfgs']#['adam','lbfgs','sgd'] #None
-        hidden_layer_sizes = [[10]]
-        activation = ['logistic']#,'identity', 'logistic', 'tanh', 'relu']   # ['tanh','identity', 'logistic', 'tanh', 'relu']
-        alpha = [0.01]#,0.01,0.1,1]  #'auto'
+        hidden_layer_sizes = [[10,10,10,10]]
+        activation = ['relu']#,'identity', 'logistic', 'tanh', 'relu']   # ['tanh','identity', 'logistic', 'tanh', 'relu']
+        alpha = [1.0]#,0.01,0.1,1]  #'auto'
         max_iter= [1000]    
     
     for i_solver in solver:

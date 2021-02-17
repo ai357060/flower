@@ -39,10 +39,12 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
         masterframe = masterframe.drop(['day'],1)
     except:
         pass
-    masterframe = masterframe.drop(['open'],1)
-    masterframe = masterframe.drop(['high'],1)
-    masterframe = masterframe.drop(['low'],1)
-    masterframe = masterframe.drop(['close'],1)
+#     masterframe = masterframe.drop(['open'],1)
+#     masterframe = masterframe.drop(['high'],1)
+#     masterframe = masterframe.drop(['low'],1)
+#     masterframe = masterframe.drop(['close'],1)
+    
+    masterframe[['open','high','low','close']] = normalize_together(masterframe[['open','high','low','close']])
     
     masterframe.dropna(inplace=True)
 
@@ -53,22 +55,17 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     
     #Scale
 #     Dla v10 nie trzeba skalować to już skalowanie jest w danych
-#     Dla v14 i v16 trzeba skalować historię - do zrobienia
-    if fver.startswith('v10'):
-        print('sc_10')
-        # wszystko już wyskalowane
-    elif fver.startswith('v14'):    
-        print('sc_14')
-        columns=masterframe.filter(regex='^hD|^hW|^hM').columns
-        masterframe[columns] = normalize_together(masterframe[columns])
-    else:
-        print('sc_16')
-        columns=masterframe.filter(regex='^hD|^hW|^hM').columns
-        masterframe[columns] = normalize_together(masterframe[columns])
-#         scaler = MinMaxScaler()
-#         scaler.fit(X_train)
-#         X_train_sc = scaler.transform(X_train)
-#         X_test_sc = scaler.transform(X_test)    
+#     if fver.startswith('v10'):
+#         print('sc_10')
+#         # wszystko już wyskalowane
+#     elif fver.startswith('v14'):    
+#         print('sc_14')
+#         columns=masterframe.filter(regex='^hD|^hW|^hM').columns
+#         masterframe[columns] = normalize_together(masterframe[columns])
+#     else:
+#         print('sc_16')
+#         columns=masterframe.filter(regex='^hD|^hW|^hM').columns
+#         masterframe[columns] = normalize_together(masterframe[columns])
     
     
     X_df = masterframe.iloc[:, :-1] # tu było 2:-1 aby pominąć fulldate i year, ale teraz powyżej usuwam te kolumny plus inne
@@ -103,6 +100,11 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     # sm = SVMSMOTE(random_state=27)
     X_train, y_train = sm.fit_sample(X_train, y_train)
 
+    scaler = MinMaxScaler()
+    scaler.fit(X_train)
+    X_train_sc = scaler.transform(X_train)
+    X_test_sc = scaler.transform(X_test)      
+    
     X_train_sc = X_train
     X_test_sc = X_test
 

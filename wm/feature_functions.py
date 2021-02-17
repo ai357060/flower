@@ -80,11 +80,13 @@ def loaddata_nodateindex(datafile='uj_d.csv'):
 
 
 def normalize_separate(df):
+    norm_df = df
     scaler = MinMaxScaler()
     norm_df = scaler.fit_transform(df)
     return norm_df
 
 def normalize_together(df):
+    norm_df = df
     scaler = MinMaxScaler()
     one_column = df.values.reshape([-1,1])
     result_one_column = scaler.fit_transform(one_column)
