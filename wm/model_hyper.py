@@ -39,12 +39,12 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
         masterframe = masterframe.drop(['day'],1)
     except:
         pass
-#     masterframe = masterframe.drop(['open'],1)
-#     masterframe = masterframe.drop(['high'],1)
-#     masterframe = masterframe.drop(['low'],1)
-#     masterframe = masterframe.drop(['close'],1)
+    masterframe = masterframe.drop(['open'],1)
+    masterframe = masterframe.drop(['high'],1)
+    masterframe = masterframe.drop(['low'],1)
+    masterframe = masterframe.drop(['close'],1)
     
-    masterframe[['open','high','low','close']] = normalize_together(masterframe[['open','high','low','close']])
+#     masterframe[['open','high','low','close']] = normalize_together(masterframe[['open','high','low','close']])
     
     masterframe.dropna(inplace=True)
 
