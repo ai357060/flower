@@ -105,8 +105,8 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     X_train_sc = scaler.transform(X_train)
     X_test_sc = scaler.transform(X_test)      
     
-    X_train_sc = X_train
-    X_test_sc = X_test
+#     X_train_sc = X_train
+#     X_test_sc = X_test
 
     
     modeltype = {}
