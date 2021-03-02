@@ -228,7 +228,7 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
             
         print('ALL________________finished________________________________________________________________________________')
     
-    return orygframe,masterframe, model
+    return orygframe, masterframe, model
 
 def calculate_atr(prices):
 
@@ -241,7 +241,7 @@ def calculate_atr(prices):
     atr = resdf.tr.mean()
     return atr
 
-def prepare_y(masterframe, atr):
+def prepare_y1(masterframe, atr):
     
     # Prepare Y
     Rtp=1
@@ -272,8 +272,9 @@ def prepare_y(masterframe, atr):
         else:
             masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
             i = i + 1
+    return
 
-    '''
+def prepare_y2(masterframe, atr):    
     # Prepare Y
     Rtp=1
     Rsl=1
@@ -303,9 +304,9 @@ def prepare_y(masterframe, atr):
         else:
             masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
             i = i + 1
-    '''  
+    return
     
-    '''      
+def prepare_y3(masterframe, atr):      
     # Prepare Y
     Rtp=0
     Rsl=0
@@ -330,9 +331,34 @@ def prepare_y(masterframe, atr):
         else:
             masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
             i = i + 1
-    '''
-    
     return
+
+def prepare_y(masterframe, atr):      
+    # Prepare Y
+    Rtp=1
+    masterframe['y'] = -1
+    n = 3  # distanse
+    i = 0
+    while i < len(masterframe) - n:   
+        j = 1
+        yy = False
+        while j <= n:
+            if (masterframe.high.iloc[i+j] > masterframe.high.iloc[i]+Rtp*atr):
+                yy = True
+                break
+            j = j + 1
+
+        if yy == True:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 1            
+            #masterframe.iloc[i+1:i+j+1,masterframe.columns.get_loc('y')]=0      #nochain
+            #i = i + j                                                           #nochain 
+            i = i + 1   #chain
+
+        else:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
+            i = i + 1
+    return
+
 
 def dumpdatawithy(datafile):
 
