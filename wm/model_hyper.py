@@ -66,24 +66,10 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
 #         print('sc_16')
 #         columns=masterframe.filter(regex='^hD|^hW|^hM').columns
 #         masterframe[columns] = normalize_together(masterframe[columns])
-    
-    
+
     X_df = masterframe.iloc[:, :-1] # tu było 2:-1 aby pominąć fulldate i year, ale teraz powyżej usuwam te kolumny plus inne
     y_df = masterframe.iloc[:, -1] 
     featurenames = masterframe.iloc[:, :-1].columns.values
-
-    X = X_df.values
-    y = y_df.values
-    y = y.astype('int')
-    X = X.astype('float')
-    
-#     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=testsize, shuffle = True)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=None, test_size=testsize, shuffle = False)
-    
-# tu można usunąć z Xtrain i Xtest: id!!!
-    Xintex = X_test[:,0]     # tylko kolumna id
-    X_test = X_test[:,1:]    # wszystkie oprócz kolumny id
-    X_train = X_train[:,1:]  # wszystkie oprócz kolumny id
 
 # balance classes
     from imblearn.over_sampling import SMOTE
@@ -98,7 +84,29 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     # sm = BorderlineSMOTE(random_state=27)
     # sm = RandomOverSampler(random_state=27)
     # sm = SVMSMOTE(random_state=27)
-    X_train, y_train = sm.fit_sample(X_train, y_train)
+    X, y = sm.fit_sample(X_df.values, y_df.values)    
+    
+    masterframeN = pd.DataFrame(X, columns=X_df.columns)
+    masterframeN[masterframe.columns[-1]] = y
+    masterframe = masterframeN
+    masterframe = masterframe.sort_values(by=['id'])
+
+    X_df = masterframe.iloc[:, :-1] 
+    y_df = masterframe.iloc[:, -1] 
+    
+    X = X_df.values
+    y = y_df.values
+    
+    y = y.astype('int')
+    X = X.astype('float')
+    
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=testsize, shuffle = True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=None, test_size=testsize, shuffle = False)
+    
+# tu można usunąć z Xtrain i Xtest: id!!!
+    Xintex = X_test[:,0]     # tylko kolumna id
+    X_test = X_test[:,1:]    # wszystkie oprócz kolumny id
+    X_train = X_train[:,1:]  # wszystkie oprócz kolumny id
 
     scaler = MinMaxScaler()
     scaler.fit(X_train)
