@@ -14,15 +14,15 @@ from model_collection import *
 
 pd.options.display.max_columns = None
 
-def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','mlp'],['rf','svc','mlp'],['rf','svc','mlp']],testone=False,has_y=False,testsize=0.25):
+def runhypermodel(fn, fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','mlp'],['rf','svc','mlp'],['rf','svc','mlp']],testone=False,has_y=False,testsize=0.25):
 
-    masterframe = loaddata_master('../Data/mf_UJ1440_'+fver+'.csv')
+    masterframe = loaddata_master('../Data/'+fn+'_'+fver+'.csv')
 
 #     atr = masterframe.atr14tr.mean()
 #     print(atr)
     atr = calculate_atr(masterframe)
-    print(atr)
     if has_y == False:
+        print(atr)
         prepare_y(masterframe,atr)
 
     #pre-prepare data
@@ -66,11 +66,20 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
 #         print('sc_16')
 #         columns=masterframe.filter(regex='^hD|^hW|^hM').columns
 #         masterframe[columns] = normalize_together(masterframe[columns])
-
+    
+    
     X_df = masterframe.iloc[:, :-1] # tu było 2:-1 aby pominąć fulldate i year, ale teraz powyżej usuwam te kolumny plus inne
     y_df = masterframe.iloc[:, -1] 
     featurenames = masterframe.iloc[:, :-1].columns.values
 
+    X = X_df.values
+    y = y_df.values
+    y = y.astype('int')
+    X = X.astype('float')
+    
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=testsize, shuffle = True)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=None, test_size=testsize, shuffle = False)
+    
 # balance classes
     from imblearn.over_sampling import SMOTE
     from imblearn.under_sampling import RandomUnderSampler
@@ -84,30 +93,29 @@ def runhypermodel(fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc','m
     # sm = BorderlineSMOTE(random_state=27)
     # sm = RandomOverSampler(random_state=27)
     # sm = SVMSMOTE(random_state=27)
-    X, y = sm.fit_sample(X_df.values, y_df.values)    
+    X_train, y_train = sm.fit_sample(X_train, y_train)
+
+    # odtworzenie masterframe dla NN
+    traindf = pd.DataFrame(X_train, columns=X_df.columns)
+    traindf[masterframe.columns[-1]] = y_train
+    masterframeN = traindf
+
+
+    X_test, y_test = sm.fit_sample(X_test, y_test)   # undersample test
+    testdf = pd.DataFrame(X_test, columns=X_df.columns)
+    testdf[masterframe.columns[-1]] = y_test
+    masterframeN = pd.concat([masterframeN,testdf])
     
-    masterframeN = pd.DataFrame(X, columns=X_df.columns)
-    masterframeN[masterframe.columns[-1]] = y
     masterframe = masterframeN
     masterframe = masterframe.sort_values(by=['id'])
 
-    X_df = masterframe.iloc[:, :-1] 
-    y_df = masterframe.iloc[:, -1] 
-    
-    X = X_df.values
-    y = y_df.values
-    
-    y = y.astype('int')
-    X = X.astype('float')
-    
-#     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42, test_size=testsize, shuffle = True)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=None, test_size=testsize, shuffle = False)
     
 # tu można usunąć z Xtrain i Xtest: id!!!
     Xintex = X_test[:,0]     # tylko kolumna id
     X_test = X_test[:,1:]    # wszystkie oprócz kolumny id
     X_train = X_train[:,1:]  # wszystkie oprócz kolumny id
-
+    
+    
     scaler = MinMaxScaler()
     scaler.fit(X_train)
     X_train_sc = scaler.transform(X_train)
@@ -345,7 +353,7 @@ def prepare_y(masterframe, atr):
     # Prepare Y
     Rtp=1
     masterframe['y'] = -1
-    n = 3  # distanse
+    n = 1  # distanse
     i = 0
     while i < len(masterframe) - n:   
         j = 1
@@ -372,7 +380,9 @@ def dumpdatawithy(datafile):
 
     masterframe = loaddata_master('../Data/'+datafile+'.csv')
 
-    prepare_y(masterframe)
+    atr = calculate_atr(masterframe)
+
+    prepare_y(masterframe,atr)
     
     masterframe = masterframe.drop(['id'],1)
     

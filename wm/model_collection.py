@@ -514,11 +514,11 @@ def ExamineNN(masterframe,Xintex,datamasterframe,featurenames,atr,testone,plot):
 # test one model
     if testone == True:
         emb_drop = [0.2]
-        hidden_layer_sizes = [[300]]
-        lr = [1e-3]
+        hidden_layer_sizes = [[300,300]]
+        lr = [1e-2]
         wd = [0.1]
-        epoch = [1]
-        metrics = [accuracy]
+        epoch = [4]
+        metrics = [Precision()]
     
     
 #     learn = tabular_learner(data, layers=[400,200,100], metrics=accuracy, emb_drop=0.7,wd=0.01, silent = False)
@@ -641,10 +641,10 @@ def PrepareResultsNN(masterframe,datamasterframe,logreg,Xintex,testone,fitwarn,a
     res3, profitdf3 = ExamineProfit3(masterframe, Xintex, y_test, proba0,proba1,0,tecal,atr)
     res4, profitdf4 = ExamineProfit4(masterframe, Xintex, y_test, proba0,proba1,0,tecal,atr)
     if testone == True:
-        profitdf1.to_csv(sep=';',path_or_buf='../Resu/temp_EP1_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d")
-        profitdf2.to_csv(sep=';',path_or_buf='../Resu/temp_EP2_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d")
-        profitdf3.to_csv(sep=';',path_or_buf='../Resu/temp_EP3_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d")
-        profitdf4.to_csv(sep=';',path_or_buf='../Resu/temp_EP4_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d")
+        profitdf1.to_csv(sep=';',path_or_buf='../Resu/temp_EP1_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d %H:%M:%S")
+        profitdf2.to_csv(sep=';',path_or_buf='../Resu/temp_EP2_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d %H:%M:%S")
+        profitdf3.to_csv(sep=';',path_or_buf='../Resu/temp_EP3_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d %H:%M:%S")
+        profitdf4.to_csv(sep=';',path_or_buf='../Resu/temp_EP4_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d %H:%M:%S")
 
     linear_resdict = {
         'Tr acc': "{:10.1f}".format(Trainscore),
@@ -731,10 +731,10 @@ def PrepareResults(masterframe,logreg,X_train,X_test,y_train,y_test,Xintex,testo
     res3, profitdf3 = ExamineProfit3(masterframe, Xintex, y_test, proba0,proba1,0,tecal,atr)
     res4, profitdf4 = ExamineProfit4(masterframe, Xintex, y_test, proba0,proba1,0,tecal,atr)
     if testone == True:
-        profitdf1.to_csv(sep=';',path_or_buf='../Resu/temp_EP1_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d")
-        profitdf2.to_csv(sep=';',path_or_buf='../Resu/temp_EP2_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d")
-        profitdf3.to_csv(sep=';',path_or_buf='../Resu/temp_EP3_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d")
-        profitdf4.to_csv(sep=';',path_or_buf='../Resu/temp_EP4_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d")
+        profitdf1.to_csv(sep=';',path_or_buf='../Resu/temp_EP1_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d %H:%M:%S")
+        profitdf2.to_csv(sep=';',path_or_buf='../Resu/temp_EP2_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d %H:%M:%S")
+        profitdf3.to_csv(sep=';',path_or_buf='../Resu/temp_EP3_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d %H:%M:%S")
+        profitdf4.to_csv(sep=';',path_or_buf='../Resu/temp_EP4_'+str(int(time.time()))+'.csv',date_format="%Y-%m-%d %H:%M:%S")
 
     linear_resdict = {
         'Tr acc': "{:10.1f}".format(logreg.score(X_train, y_train)*100),
@@ -800,6 +800,7 @@ def ExamineProfit1(masterframe, Xintex, y_test, proba0, proba1, trade_cnt_th ,te
     profitdf = pd.DataFrame({'id':(Xintex).astype(int),'y_test':y_test,'proba0':proba0,'proba1':proba1})
     profitdf = profitdf.set_index(profitdf.id)
     profitdf = profitdf.drop(['id'],1)
+    profitdf['fulldate'] = masterframe.fulldate
     profitdf['close'] = masterframe.close
     profitdf['nextclose'] = masterframe.close.shift(-1)
     profitdf['nexthigh'] = masterframe.high.shift(-1)
