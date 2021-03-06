@@ -659,25 +659,25 @@ def PrepareResultsNN(masterframe,datamasterframe,logreg,Xintex,testone,fitwarn,a
         'Te_1_cnt': "{:10.1f}".format((y_test == 1).tolist().count(True)/len(y_test)*100),
         'Te_cnt': "{:10.0f}".format(test_size),
         'Te_0_50' : "{:10.1f}".format(zerohit50/zerocnt50*100 if zerocnt50>0 else 0),
-        'Te_0_50_cnt' : "{:10.0f}".format(zerocnt50/test_size*100),
+        'Te_0_50_cnt' : "{:10.0f}".format(zerocnt50/te0cnt*100),
         'Te_0_60' : "{:10.1f}".format(zerohit60/zerocnt60*100 if zerocnt60>0 else 0),
-        'Te_0_60_cnt' : "{:10.0f}".format(zerocnt60/test_size*100),
+        'Te_0_60_cnt' : "{:10.0f}".format(zerocnt60/te0cnt*100),
         'Te_0_70' : "{:10.1f}".format(zerohit70/zerocnt70*100 if zerocnt70>0 else 0),
-        'Te_0_70_cnt' : "{:10.0f}".format(zerocnt70/test_size*100),
+        'Te_0_70_cnt' : "{:10.0f}".format(zerocnt70/te0cnt*100),
         'Te_0_80' : "{:10.1f}".format(zerohit80/zerocnt80*100 if zerocnt80>0 else 0),
-        'Te_0_80_cnt' : "{:10.0f}".format(zerocnt80/test_size*100),
+        'Te_0_80_cnt' : "{:10.0f}".format(zerocnt80/te0cnt*100),
         'Te_0_90' : "{:10.1f}".format(zerohit90/zerocnt90*100 if zerocnt90>0 else 0),
-        'Te_0_90_cnt' : "{:10.0f}".format(zerocnt90/test_size*100),
+        'Te_0_90_cnt' : "{:10.0f}".format(zerocnt90/te0cnt*100),
         'Te_1_50' : "{:10.1f}".format(onehit50/onecnt50*100 if onecnt50>0 else 0),
-        'Te_1_50_cnt' : "{:10.0f}".format(onecnt50/test_size*100),
+        'Te_1_50_cnt' : "{:10.0f}".format(onecnt50/te1cnt*100),
         'Te_1_60' : "{:10.1f}".format(onehit60/onecnt60*100 if onecnt60>0 else 0),
-        'Te_1_60_cnt' : "{:10.0f}".format(onecnt60/test_size*100),
+        'Te_1_60_cnt' : "{:10.0f}".format(onecnt60/te1cnt*100),
         'Te_1_70' : "{:10.1f}".format(onehit70/onecnt70*100 if onecnt70>0 else 0),
-        'Te_1_70_cnt' : "{:10.0f}".format(onecnt70/test_size*100),
+        'Te_1_70_cnt' : "{:10.0f}".format(onecnt70/te1cnt*100),
         'Te_1_80' : "{:10.1f}".format(onehit80/onecnt80*100 if onecnt80>0 else 0),
-        'Te_1_80_cnt' : "{:10.0f}".format(onecnt80/test_size*100),
+        'Te_1_80_cnt' : "{:10.0f}".format(onecnt80/te1cnt*100),
         'Te_1_90' : "{:10.1f}".format(onehit90/onecnt90*100 if onecnt90>0 else 0),
-        'Te_1_90_cnt' : "{:10.0f}".format(onecnt90/test_size*100)
+        'Te_1_90_cnt' : "{:10.0f}".format(onecnt90/te1cnt*100)
 #         'Str1_0.5':res1[0.5],'Str1_0.6':res1[0.6],'Str1_0.7':res1[0.7],'Str1_0.8':res1[0.8],'Str1_0.9':res1[0.9],
 #         'Str2_0.5':res2[0.5],'Str2_0.6':res2[0.6],'Str2_0.7':res2[0.7],'Str2_0.8':res2[0.8],'Str2_0.9':res2[0.9],
 #         'Str3_0.5':res3[0.5],'Str3_0.6':res3[0.6],'Str3_0.7':res3[0.7],'Str3_0.8':res3[0.8],'Str3_0.9':res3[0.9],
@@ -724,6 +724,9 @@ def PrepareResults(masterframe,logreg,X_train,X_test,y_train,y_test,Xintex,testo
     onehit80 = np.sum((y_test == 1) & (proba1 >= 0.8))
     onecnt90 = np.sum( proba1 >= 0.9) 
     onehit90 = np.sum((y_test == 1) & (proba1 >= 0.9))
+    
+    te0cnt = (y_test == 0).tolist().count(True)
+    te1cnt = (y_test == 1).tolist().count(True)
 
     tecal = (zerocnt70+onecnt70)/len(y_test)*100
     res1, profitdf1 = ExamineProfit1(masterframe, Xintex, y_test, proba0,proba1,0,tecal,atr)
@@ -747,25 +750,25 @@ def PrepareResults(masterframe,logreg,X_train,X_test,y_train,y_test,Xintex,testo
         'Te_1_cnt': "{:10.1f}".format((y_test == 1).tolist().count(True)/len(y_test)*100),
         'Te_cnt': "{:10.0f}".format(test_size),
         'Te_0_50' : "{:10.1f}".format(zerohit50/zerocnt50*100 if zerocnt50>0 else 0),
-        'Te_0_50_cnt' : "{:10.0f}".format(zerocnt50/test_size*100),
+        'Te_0_50_cnt' : "{:10.0f}".format(zerocnt50/te0cnt*100),
         'Te_0_60' : "{:10.1f}".format(zerohit60/zerocnt60*100 if zerocnt60>0 else 0),
-        'Te_0_60_cnt' : "{:10.0f}".format(zerocnt60/test_size*100),
+        'Te_0_60_cnt' : "{:10.0f}".format(zerocnt60/te0cnt*100),
         'Te_0_70' : "{:10.1f}".format(zerohit70/zerocnt70*100 if zerocnt70>0 else 0),
-        'Te_0_70_cnt' : "{:10.0f}".format(zerocnt70/test_size*100),
+        'Te_0_70_cnt' : "{:10.0f}".format(zerocnt70/te0cnt*100),
         'Te_0_80' : "{:10.1f}".format(zerohit80/zerocnt80*100 if zerocnt80>0 else 0),
-        'Te_0_80_cnt' : "{:10.0f}".format(zerocnt80/test_size*100),
+        'Te_0_80_cnt' : "{:10.0f}".format(zerocnt80/te0cnt*100),
         'Te_0_90' : "{:10.1f}".format(zerohit90/zerocnt90*100 if zerocnt90>0 else 0),
-        'Te_0_90_cnt' : "{:10.0f}".format(zerocnt90/test_size*100),
+        'Te_0_90_cnt' : "{:10.0f}".format(zerocnt90/te0cnt*100),
         'Te_1_50' : "{:10.1f}".format(onehit50/onecnt50*100 if onecnt50>0 else 0),
-        'Te_1_50_cnt' : "{:10.0f}".format(onecnt50/test_size*100),
+        'Te_1_50_cnt' : "{:10.0f}".format(onecnt50/te1cnt*100),
         'Te_1_60' : "{:10.1f}".format(onehit60/onecnt60*100 if onecnt60>0 else 0),
-        'Te_1_60_cnt' : "{:10.0f}".format(onecnt60/test_size*100),
+        'Te_1_60_cnt' : "{:10.0f}".format(onecnt60/te1cnt*100),
         'Te_1_70' : "{:10.1f}".format(onehit70/onecnt70*100 if onecnt70>0 else 0),
-        'Te_1_70_cnt' : "{:10.0f}".format(onecnt70/test_size*100),
+        'Te_1_70_cnt' : "{:10.0f}".format(onecnt70/te1cnt*100),
         'Te_1_80' : "{:10.1f}".format(onehit80/onecnt80*100 if onecnt80>0 else 0),
-        'Te_1_80_cnt' : "{:10.0f}".format(onecnt80/test_size*100),
+        'Te_1_80_cnt' : "{:10.0f}".format(onecnt80/te1cnt*100),
         'Te_1_90' : "{:10.1f}".format(onehit90/onecnt90*100 if onecnt90>0 else 0),
-        'Te_1_90_cnt' : "{:10.0f}".format(onecnt90/test_size*100)
+        'Te_1_90_cnt' : "{:10.0f}".format(onecnt90/te1cnt*100)
 #         'Str1_0.5':res1[0.5],'Str1_0.6':res1[0.6],'Str1_0.7':res1[0.7],'Str1_0.8':res1[0.8],'Str1_0.9':res1[0.9],
 #         'Str2_0.5':res2[0.5],'Str2_0.6':res2[0.6],'Str2_0.7':res2[0.7],'Str2_0.8':res2[0.8],'Str2_0.9':res2[0.9],
 #         'Str3_0.5':res3[0.5],'Str3_0.6':res3[0.6],'Str3_0.7':res3[0.7],'Str3_0.8':res3[0.8],'Str3_0.9':res3[0.9],
