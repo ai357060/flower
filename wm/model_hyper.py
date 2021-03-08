@@ -98,16 +98,16 @@ def runhypermodel(fn, fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc
     # odtworzenie masterframe dla NN
     traindf = pd.DataFrame(X_train, columns=X_df.columns)
     traindf[masterframe.columns[-1]] = y_train
-    masterframeN = traindf
+    masterframeN = traindf.sort_values(by=['id'])
 
 
 #    X_test, y_test = sm.fit_sample(X_test, y_test)   # undersample test
     testdf = pd.DataFrame(X_test, columns=X_df.columns)
     testdf[masterframe.columns[-1]] = y_test
+    testdf = testdf.sort_values(by=['id'])
     masterframeN = pd.concat([masterframeN,testdf])
     
     masterframe = masterframeN
-    masterframe = masterframe.sort_values(by=['id'])
 
     
 # tu można usunąć z Xtrain i Xtest: id!!!
