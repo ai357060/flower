@@ -349,7 +349,7 @@ def prepare_y3(masterframe, atr):
             i = i + 1
     return
 
-def prepare_y(masterframe, atr):      
+def prepare_y4(masterframe, atr):      
     # Prepare Y
     Rtp=1
     masterframe['y'] = -1
@@ -360,6 +360,32 @@ def prepare_y(masterframe, atr):
         yy = False
         while j <= n:
             if (masterframe.high.iloc[i+j] > masterframe.high.iloc[i]+Rtp*atr):
+                yy = True
+                break
+            j = j + 1
+
+        if yy == True:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 1            
+            #masterframe.iloc[i+1:i+j+1,masterframe.columns.get_loc('y')]=0      #nochain
+            #i = i + j                                                           #nochain 
+            i = i + 1   #chain
+
+        else:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
+            i = i + 1
+    return
+
+def prepare_y(masterframe, atr):      
+    # Prepare Y
+    Rtp=1
+    masterframe['y'] = -1
+    n = 1  # distanse
+    i = 0
+    while i < len(masterframe) - n:   
+        j = 1
+        yy = False
+        while j <= n:
+            if (masterframe.close.iloc[i+j] > masterframe.high.iloc[i]+Rtp*atr):
                 yy = True
                 break
             j = j + 1

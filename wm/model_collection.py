@@ -635,6 +635,9 @@ def PrepareResultsNN(masterframe,datamasterframe,logreg,Xintex,testone,fitwarn,a
     onecnt90 = np.sum( proba1 >= 0.9) 
     onehit90 = np.sum((y_test == 1) & (proba1 >= 0.9))
 
+    te0cnt = (y_test == 0).tolist().count(True)
+    te1cnt = (y_test == 1).tolist().count(True)
+    
     tecal = (zerocnt70+onecnt70)/len(y_test)*100
     res1, profitdf1 = ExamineProfit1(masterframe, Xintex, y_test, proba0,proba1,0,tecal,atr)
     res2, profitdf2 = ExamineProfit2(masterframe, Xintex, y_test, proba0,proba1,0,tecal,atr)
