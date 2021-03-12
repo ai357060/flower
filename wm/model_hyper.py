@@ -88,7 +88,7 @@ def runhypermodel(fn, fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc
     # from imblearn.over_sampling import RandomOverSampler
     # from imblearn.over_sampling import SVMSMOTE
 #     sm = SMOTE(random_state=27,sampling_strategy='minority')
-    sm = RandomUnderSampler(random_state=27,sampling_strategy='majority')
+    sm = RandomUnderSampler(random_state=27,sampling_strategy='majority')######
     # sm = ADASYN(random_state=27)
     # sm = BorderlineSMOTE(random_state=27)
     # sm = RandomOverSampler(random_state=27)
@@ -104,7 +104,7 @@ def runhypermodel(fn, fver, featsel='pca',featcount=[5,15,25],models=[['rf','svc
 #    X_test, y_test = sm.fit_sample(X_test, y_test)   # undersample test
     testdf = pd.DataFrame(X_test, columns=X_df.columns)
     testdf[masterframe.columns[-1]] = y_test
-    testdf = testdf.sort_values(by=['id'])
+#     testdf = testdf.sort_values(by=['id'])
     masterframeN = pd.concat([masterframeN,testdf])
     
     masterframe = masterframeN
