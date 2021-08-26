@@ -83,7 +83,7 @@ def ExamineLogisticRegression(masterframe,Xintex,X_train, y_train,X_test, y_test
 #penalty default l2
 #max_iter =100
     linear_resdf = pd.DataFrame(columns=['proctime','penalty','solver','C','max_iter','Tr acc','Te acc','Te_cal','Mess'
-                                         ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Te_cnt'
+                                         ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Tr_cnt','Te_cnt'
 ,'Te_0_50','Te_0_50_cnt','Te_0_60','Te_0_60_cnt','Te_0_70','Te_0_70_cnt','Te_0_80','Te_0_80_cnt','Te_0_90','Te_0_90_cnt'
 ,'Te_1_50','Te_1_50_cnt','Te_1_60','Te_1_60_cnt','Te_1_70','Te_1_70_cnt','Te_1_80','Te_1_80_cnt','Te_1_90','Te_1_90_cnt'])
 
@@ -145,7 +145,7 @@ def ExamineLogisticRegression(masterframe,Xintex,X_train, y_train,X_test, y_test
 
 def ExamineLinearSVC(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,atr,testone,plot):
     linear_resdf = pd.DataFrame(columns=['proctime','penalty','C','max_iter','loss','Tr acc','Te acc','Te_cal','Mess'
-                                         ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Te_cnt'
+                                         ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Tr_cnt','Te_cnt'
 ,'Te_0_50','Te_0_50_cnt','Te_0_60','Te_0_60_cnt','Te_0_70','Te_0_70_cnt','Te_0_80','Te_0_80_cnt','Te_0_90','Te_0_90_cnt'
 ,'Te_1_50','Te_1_50_cnt','Te_1_60','Te_1_60_cnt','Te_1_70','Te_1_70_cnt','Te_1_80','Te_1_80_cnt','Te_1_90','Te_1_90_cnt'])
 
@@ -218,7 +218,7 @@ def ExamineRandomForest(masterframe,Xintex,X_train, y_train,X_test, y_test,featu
     
     linear_resdf = pd.DataFrame(columns=['proctime','max_features','n_estimators','max_depth','max_leaf_nodes','Tr acc','Te acc','Te_cal'
                                          ,'Mess'
-                                         ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Te_cnt'
+                                         ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Tr_cnt','Te_cnt'
 ,'Te_0_50','Te_0_50_cnt','Te_0_60','Te_0_60_cnt','Te_0_70','Te_0_70_cnt','Te_0_80','Te_0_80_cnt','Te_0_90','Te_0_90_cnt'
 ,'Te_1_50','Te_1_50_cnt','Te_1_60','Te_1_60_cnt','Te_1_70','Te_1_70_cnt','Te_1_80','Te_1_80_cnt','Te_1_90','Te_1_90_cnt'])
     
@@ -295,7 +295,7 @@ def ExamineSVC(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,a
     # max_leaf_nodes
     
     linear_resdf = pd.DataFrame(columns=['proctime','max_iter','C','gamma','kernel','degree','Tr acc','Te acc','Te_cal','Mess'
-                                         ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Te_cnt'
+                                         ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Tr_cnt','Te_cnt'
 ,'Te_0_50','Te_0_50_cnt','Te_0_60','Te_0_60_cnt','Te_0_70','Te_0_70_cnt','Te_0_80','Te_0_80_cnt','Te_0_90','Te_0_90_cnt'
 ,'Te_1_50','Te_1_50_cnt','Te_1_60','Te_1_60_cnt','Te_1_70','Te_1_70_cnt','Te_1_80','Te_1_80_cnt','Te_1_90','Te_1_90_cnt'])
     
@@ -309,8 +309,8 @@ def ExamineSVC(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,a
     
     if testone == True:
         C = [10]
-        gamma = ['auto']   
-        kernel = ['poly'] 
+        gamma = [0.01]   
+        kernel = ['rbf'] 
         max_iter = [-1]  
         degree = [2]
         timeout = 5
@@ -380,7 +380,7 @@ def ExamineMLP(masterframe,Xintex,X_train, y_train,X_test, y_test,featurenames,a
     # max_leaf_nodes
     
     linear_resdf = pd.DataFrame(columns=['proctime','solver','layers','activation','max_iter','alpha','Tr acc','Te acc','Te_cal','Mess'
-                                         ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Te_cnt'
+                                         ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Tr_cnt','Te_cnt'
 ,'Te_0_50','Te_0_50_cnt','Te_0_60','Te_0_60_cnt','Te_0_70','Te_0_70_cnt','Te_0_80','Te_0_80_cnt','Te_0_90','Te_0_90_cnt'
 ,'Te_1_50','Te_1_50_cnt','Te_1_60','Te_1_60_cnt','Te_1_70','Te_1_70_cnt','Te_1_80','Te_1_80_cnt','Te_1_90','Te_1_90_cnt'])
     
@@ -480,7 +480,7 @@ def ExamineNN(masterframe,Xintex,datamasterframe,featurenames,atr,testone,plot):
 #     procs = [FillMissing, Categorify]
 
     linear_resdf = pd.DataFrame(columns=['proctime','emb_drop','layers','lr','wd','epoch','metrics','Tr acc','Te acc','Te_cal','Mess'
-                                         ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Te_cnt'
+                                         ,'Tr_1_cnt','Te_1_cnt','Tr_0_acc','Tr_1_acc','Tr_cnt','Te_cnt'
 ,'Te_0_50','Te_0_50_cnt','Te_0_60','Te_0_60_cnt','Te_0_70','Te_0_70_cnt','Te_0_80','Te_0_80_cnt','Te_0_90','Te_0_90_cnt'
 ,'Te_1_50','Te_1_50_cnt','Te_1_60','Te_1_60_cnt','Te_1_70','Te_1_70_cnt','Te_1_80','Te_1_80_cnt','Te_1_90','Te_1_90_cnt'])
     
@@ -517,7 +517,7 @@ def ExamineNN(masterframe,Xintex,datamasterframe,featurenames,atr,testone,plot):
         hidden_layer_sizes = [[300,300]]
         lr = [1e-2]
         wd = [0.1]
-        epoch = [10]
+        epoch = [1]
         metrics = [Precision()]
     
     
@@ -609,6 +609,7 @@ def PrepareResultsNN(masterframe,datamasterframe,logreg,Xintex,testone,fitwarn,a
 #     proba1 = pre.p1
 
     test_size = y_test.shape[0]
+    train_size = y_train.shape[0]
 #     print(test_size)
 #     hit = np.sum((y_test == 0) & (proba0 > 0.5)) + np.sum((y_test == 1) & (proba1 >= 0.5))
 #     Testscore = hit/test_size*100
@@ -657,6 +658,7 @@ def PrepareResultsNN(masterframe,datamasterframe,logreg,Xintex,testone,fitwarn,a
         'Tr_0_acc': "{:10.1f}".format(0),
         'Tr_1_acc': "{:10.1f}".format(0),
         'Te_1_cnt': "{:10.1f}".format((y_test == 1).tolist().count(True)/len(y_test)*100),
+        'Tr_cnt': "{:10.0f}".format(train_size),
         'Te_cnt': "{:10.0f}".format(test_size),
         'Te_0_50' : "{:10.1f}".format(zerohit50/zerocnt50*100 if zerocnt50>0 else 0),
         'Te_0_50_cnt' : "{:10.0f}".format(zerocnt50/test_size*100),
@@ -700,6 +702,8 @@ def PrepareResults(masterframe,logreg,X_train,X_test,y_train,y_test,Xintex,testo
     y_train_predict = logreg.predict(X_train)
     y_test_predict = logreg.predict(X_test)
     test_size = X_test.shape[0]
+    train_size = y_train.shape[0]
+    
     proba = logreg.predict_proba(X_test)
     proba0 = proba[:,0]
     proba1 = proba[:,1]
@@ -745,6 +749,7 @@ def PrepareResults(masterframe,logreg,X_train,X_test,y_train,y_test,Xintex,testo
         'Tr_0_acc': "{:10.1f}".format((y_train_predict[y_train==0]).tolist().count(0)/len(y_train[y_train==0])*100),
         'Tr_1_acc': "{:10.1f}".format((y_train_predict[y_train==1]).tolist().count(1)/len(y_train[y_train==1])*100),
         'Te_1_cnt': "{:10.1f}".format((y_test == 1).tolist().count(True)/len(y_test)*100),
+        'Tr_cnt': "{:10.0f}".format(train_size),
         'Te_cnt': "{:10.0f}".format(test_size),
         'Te_0_50' : "{:10.1f}".format(zerohit50/zerocnt50*100 if zerocnt50>0 else 0),
         'Te_0_50_cnt' : "{:10.0f}".format(zerocnt50/test_size*100),
