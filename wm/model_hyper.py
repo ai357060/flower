@@ -375,7 +375,8 @@ def prepare_y4(masterframe, atr):
             i = i + 1
     return
 
-def prepare_y(masterframe, atr):      
+# close>high_1atr dist1 
+def prepare_y_(masterframe, atr):      
     # Prepare Y
     Rtp=1
     masterframe['y'] = -1
@@ -401,17 +402,49 @@ def prepare_y(masterframe, atr):
             i = i + 1
     return
 
+def prepare_y(masterframe, atr,dist = 1,Rtp = 1,mode='c'):      
+    # Rtp krotnosc atr
+    # dist - distanse
+    # mode h - high; każde inne to c (close)
+    
+    masterframe['y'] = -1
+    i = 0
+    while i < len(masterframe) - dist:   
+        j = 1
+        yy = False
+        while j <= dist:
+            if (mode=='h'):
+                ref = masterframe.high.iloc[i+j]
+            else:
+                ref = masterframe.close.iloc[i+j]
+            if (ref > masterframe.high.iloc[i]+Rtp*atr):
+                yy = True
+                break
+            j = j + 1
 
-def dumpdatawithy(datafile):
+        if yy == True:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 1            
+            #masterframe.iloc[i+1:i+j+1,masterframe.columns.get_loc('y')]=0      #nochain
+            #i = i + j                                                           #nochain 
+            i = i + 1   #chain
+
+        else:
+            masterframe.iloc[i,masterframe.columns.get_loc('y')] = 0
+            i = i + 1
+    return
+
+
+
+def dumpdatawithy(datafile,dist = 1,Rtp = 1,mode = 'c'):
 
     masterframe = loaddata_master('../Data/'+datafile+'.csv')
 
     atr = calculate_atr(masterframe)
 
-    prepare_y(masterframe,atr)
+    prepare_y(masterframe,atr,dist,Rtp,mode)
     
     masterframe = masterframe.drop(['id'],1)
     
-    masterframe.to_csv(sep=';',path_or_buf='../Data/y_'+datafile+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+    masterframe.to_csv(sep=';',path_or_buf='../Data/y_'+str(dist)+'_'+str(Rtp)+'_'+mode+'_'+datafile+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     
     return
