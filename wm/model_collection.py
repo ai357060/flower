@@ -509,7 +509,7 @@ def ExamineNN(masterframe,Xintex,datamasterframe,featurenames,atr,testone,plot):
     epoch = [6]
 #     metrics = [accuracy_score, precision_score, recall_score, f1_score, fbeta_score, log_loss, roc_auc_score]
 #     metrics = [accuracy, Precision(), Recall(),AUROC(),FBeta()]
-    metrics = [accuracy,Precision()]
+    metrics = [accuracy]
 
 # test one model
     if testone == True:
