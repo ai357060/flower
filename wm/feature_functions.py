@@ -16,6 +16,9 @@ from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import MinMaxScaler
 from datetime import timedelta
 
+import pandas as pd
+from pandasql import sqldf
+
 class holder:
     1
 
@@ -76,6 +79,26 @@ def loaddata_nodateindex(datafile='uj_d.csv'):
     weekid_minus1 = (year_minus1.map('{0:04d}'.format)+df.week.map('{0:02d}'.format)).astype(int)
     df['weekID'] = np.where((df.month==1) & ((df.week == 52)|(df.week == 53)),weekid_minus1,np.where((df.month==12) & (df.week == 1),weekid_plus1,weekid))
     
+    return df
+
+def loaddata_4h(datafile):
+    df = pd.read_csv('../Data/'+datafile)
+    try:
+        df.date=pd.to_datetime(df.date,format='%Y-%m-%d')
+    except:
+        #df.date=pd.to_datetime(df.date,format='%Y.%m.%d')    
+        df.date=pd.to_datetime(df.date,format='%d.%m.%Y %H:%M:%S.%f')    
+
+    df=df[df.volume!=0]
+    df.reset_index(inplace = True, drop = True)
+    df['id'] = df.index    
+    df['hour'] = pd.DatetimeIndex(df['date']).hour
+    df.loc[df.hour==2,'hour']=1
+    df.loc[df.hour==6,'hour']=5
+    df.loc[df.hour==10,'hour']=9
+    df.loc[df.hour==14,'hour']=13
+    df.loc[df.hour==18,'hour']=17
+    df.loc[df.hour==22,'hour']=21
     return df
 
 
@@ -1211,3 +1234,185 @@ def historyM1(prices,periods):
     dict[periods[0]] = df
     results.df = dict
     return results
+
+
+def rsi(prices, periods):
+    """
+    Returns a pd.Series with the relative strength index.
+    """
+    ema = True
+    period = periods[0]
+    results = holder()
+    rsidf = pd.DataFrame()
+
+    # Make two series: one for lower closes and one for higher closes
+    rsidf['close_delta'] = prices['close'].diff()
+    rsidf['up'] = rsidf.close_delta.clip(lower=0)
+    rsidf['down'] = -1 * rsidf.close_delta.clip(upper=0)
+    
+    # Use exponential moving average
+    rsidf['ma_up'] = rsidf.up.ewm(com = period-1,adjust=False).mean()
+    rsidf['ma_down'] = rsidf.down.ewm(com = period-1,adjust=False).mean()
+    rsidf['rsi'] = 100 - (100/(1 + rsidf['ma_up'] / rsidf['ma_down']))
+
+    rsidf['ma_up1'] = 0
+    rsidf['ma_down1'] = 0
+    """
+    for i in range(1,len(rsidf)): 
+#normal
+#        rsidf.iloc[i, rsidf.columns.get_loc('ma_up1')] = rsidf.iloc[i, rsidf.columns.get_loc('up')]*(1/period) + rsidf.iloc[i-1, rsidf.columns.get_loc('ma_up1')]*(1-1/period)
+#        rsidf.iloc[i, rsidf.columns.get_loc('ma_down1')] = rsidf.iloc[i, rsidf.columns.get_loc('down')]*(1/period) + rsidf.iloc[i-1, rsidf.columns.get_loc('ma_down1')]*(1-1/period)
+#on the start
+        rsidf.iloc[i, rsidf.columns.get_loc('ma_up1')] = 0 + rsidf.iloc[i-1, rsidf.columns.get_loc('ma_up')]*(1-1/period)
+        rsidf.iloc[i, rsidf.columns.get_loc('ma_down1')] = 0 + rsidf.iloc[i-1, rsidf.columns.get_loc('ma_down')]*(1-1/period)
+    """    
+    rsidf['ma_up1'] = rsidf.ma_up.shift(1)*(1-1/period) # this is faster than for loop
+    rsidf['ma_down1'] = rsidf.ma_down.shift(1)*(1-1/period)
+    rsidf['rsi1'] = 100 - (100/(1 + rsidf['ma_up1'] / rsidf['ma_down1']))
+
+        
+    rsidf = rsidf.drop(['close_delta'],1)
+    rsidf = rsidf.drop(['up'],1)
+    rsidf = rsidf.drop(['down'],1)
+    rsidf = rsidf.drop(['ma_up'],1)
+    rsidf = rsidf.drop(['ma_down'],1)
+    rsidf = rsidf.drop(['ma_up1'],1)
+    rsidf = rsidf.drop(['ma_down1'],1)
+
+    
+    dict = {}
+    dict[periods[0]] = rsidf
+    results.df = dict
+    return results
+
+
+def tdi(prices,periods):
+    greenperiod = 2
+    redperiod = 7
+    results = holder()
+    df = rsi(prices,[periods[0]]).df[periods[0]]
+    df['red'] = df.rsi.rolling(redperiod).mean()
+    df['green'] = df.rsi.rolling(greenperiod).mean()
+    df['green_red'] = df.green - df.red
+    df['green_red_delta'] = df.green_red.diff()
+    df['green_green'] = df.green.diff()
+    df['haclose'] = prices[['close','high','low','open']].mean(axis = 1) 
+    df['haopen'] = prices[['close','open']].mean(axis = 1) 
+    df['haopen'] = (df.haopen.shift(1) + df.haclose.shift(1)) / 2
+    df['hacolor'] = np.where(df.haclose>=df.haopen,1,-1)
+    df['barnumber'] = df.groupby((df['hacolor'] != df['hacolor'].shift(1)).cumsum()).cumcount()+1
+    df = df.drop(['rsi1'],1)
+
+    dict = {}
+    dict[periods[0]] = df
+    results.df = dict
+    return results
+
+
+def tdi1(prices,periods):
+    greenperiod = 2
+    redperiod = 7
+    results = holder()
+    df = rsi(prices,[periods[0]]).df[periods[0]]
+    df['red'] = df.rsi.rolling(redperiod).mean()
+    df['green'] = df.rsi.rolling(greenperiod).mean()
+    df['red1'] = df.rsi1/redperiod + df.rsi.shift(1).rolling(redperiod-1).sum()/redperiod
+    df['green1'] = df.rsi1/greenperiod + df.rsi.shift(1).rolling(greenperiod-1).sum()/greenperiod
+    df['green1_red1'] = df.green1 - df.red1
+    df['red2'] = df.red.shift(1)
+    df['green2'] = df.green.shift(1)
+    df['green2_red2'] = df.green2 - df.red2
+    df['green_red_change'] = df.green1_red1 - df.green2_red2
+    df['red_slope'] = df.red1 - df.red2
+    df['green_slope'] = df.green1 - df.green2
+    df['green_red_slope_change'] = df.green_slope - df.red_slope
+
+    df['haclose'] = prices[['close','high','low','open']].mean(axis = 1) 
+    df['haopen'] = prices[['close','open']].mean(axis = 1) 
+    df['haopen'] = (df.haopen.shift(1) + df.haclose.shift(1)) / 2
+    df['hacolor'] = np.where(df.haclose>=df.haopen,1,-1)
+    df['barnumber'] = df.groupby((df['hacolor'] != df['hacolor'].shift(1)).cumsum()).cumcount()+1
+
+    df['haclose1'] = prices['open']
+    df['haopen1'] = df.haopen
+    df['habarsize1'] = df.haclose1-df.haopen1
+    df['hacolor1'] = np.where(df.haclose1>=df.haopen1,1,-1)
+    df['hacolor2'] = df.hacolor.shift(1)
+    df['hacolor3'] = df.hacolor.shift(2)
+    df['hacolor4'] = df.hacolor.shift(3)
+    df['hacolor5'] = df.hacolor.shift(4)
+    df['hacolor6'] = df.hacolor.shift(5)
+    df['hacolor7'] = df.hacolor.shift(6)
+    df['hacolor8'] = df.hacolor.shift(7)
+    df['hacolor9'] = df.hacolor.shift(8)
+    df['hacolor10'] = df.hacolor.shift(9)
+
+    df['barnumber1'] = df.apply(lambda row : barnumber([row['hacolor1'],row['hacolor2'],row['hacolor3'],row['hacolor4'],row['hacolor5'],row['hacolor6'],row['hacolor7'],row['hacolor8'],row['hacolor9'],row['hacolor10']]), axis = 1)    
+    
+    df = df.drop(['red'],1)
+    df = df.drop(['green'],1)
+    df = df.drop(['haclose'],1)
+    df = df.drop(['haopen'],1)
+    df = df.drop(['hacolor'],1)
+    df = df.drop(['barnumber'],1)
+
+    df = df.drop(['haclose1'],1)
+    df = df.drop(['haopen1'],1)
+    df = df.drop(['hacolor2'],1)
+    df = df.drop(['hacolor3'],1)
+    df = df.drop(['hacolor4'],1)
+    df = df.drop(['hacolor5'],1)
+    df = df.drop(['hacolor6'],1)
+    df = df.drop(['hacolor7'],1)
+    df = df.drop(['hacolor8'],1)
+    df = df.drop(['hacolor9'],1)
+    df = df.drop(['hacolor10'],1)
+
+    df = df.drop(['rsi'],1)
+    
+    dict = {}
+    dict[periods[0]] = df
+    results.df = dict
+    return results
+
+def barnumber(a):
+    first = a[0]
+    cumsum = 1
+    for i in range(1,len(a)):
+        if (a[i]==first): 
+            cumsum+=1
+        else:
+            break
+    return cumsum
+
+
+def opentrades(df,hour):
+    df['tradetype'] = 0
+    df['tradetype'] = np.where((df.hour==hour) & (df.tdi13green_slope>0),1,-1)
+    df['openprice'] = np.where(df.tradetype!=0,df.open,0)
+    df['openindex'] = np.where(df.tradetype!=0,df.index,0)
+    return df
+
+def closetrades(df,hour):
+    df1 = df.copy()
+    
+    df['closeindex'] = -1
+    df['closeindex'] = pd.Series(
+        findclose(row.openindex,hour,df1)
+        for row in df.itertuples()  
+    )
+    
+    df['closeprice']=pd.merge(df,df[['id','open']], left_on='closeindex', right_on='id', how='inner')[['open_y']]
+
+    df=df[df.closeindex!=-1]
+    
+    return df
+
+
+def findclose(openindex,hour,masterFrame):
+    closeid = masterFrame[(masterFrame.hour==hour)&(masterFrame.id>openindex)].head(1) 
+    if (len(closeid)>0):
+         closeid = closeid.id.values[0]
+    else: 
+        closeid = -1
+    return closeid
