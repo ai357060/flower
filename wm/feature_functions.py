@@ -89,16 +89,21 @@ def loaddata_4h(datafile):
         #df.date=pd.to_datetime(df.date,format='%Y.%m.%d')    
         df.date=pd.to_datetime(df.date,format='%d.%m.%Y %H:%M:%S.%f')    
 
-    df=df[df.volume!=0]
-    df.reset_index(inplace = True, drop = True)
-    df['id'] = df.index    
+    df['year'] = pd.DatetimeIndex(df['date']).year
+    df['month'] = pd.DatetimeIndex(df['date']).month
+    df['week'] = pd.DatetimeIndex(df['date']).week
+    df['day'] = pd.DatetimeIndex(df['date']).day 
     df['hour'] = pd.DatetimeIndex(df['date']).hour
+    df['weekday'] = df.date.apply(lambda x: x.isoweekday())    
     df.loc[df.hour==2,'hour']=1
     df.loc[df.hour==6,'hour']=5
     df.loc[df.hour==10,'hour']=9
     df.loc[df.hour==14,'hour']=13
     df.loc[df.hour==18,'hour']=17
     df.loc[df.hour==22,'hour']=21
+    df=df[-(((df.weekday==6)|(df.weekday==7))&(df.volume==0))]
+    df.reset_index(inplace = True, drop = True)
+    df['id'] = df.index    
     return df
 
 
@@ -1312,20 +1317,28 @@ def tdi(prices,periods):
 def tdi1(prices,periods):
     greenperiod = 2
     redperiod = 7
+    midperiod = 31
     results = holder()
     df = rsi(prices,[periods[0]]).df[periods[0]]
     df['red'] = df.rsi.rolling(redperiod).mean()
     df['green'] = df.rsi.rolling(greenperiod).mean()
+    df['mid'] = df.rsi.rolling(midperiod).mean()
     df['red1'] = df.rsi1/redperiod + df.rsi.shift(1).rolling(redperiod-1).sum()/redperiod
     df['green1'] = df.rsi1/greenperiod + df.rsi.shift(1).rolling(greenperiod-1).sum()/greenperiod
+    df['mid1'] = df.rsi1/midperiod + df.rsi.shift(1).rolling(midperiod-1).sum()/midperiod
     df['green1_red1'] = df.green1 - df.red1
     df['red2'] = df.red.shift(1)
     df['green2'] = df.green.shift(1)
+    df['mid2'] = df.mid.shift(1)
     df['green2_red2'] = df.green2 - df.red2
     df['green_red_change'] = df.green1_red1 - df.green2_red2
+    df['green_red_mul'] = df.green1_red1 * df.green2_red2
+    df['green_red_cross'] = np.where(df.green_red_mul<=0,1,0)
     df['red_slope'] = df.red1 - df.red2
     df['green_slope'] = df.green1 - df.green2
     df['green_red_slope_change'] = df.green_slope - df.red_slope
+    df['green_red_dist'] = (df.green1 + df.green2)/2 - (df.red1 + df.red2)/2
+    df['mid_slope'] = df.mid1 - df.mid2
 
     df['haclose'] = prices[['close','high','low','open']].mean(axis = 1) 
     df['haopen'] = prices[['close','open']].mean(axis = 1) 
@@ -1348,16 +1361,7 @@ def tdi1(prices,periods):
     df['hacolor10'] = df.hacolor.shift(9)
 
     df['barnumber1'] = df.apply(lambda row : barnumber([row['hacolor1'],row['hacolor2'],row['hacolor3'],row['hacolor4'],row['hacolor5'],row['hacolor6'],row['hacolor7'],row['hacolor8'],row['hacolor9'],row['hacolor10']]), axis = 1)    
-    
-    df = df.drop(['red'],1)
-    df = df.drop(['green'],1)
-    df = df.drop(['haclose'],1)
-    df = df.drop(['haopen'],1)
-    df = df.drop(['hacolor'],1)
-    df = df.drop(['barnumber'],1)
 
-    df = df.drop(['haclose1'],1)
-    df = df.drop(['haopen1'],1)
     df = df.drop(['hacolor2'],1)
     df = df.drop(['hacolor3'],1)
     df = df.drop(['hacolor4'],1)
@@ -1368,8 +1372,26 @@ def tdi1(prices,periods):
     df = df.drop(['hacolor9'],1)
     df = df.drop(['hacolor10'],1)
 
-    df = df.drop(['rsi'],1)
     
+    df['haopen2'] = df.haopen.shift(1)
+    df['haclose2'] = df.haclose.shift(1)
+    df['habarsize2'] = df.haclose.shift(1)-df.haopen.shift(1)
+    
+    """
+    df = df.drop(['red'],1)
+    df = df.drop(['green'],1)
+    df = df.drop(['haclose'],1)
+    df = df.drop(['haopen'],1)
+    df = df.drop(['hacolor'],1)
+    df = df.drop(['barnumber'],1)
+    df = df.drop(['haclose2'],1)
+    df = df.drop(['haopen2'],1)
+
+    df = df.drop(['haclose1'],1)
+    df = df.drop(['haopen1'],1)
+
+    df = df.drop(['rsi'],1)
+    """
     dict = {}
     dict[periods[0]] = df
     results.df = dict
@@ -1386,33 +1408,3 @@ def barnumber(a):
     return cumsum
 
 
-def opentrades(df,hour):
-    df['tradetype'] = 0
-    df['tradetype'] = np.where((df.hour==hour) & (df.tdi13green_slope>0),1,-1)
-    df['openprice'] = np.where(df.tradetype!=0,df.open,0)
-    df['openindex'] = np.where(df.tradetype!=0,df.index,0)
-    return df
-
-def closetrades(df,hour):
-    df1 = df.copy()
-    
-    df['closeindex'] = -1
-    df['closeindex'] = pd.Series(
-        findclose(row.openindex,hour,df1)
-        for row in df.itertuples()  
-    )
-    
-    df['closeprice']=pd.merge(df,df[['id','open']], left_on='closeindex', right_on='id', how='inner')[['open_y']]
-
-    df=df[df.closeindex!=-1]
-    
-    return df
-
-
-def findclose(openindex,hour,masterFrame):
-    closeid = masterFrame[(masterFrame.hour==hour)&(masterFrame.id>openindex)].head(1) 
-    if (len(closeid)>0):
-         closeid = closeid.id.values[0]
-    else: 
-        closeid = -1
-    return closeid
