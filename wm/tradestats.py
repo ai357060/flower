@@ -461,14 +461,14 @@ def stathyper(trades,tradetypes,openhours,closehours,sls,bar2froms,bar2tos,bar1f
     return stats,stats0
 
 def calculatestats(trades,tradetype,openhour,closehour,sl,bar2from,bar2to,bar1from,bar1to,gr2from,gr2to,gr1from,gr1to):
-    stats0 = trades[trades.tradetype==tradetype]
-    stats0 = stats0[stats0.hour==openhour]
-    stats0 = stats0[stats0.closehour==closehour]
-    stats0 = stats0[stats0.sl==sl]
-    stats0 = stats0[(stats0.tdi13habarsize2>=bar2from)&(stats0.tdi13habarsize2<=bar2to)]
-    stats0 = stats0[(stats0.tdi13habarsize1>=bar1from)&(stats0.tdi13habarsize1<=bar1to)]
-    stats0 = stats0[(stats0.tdi13green2_red2>=gr2from)&(stats0.tdi13green2_red2<=gr2to)]
-    stats0 = stats0[(stats0.tdi13green1_red1>=gr1from)&(stats0.tdi13green1_red1<=gr1to)]
+    stats0 = trades[(trades.tradetype==tradetype)&
+                    (trades.hour==openhour)&
+                    (trades.closehour==closehour)&
+                    (trades.sl==sl)&
+                    (trades.tdi13habarsize2>=bar2from)&(trades.tdi13habarsize2<=bar2to)&
+                    (trades.tdi13habarsize1>=bar1from)&(trades.tdi13habarsize1<=bar1to)&
+                    (trades.tdi13green2_red2>=gr2from)&(trades.tdi13green2_red2<=gr2to)&
+                    (trades.tdi13green1_red1>=gr1from)&(trades.tdi13green1_red1<=gr1to)]
     pr_c = len(stats0)
     pr_c_u = len(stats0[stats0.profit>=0])
     pr_c_d = len(stats0[stats0.profit<0])
