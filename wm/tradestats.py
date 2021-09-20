@@ -50,7 +50,7 @@ def loaddata_4h(datafile):
     df['week'] = pd.DatetimeIndex(df['date']).week
     df['day'] = pd.DatetimeIndex(df['date']).day 
     df['hour'] = pd.DatetimeIndex(df['date']).hour
-    df['weekday'] = df.date.apply(lambda x: x.isoweekday())    
+    df['weekday'] = df.index.map(lambda v: pd.to_datetime(v).isocalendar()[1])   
     df.loc[df.hour==2,'hour']=1
     df.loc[df.hour==6,'hour']=5
     df.loc[df.hour==10,'hour']=9
@@ -428,7 +428,7 @@ def stattrades(trades):
 def stathyper(trades,tradetypes,openhours,closehours,sls,bar2froms,bar2tos,bar1froms,bar1tos,gr2froms,gr2tos,gr1froms,gr1tos):
     trades = trades[trades.tradetype!=0]
     
-    stats = pd.DataFrame(columns=['tradetype','openhour','closehour','sl','bar2from','bar2to','bar1from','bar1to','gr2from','gr2to','gr1from','gr1to','count','mean','profit_sum','maxdown'])
+    stats = pd.DataFrame(columns=['tradetype','openhour','closehour','sl','bar2from','bar2to','bar1from','bar1to','gr2from','gr2to','gr1from','gr1to','count','countup','countdown','mean','profit_sum','maxdown'])
     for tradetype in tradetypes:                
         print('tradetype',tradetype)
         for openhour in openhours:                
@@ -448,15 +448,14 @@ def stathyper(trades,tradetypes,openhours,closehours,sls,bar2froms,bar2tos,bar1f
                                         print('              bar1to',bar1to)
                                         if (bar1to>bar1from):
                                             for gr2from in gr2froms:
-                                                print('                gr2from',gr2from)
                                                 for gr2to in gr2tos:
                                                     if(gr2to>gr2from):
-                                                        print('                  gr2to',gr2to)
                                                         for gr1from in gr1froms:
                                                             for gr1to in gr1tos:
                                                                 if(gr1to>gr1from):
                                                                     df,stats0 = calculatestats(trades,tradetype,openhour,closehour,sl,bar2from,bar2to,bar1from,bar1to,gr2from,gr2to,gr1from,gr1to)
                                                                     stats = stats.append(df,sort=False)
+                    stats.to_csv(sep=';',path_or_buf='../Data/stats_'+str(openhour)+'_'+str(closehour)+'_'+str(sl)+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     stats['profit_ratio'] = stats.profit_sum/stats.sl
     stats['maxdown_ratio'] = stats.maxdown/stats.sl
     return stats,stats0
@@ -471,10 +470,12 @@ def calculatestats(trades,tradetype,openhour,closehour,sl,bar2from,bar2to,bar1fr
     stats0 = stats0[(stats0.tdi13green2_red2>=gr2from)&(stats0.tdi13green2_red2<=gr2to)]
     stats0 = stats0[(stats0.tdi13green1_red1>=gr1from)&(stats0.tdi13green1_red1<=gr1to)]
     pr_c = len(stats0)
+    pr_c_u = len(stats0[stats0.profit>=0])
+    pr_c_d = len(stats0[stats0.profit<0])
     pr_mean = stats0.profit.mean()
     pr_sum = stats0.profit.sum()
     pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
-    df = pd.DataFrame(data={'tradetype':tradetype,'openhour':openhour,'closehour':closehour,'sl':sl,'bar2from':bar2from,'bar2to':bar2to,'bar1from':bar1from,'bar1to':bar1to,'gr2from':gr2from,'gr2to':gr2to,'gr1from':gr1from,'gr1to':gr1to,'count':pr_c,'mean':pr_mean,'profit_sum':pr_sum,'maxdown':pr_maxdown}, index=[0])
+    df = pd.DataFrame(data={'tradetype':tradetype,'openhour':openhour,'closehour':closehour,'sl':sl,'bar2from':bar2from,'bar2to':bar2to,'bar1from':bar1from,'bar1to':bar1to,'gr2from':gr2from,'gr2to':gr2to,'gr1from':gr1from,'gr1to':gr1to,'count':pr_c,'countup':pr_c_u,'countdown':pr_c_d,'mean':pr_mean,'profit_sum':pr_sum,'maxdown':pr_maxdown}, index=[0])
     return df,stats0
 
 def find_maxdownseries(grouping):
