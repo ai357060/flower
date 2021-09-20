@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+"""
 from scipy import stats
 import scipy.optimize
 from scipy.optimize  import OptimizeWarning
@@ -18,6 +19,7 @@ from datetime import timedelta
 
 import pandas as pd
 from pandasql import sqldf
+"""
 
 '''
 from numpy import mean
@@ -32,6 +34,9 @@ from warnings import catch_warnings
 from warnings import simplefilter
 '''
 
+class holder:
+    1
+    
 def loaddata_4h(datafile):
     df = pd.read_csv('../Data/'+datafile)
     try:
