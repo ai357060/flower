@@ -445,8 +445,8 @@ def stathyper(trades,tradetypes,openhours,closehours,sls,bar2froms,bar2tos,bar1f
                                 for bar1from in bar1froms:
                                     print('            bar1from',bar1from)
                                     for bar1to in bar1tos:
-                                        print('              bar1to',bar1to)
                                         if (bar1to>bar1from):
+                                            print('              bar1to',bar1to)
                                             for gr2from in gr2froms:
                                                 for gr2to in gr2tos:
                                                     if(gr2to>gr2from):
