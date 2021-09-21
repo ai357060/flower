@@ -425,11 +425,17 @@ def stattrades(trades):
     
     return stats
 
-def stathyper(trades,tradetypes,openhours,closehours,sls,bar2froms,bar2tos,bar1froms,bar1tos,gr2froms,gr2tos,gr1froms,gr1tos):
+def stathyper(trades,tradetypes,openhours,closehours,sls,bar2froms,bar2tos,bar1froms,bar1tos,
+              gr2froms,gr2tos,gr1froms,gr1tos,gslopefroms,gslopetos,rslopefroms,rslopetos,
+             grcfroms,grctos):
     trades = trades[trades.tradetype!=0]
 #     trades = trades.set_index('tdi13habarsize2')
     
-    stats = pd.DataFrame(columns=['tradetype','openhour','closehour','sl','bar2from','bar2to','bar1from','bar1to','gr2from','gr2to','gr1from','gr1to','count','countup','countdown','mean','profit_sum','maxdown'])
+    stats = pd.DataFrame(columns=['tradetype','openhour','closehour','sl','bar2from','bar2to','bar1from','bar1to',
+                                  'gr2from','gr2to','gr1from','gr1to',
+                                  'rslopefrom','rslopeto','gslopefrom','gslopeto',
+                                  'grcfrom','grcto',
+                                  'count','countup','countdown','mean','profit_sum','maxdown','maxup'])
     for tradetype in tradetypes:                
         print('tradetype',tradetype)
         for openhour in openhours:                
@@ -455,22 +461,45 @@ def stathyper(trades,tradetypes,openhours,closehours,sls,bar2froms,bar2tos,bar1f
                                                         for gr1from in gr1froms:
                                                             for gr1to in gr1tos:
                                                                 if(gr1to>gr1from):
-                                                                    df = calculatestats(trades,tradetype,openhour,closehour,sl,bar2from,bar2to,bar1from,bar1to,gr2from,gr2to,gr1from,gr1to)
-                                                                    if (isinstance(df, pd.DataFrame)):
-                                                                        stats = stats.append(df)
+                                                                    
+                                                                    for gslopefrom in gslopefroms:
+                                                                        for gslopeto in gslopetos:
+                                                                            if(gslopeto>gslopefrom):
+                                                                                for rslopefrom in rslopefroms:
+                                                                                    for rslopeto in rslopetos:
+                                                                                        if(rslopeto>rslopefrom):
+                                                                                            
+                                                                                            for grcfrom in grcfroms:
+                                                                                                for grcto in grctos:
+                                                                                                    if(grcto>grcfrom):
+
+                                                                                                        df = calculatestats(
+                                                                                                            trades,tradetype,
+                                                                                                            openhour,closehour,sl,
+                                                                                                            bar2from,bar2to,
+                                                                                                            bar1from,bar1to,
+                                                                                                            gr2from,gr2to,
+                                                                                                            gr1from,gr1to, 
+                                                                                                            gslopefrom,gslopeto,
+                                                                                                            rslopefrom,rslopeto,
+                                                                                                            grcfrom,grcto)
+                                                                                                        if (isinstance(df, pd.DataFrame)):
+                                                                                                            stats=\
+                                                                                                            stats.append(df,sort=False)
     stats['profit_ratio'] = stats.profit_sum/stats.sl
     stats['maxdown_ratio'] = stats.maxdown/stats.sl
-    stats['updown_ratio'] = stats.countup/stats.countdown
+    stats['maxup_ratio'] = stats.maxup/stats.sl
+    stats['updown_ratio'] = (stats.countup*1.0)/(stats.countdown+0.001)
     
 #                    stats.to_csv(sep=';',path_or_buf='../Data/stats_'+str(openhour)+'_'+str(closehour)+'_'+str(sl)+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     
     top = 500
     stats0 = stats.sort_values("count",ascending=False).head(top)
-    stats0 = stats0.append(stats.sort_values("countup",ascending=False).head(top))
-    stats0 = stats0.append(stats.sort_values("countdown",ascending=False).head(top))
-    stats0 = stats0.append(stats.sort_values("mean",ascending=False).head(top))
+#     stats0 = stats0.append(stats.sort_values("countup",ascending=False).head(top))
+#     stats0 = stats0.append(stats.sort_values("countdown",ascending=False).head(top))
+#     stats0 = stats0.append(stats.sort_values("mean",ascending=False).head(top))
     stats0 = stats0.append(stats.sort_values("profit_sum",ascending=False).head(top))
-    stats0 = stats0.append(stats.sort_values("maxdown",ascending=True).head(top))
+#     stats0 = stats0.append(stats.sort_values("maxdown",ascending=True).head(top))
     stats0 = stats0.append(stats.sort_values("profit_ratio",ascending=False).head(top))
     stats0 = stats0.append(stats.sort_values("maxdown_ratio",ascending=False).head(top))
     stats0 = stats0.append(stats.sort_values("updown_ratio",ascending=False).head(top))
@@ -478,7 +507,8 @@ def stathyper(trades,tradetypes,openhours,closehours,sls,bar2froms,bar2tos,bar1f
     stats0.to_csv(sep=';',path_or_buf='../Data/stats_'+str(openhour)+'_'+str(closehour)+'_'+str(sl)+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     return stats0
 
-def calculatestats(trades,tradetype,openhour,closehour,sl,bar2from,bar2to,bar1from,bar1to,gr2from,gr2to,gr1from,gr1to):
+def calculatestats(trades,tradetype,openhour,closehour,sl,bar2from,bar2to,bar1from,bar1to,gr2from,gr2to,gr1from,gr1to,
+                   gslopefrom,gslopeto,rslopefrom,rslopeto,grcfrom,grcto):
     stats0 = trades[(trades.tradetype==tradetype)&
                     (trades.hour==openhour)&
                     (trades.closehour==closehour)&
@@ -486,7 +516,11 @@ def calculatestats(trades,tradetype,openhour,closehour,sl,bar2from,bar2to,bar1fr
                     (trades.tdi13habarsize2>=bar2from)&(trades.tdi13habarsize2<=bar2to)&
                     (trades.tdi13habarsize1>=bar1from)&(trades.tdi13habarsize1<=bar1to)&
                     (trades.tdi13green2_red2>=gr2from)&(trades.tdi13green2_red2<=gr2to)&
-                    (trades.tdi13green1_red1>=gr1from)&(trades.tdi13green1_red1<=gr1to)]
+                    (trades.tdi13green1_red1>=gr1from)&(trades.tdi13green1_red1<=gr1to)&
+                    (trades.tdi13green_slope>=gslopefrom)&(trades.tdi13green_slope<=gslopeto)&
+                    (trades.tdi13red_slope>=rslopefrom)&(trades.tdi13red_slope<=rslopeto)&
+                    (trades.tdi13green_red_change>=grcfrom)&(trades.tdi13green_red_change<=grcto)
+                   ]
     pr_c = len(stats0)
     pr_mean = stats0.profit.mean()
     pr_sum = stats0.profit.sum()
@@ -494,7 +528,17 @@ def calculatestats(trades,tradetype,openhour,closehour,sl,bar2from,bar2to,bar1fr
         pr_c_u = len(stats0[stats0.profit>=0])
         pr_c_d = len(stats0[stats0.profit<0])
         pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
-        df = pd.DataFrame(data={'tradetype':tradetype,'openhour':openhour,'closehour':closehour,'sl':sl,'bar2from':bar2from,'bar2to':bar2to,'bar1from':bar1from,'bar1to':bar1to,'gr2from':gr2from,'gr2to':gr2to,'gr1from':gr1from,'gr1to':gr1to,'count':pr_c,'countup':pr_c_u,'countdown':pr_c_d,'mean':pr_mean,'profit_sum':pr_sum,'maxdown':pr_maxdown}, index=[0])
+        pr_maxup =   (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).max()
+        if (pr_maxdown<0):
+            pr_maxdown = 0
+        df = pd.DataFrame(data={'tradetype':tradetype,'openhour':openhour,'closehour':closehour,'sl':sl,
+                                'bar2from':bar2from,'bar2to':bar2to,'bar1from':bar1from,'bar1to':bar1to,
+                                'gr2from':gr2from,'gr2to':gr2to,'gr1from':gr1from,'gr1to':gr1to,
+                                'rslopefrom':rslopefrom,'rslopeto':rslopeto,
+                                'gslopefrom':gslopefrom,'gslopeto':gslopeto,
+                                'grcfrom':grcfrom,'grcto':grcto,
+                                'count':pr_c,'countup':pr_c_u,'countdown':pr_c_d,'mean':pr_mean,'profit_sum':pr_sum,
+                                'maxdown':pr_maxdown,'maxup':pr_maxup}, index=[0])
     else:
         df = np.nan
     return df
