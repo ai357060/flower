@@ -457,10 +457,10 @@ def stathyper(trades,tradetypes,openhours,closehours,sls,bar2froms,bar2tos,bar1f
                                                                 if(gr1to>gr1from):
                                                                     df = calculatestats(trades,tradetype,openhour,closehour,sl,bar2from,bar2to,bar1from,bar1to,gr2from,gr2to,gr1from,gr1to)
                                                                     if (isinstance(df, pd.DataFrame)):
-                                                                        stats = stats.append(df,sort=False)
-                    stats['profit_ratio'] = stats.profit_sum/stats.sl
-                    stats['maxdown_ratio'] = stats.maxdown/stats.sl
-                    stats['updown_ratio'] = stats.countup/stats.countup
+                                                                        stats = stats.append(df)
+    stats['profit_ratio'] = stats.profit_sum/stats.sl
+    stats['maxdown_ratio'] = stats.maxdown/stats.sl
+    stats['updown_ratio'] = stats.countup/stats.countdown
     
 #                    stats.to_csv(sep=';',path_or_buf='../Data/stats_'+str(openhour)+'_'+str(closehour)+'_'+str(sl)+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     
