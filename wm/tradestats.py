@@ -464,16 +464,16 @@ def stathyper(trades,tradetypes,openhours,closehours,sls,bar2froms,bar2tos,bar1f
     
 #                    stats.to_csv(sep=';',path_or_buf='../Data/stats_'+str(openhour)+'_'+str(closehour)+'_'+str(sl)+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     
-    
-    stats0 = stats.sort_values("count",ascending=False).head(1000)
-    stats0 = stats0.append(stats.sort_values("countup",ascending=False).head(1000))
-    stats0 = stats0.append(stats.sort_values("countdown",ascending=False).head(1000))
-    stats0 = stats0.append(stats.sort_values("mean",ascending=False).head(1000))
-    stats0 = stats0.append(stats.sort_values("profit_sum",ascending=False).head(1000))
-    stats0 = stats0.append(stats.sort_values("maxdown",ascending=True).head(1000))
-    stats0 = stats0.append(stats.sort_values("profit_ratio",ascending=False).head(1000))
-    stats0 = stats0.append(stats.sort_values("maxdown_ratio",ascending=False).head(1000))
-    stats0 = stats0.append(stats.sort_values("updown_ratio",ascending=False).head(1000))
+    top = 500
+    stats0 = stats.sort_values("count",ascending=False).head(top)
+    stats0 = stats0.append(stats.sort_values("countup",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("countdown",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("mean",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("profit_sum",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("maxdown",ascending=True).head(top))
+    stats0 = stats0.append(stats.sort_values("profit_ratio",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("maxdown_ratio",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("updown_ratio",ascending=False).head(top))
     stats0 = stats0.drop_duplicates()
     stats0.to_csv(sep=';',path_or_buf='../Data/stats_'+str(openhour)+'_'+str(closehour)+'_'+str(sl)+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     return stats0
@@ -490,7 +490,7 @@ def calculatestats(trades,tradetype,openhour,closehour,sl,bar2from,bar2to,bar1fr
     pr_c = len(stats0)
     pr_mean = stats0.profit.mean()
     pr_sum = stats0.profit.sum()
-    if ((pr_c>200) and (pr_sum)>0):
+    if ((pr_c>0) and (pr_sum)>0):
         pr_c_u = len(stats0[stats0.profit>=0])
         pr_c_d = len(stats0[stats0.profit<0])
         pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
