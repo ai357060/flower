@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime
+import math
+from datetime import timedelta
 """
 from scipy import stats
 import scipy.optimize
@@ -430,8 +432,16 @@ def stathyperparams(trades,params):
     starttime = datetime.now()
 
     trades = trades[trades.tradetype!=0]
-    
-    stats = pd.DataFrame(index=range(10000),columns=['tradetype',
+    seq = {}
+    stats = pd.DataFrame()
+    seq['execs'] = 0
+    seq['locs'] = 0
+    seq['allexecs'] = 0
+    seq['dryrun'] = True
+    stats = execstats_tradetype(trades,stats,params,seq)
+    print('allexecs: ',seq['allexecs'])
+#index=range(10000),
+    stats = pd.DataFrame(columns=['tradetype',
                                                      'yearfrom','yearto',
                                                      'openhour','closehour',
                                                      'sl',
@@ -447,9 +457,11 @@ def stathyperparams(trades,params):
                                                      'profit_sum','profit_ratio',
                                                      'maxdown','maxdown_ratio'
                                                     ])
-    seq = {}
-    seq['execs'] = 0
-    execstats_tradetype(trades,stats,params,seq)
+    seq['dryrun'] = False
+    seq['starttime'] = datetime.now()
+    seq['lastrun'] = datetime.now()
+    
+    stats = execstats_tradetype(trades,stats,params,seq)
     
     stats['profit_ratio'] = stats.profit_sum/stats.sl
     stats['maxdown_ratio'] = stats.maxdown/stats.sl
@@ -467,53 +479,47 @@ def stathyperparams(trades,params):
                   path_or_buf='../Data/stats_'+str(params['filename'])+'.csv',
                   date_format="%Y-%m-%d",index = False,na_rep='')
     endtime = datetime.now()
-    print(seq['execs'],'   ',str(endtime - starttime))
+    print('finish: ',seq['execs'],'   ',str(endtime - starttime))
     return stats0
 
 
 def execstats_tradetype(trades,stats,params,seq):
     for tradetype in params['tradetypes']:
-        print('tradetype',tradetype)
         seq['tradetype'] = tradetype
-        execstats_openclosehour(trades,stats,params,seq)
-    return 
+        stats = execstats_openclosehour(trades,stats,params,seq)
+    return stats
 
 def execstats_openclosehour(trades,stats,params,seq):
     for openhour in params['openhours']:
-        print('  openhour',openhour)
         for closehour in params['closehours']:                
-            print('    closehour',closehour)
             seq['openhour'] = openhour
             seq['closehour'] = closehour
-            execstats_sl(trades,stats,params,seq)
-    return 
+            stats = execstats_sl(trades,stats,params,seq)
+    return stats
 
 def execstats_sl(trades,stats,params,seq):
     for sl in params['sls']:                
-        print('      sl',sl)
         seq['sl'] = sl
-        execstats_bar2(trades,stats,params,seq)
-    return 
+        stats = execstats_bar2(trades,stats,params,seq)
+    return stats
 
 def execstats_bar2(trades,stats,params,seq):
     for bar2from in params['bar2froms']:
-        print('        bar2from',bar2from)
         for bar2to in params['bar2tos']:
             if (bar2to>bar2from):
                 seq['bar2from'] = bar2from
                 seq['bar2to'] = bar2to
-                execstats_bar1(trades,stats,params,seq)
-    return 
+                stats = execstats_bar1(trades,stats,params,seq)
+    return stats
 
 def execstats_bar1(trades,stats,params,seq):
     for bar1from in params['bar1froms']:
-        print('          bar1from',bar1from)
         for bar1to in params['bar1tos']:
             if (bar1to>bar1from):
                 seq['bar1from'] = bar1from
                 seq['bar1to'] = bar1to
-                execstats_gr12(trades,stats,params,seq)
-    return 
+                stats = execstats_gr12(trades,stats,params,seq)
+    return stats
 
 def execstats_gr12(trades,stats,params,seq):
     for gr2from in params['gr2froms']:
@@ -526,8 +532,8 @@ def execstats_gr12(trades,stats,params,seq):
                             seq['gr2to'] = gr2to
                             seq['gr1from'] = gr1from
                             seq['gr1to'] = gr1to
-                            execstats_grslopes(trades,stats,params,seq)
-    return 
+                            stats = execstats_grslopes(trades,stats,params,seq)
+    return stats
 
 def execstats_grslopes(trades,stats,params,seq):
     for gslopefrom in params['gslopefroms']:
@@ -540,8 +546,8 @@ def execstats_grslopes(trades,stats,params,seq):
                             seq['gslopeto'] = gslopeto
                             seq['rslopefrom'] = rslopefrom
                             seq['rslopeto'] = rslopeto
-                            execstats_grc(trades,stats,params,seq)
-    return 
+                            stats = execstats_grc(trades,stats,params,seq)
+    return stats
 
 def execstats_grc(trades,stats,params,seq):
     for grcfrom in params['grcfroms']:
@@ -549,8 +555,8 @@ def execstats_grc(trades,stats,params,seq):
             if(grcto>grcfrom):
                 seq['grcfrom'] = grcfrom
                 seq['grcto'] = grcto
-                execstats_years(trades,stats,params,seq)
-    return 
+                stats = execstats_years(trades,stats,params,seq)
+    return stats
 
 def execstats_years(trades,stats,params,seq):
     for yearfrom in params['yearfroms']:
@@ -558,8 +564,8 @@ def execstats_years(trades,stats,params,seq):
             if(yearto>=yearfrom):
                 seq['yearfrom'] = yearfrom
                 seq['yearto'] = yearto
-                execstats_red(trades,stats,params,seq)
-    return 
+                stats = execstats_red(trades,stats,params,seq)
+    return stats
 
 def execstats_red(trades,stats,params,seq):
     for redfrom in params['redfroms']:
@@ -567,8 +573,8 @@ def execstats_red(trades,stats,params,seq):
             if(redto>redfrom):
                 seq['redfrom'] = redfrom
                 seq['redto'] = redto
-                execstats_barno(trades,stats,params,seq)
-    return 
+                stats = execstats_barno(trades,stats,params,seq)
+    return stats
 
 def execstats_barno(trades,stats,params,seq):
     for barnofrom in params['barnofroms']:
@@ -576,8 +582,8 @@ def execstats_barno(trades,stats,params,seq):
             if(barnoto>=barnofrom):
                 seq['barnofrom'] = barnofrom
                 seq['barnoto'] = barnoto
-                execstats_cross(trades,stats,params,seq)
-    return 
+                stats = execstats_cross(trades,stats,params,seq)
+    return stats
 
 def execstats_cross(trades,stats,params,seq):
     for crossfrom in params['crossfroms']:
@@ -585,12 +591,17 @@ def execstats_cross(trades,stats,params,seq):
             if(crossto>=crossfrom):
                 seq['crossfrom'] = crossfrom
                 seq['crossto'] = crossto
-                execstats(trades,stats,params,seq)
-    return 
+                stats = execstats(trades,stats,params,seq)
+    return stats
 
 
 def execstats(trades,stats,params,seq):
-    df = calculatestats(trades,seq['tradetype'],
+
+    if (seq['dryrun']):
+        seq['allexecs'] = seq['allexecs'] + 1
+    else:
+        seq['execs'] = seq['execs'] + 1
+        df = calculatestats(trades,seq['tradetype'],
                         seq['openhour'],seq['closehour'],
                         seq['sl'],
                         seq['bar2from'],seq['bar2to'],seq['bar1from'],seq['bar1to'],
@@ -602,11 +613,22 @@ def execstats(trades,stats,params,seq):
                         seq['barnofrom'],seq['barnoto'],
                         seq['crossfrom'],seq['crossto']                      
                        )
-#     if (isinstance(df, pd.DataFrame)):
-    if (not df is None):
-#         stats = stats.append(df,sort=False,ignore_index=True)
-        seq['execs'] = seq['execs'] + 1
-        stats.loc[seq['execs']] = df
+        if (not df is None):
+            seq['locs'] = seq['locs'] + 1
+#             stats.loc[seq['locs']] = df
+            stats = stats.append(df, ignore_index=True)
+            
+        if ((seq['execs'] % 1000)==0):
+            progress = (1.0*seq['execs']/seq['allexecs'])
+            print('_________progress:  ', "{:.4f}".format(progress*100.00))
+            elapsedtime = datetime.now() - seq['starttime']
+            print('elapsed time:       ',str(elapsedtime))
+            print('last runtime:       ',str(datetime.now() - seq['lastrun']))
+            seq['lastrun'] = datetime.now()
+            remainingtime = (elapsedtime.total_seconds()*(1-progress))/progress
+            print('remaining time:     ',timedelta(seconds=remainingtime))
+            print('estimated end time: ',str(datetime.now()+timedelta(seconds=remainingtime)))
+        
     return stats
                                
 
