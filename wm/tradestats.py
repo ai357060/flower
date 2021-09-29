@@ -465,7 +465,8 @@ def stathyperparams(trades,params):
     
     stats['profit_ratio'] = stats.profit_sum/stats.sl
     stats['maxdown_ratio'] = stats.maxdown/stats.sl
-    stats['updown_ratio'] = (stats.countup*1.0)/(stats.countdown+0.001)
+    stats['updown_ratio'] = (stats.countup*1.0)/(stats.countdown)
+    stats['mm_ratio'] = (stats.monthsup*1.0)/(stats.monthsdown)
     top = 500
     stats0 = stats.sort_values("count",ascending=False).head(top)
     stats0 = stats0.append(stats.sort_values("profit_sum",ascending=False).head(top))
@@ -474,12 +475,14 @@ def stathyperparams(trades,params):
     stats0 = stats0.append(stats.sort_values("updown_ratio",ascending=False).head(top))
     stats0 = stats0.append(stats.sort_values("monthsup",ascending=False).head(top))
     stats0 = stats0.append(stats.sort_values("monthsdown",ascending=True).head(top))
+    stats0 = stats0.append(stats.sort_values("mm_ratio",ascending=False).head(top))
     stats0 = stats0.drop_duplicates()
     stats0.to_csv(sep=';',
                   path_or_buf='../Data/stats_'+str(params['filename'])+'.csv',
                   date_format="%Y-%m-%d",index = False,na_rep='')
     endtime = datetime.now()
-    print('finish: ',seq['execs'],'   ',str(endtime - starttime))
+    print('finish:        ',str(datetime.now()))
+    print('duration:      ',str(endtime - starttime))
     return stats0
 
 
@@ -620,14 +623,14 @@ def execstats(trades,stats,params,seq):
             
         if ((seq['execs'] % 1000)==0):
             progress = (1.0*seq['execs']/seq['allexecs'])
-            print('_________progress:  ', "{:.4f}".format(progress*100.00))
+            print('____progress:  ', "{:.4f}".format(progress*100.00))
             elapsedtime = datetime.now() - seq['starttime']
-            print('elapsed time:       ',str(elapsedtime))
-            print('last runtime:       ',str(datetime.now() - seq['lastrun']))
+            print('elapsed:       ',str(elapsedtime))
+            print('last run:      ',str(datetime.now() - seq['lastrun']))
             seq['lastrun'] = datetime.now()
             remainingtime = (elapsedtime.total_seconds()*(1-progress))/progress
-            print('remaining time:     ',timedelta(seconds=remainingtime))
-            print('estimated end time: ',str(datetime.now()+timedelta(seconds=remainingtime)))
+            print('remaining:     ',timedelta(seconds=remainingtime))
+            print('estimated end: ',str(datetime.now()+timedelta(seconds=remainingtime)))
         
     return stats
                                
@@ -655,14 +658,14 @@ def calculatestats(trades,tradetype,openhour,closehour,sl,
                     (trades.tdi13green_red_change>=grcfrom)&(trades.tdi13green_red_change<=grcto)&
                     (trades.year>=yearfrom)&(trades.year<=yearto)&
                     (trades.tdi13red1>=redfrom)&(trades.tdi13red1<=redto)&
-                    (trades.tdi13barnumber>=barnofrom)&(trades.tdi13barnumber<=barnoto)&
+                    (trades.tdi13barnumber1>=barnofrom)&(trades.tdi13barnumber1<=barnoto)&
                     (trades.tdi13green_red_cross>=crossfrom)&(trades.tdi13green_red_cross<=crossto)
                    ]
     pr_c = len(stats0)
     pr_sum = stats0.profit.sum()
-    if ((pr_c>0) and (pr_sum)>0):
-        pr_c_u = len(stats0[stats0.profit>=0])
-        pr_c_d = len(stats0[stats0.profit<0])
+    pr_c_u = len(stats0[stats0.profit>=0])
+    pr_c_d = len(stats0[stats0.profit<0])
+    if ((pr_c>0) and (pr_sum>0) and (pr_c_d>0)):
         pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
         if (pr_maxdown>0):
             pr_maxdown = 0
