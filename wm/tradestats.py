@@ -53,14 +53,15 @@ def loaddata_4h(datafile):
     df['week'] = pd.DatetimeIndex(df['date']).week
     df['day'] = pd.DatetimeIndex(df['date']).day 
     df['hour'] = pd.DatetimeIndex(df['date']).hour
-    df['weekday'] = df.index.map(lambda v: pd.to_datetime(v).isocalendar()[1])   
+#     df['weekday'] = df.index.map(lambda v: pd.to_datetime(v).isocalendar()[1])   
+    df['weekday'] = df.date.dt.dayofweek
     df.loc[df.hour==2,'hour']=1
     df.loc[df.hour==6,'hour']=5
     df.loc[df.hour==10,'hour']=9
     df.loc[df.hour==14,'hour']=13
     df.loc[df.hour==18,'hour']=17
     df.loc[df.hour==22,'hour']=21
-    df=df[-(((df.weekday==6)|(df.weekday==7))&(df.volume==0))]
+    df=df[-(((df.weekday==5)|(df.weekday==6))&(df.volume==0))] # jedna świeca w niedziele zostaje.
     df.reset_index(inplace = True, drop = True)
     df['id'] = df.index    
     return df
@@ -379,8 +380,9 @@ def cleartrades(df,save=False):
     return df
 
 
-def preparetrades(masterFrame, trtypes,openhours,closehours,sls):
+def preparetrades(masterFrame, trtypes,openhours,closehours,sls,yearfrom,yearto):
     first = True
+    masterFrame = masterFrame[(masterFrame.year>=yearfrom)&(masterFrame.year<=yearto)]
     for trtype in trtypes:
         for closehour in closehours:                
             for sl in sls:                
@@ -437,12 +439,13 @@ def stathyperparams(trades,params):
     seq['execs'] = 0
     seq['locs'] = 0
     seq['allexecs'] = 0
+    alldays = len(trades.drop_duplicates(['year','month','day']))
+    seq['mintrades'] = alldays/25 #once a month
     seq['dryrun'] = True
     stats = execstats_tradetype(trades,stats,params,seq)
     print('allexecs: ',seq['allexecs'])
 #index=range(10000),
     stats = pd.DataFrame(columns=['tradetype',
-                                                     'yearfrom','yearto',
                                                      'openhour','closehour',
                                                      'sl',
                                                      'bar2from','bar2to','bar1from','bar1to',
@@ -465,8 +468,8 @@ def stathyperparams(trades,params):
     
     stats['profit_ratio'] = stats.profit_sum/stats.sl
     stats['maxdown_ratio'] = stats.maxdown/stats.sl
-    stats['updown_ratio'] = (stats.countup*1.0)/(stats.countdown)
-    stats['mm_ratio'] = (stats.monthsup*1.0)/(stats.monthsdown)
+    stats['updown_ratio'] = (stats.countup*1.0)-(stats.countdown)
+    stats['mm_ratio'] = (stats.monthsup*1.0)-(stats.monthsdown)
     top = 500
     stats0 = stats.sort_values("count",ascending=False).head(top)
     stats0 = stats0.append(stats.sort_values("profit_sum",ascending=False).head(top))
@@ -558,15 +561,6 @@ def execstats_grc(trades,stats,params,seq):
             if(grcto>grcfrom):
                 seq['grcfrom'] = grcfrom
                 seq['grcto'] = grcto
-                stats = execstats_years(trades,stats,params,seq)
-    return stats
-
-def execstats_years(trades,stats,params,seq):
-    for yearfrom in params['yearfroms']:
-        for yearto in params['yeartos']:
-            if(yearto>=yearfrom):
-                seq['yearfrom'] = yearfrom
-                seq['yearto'] = yearto
                 stats = execstats_red(trades,stats,params,seq)
     return stats
 
@@ -604,14 +598,13 @@ def execstats(trades,stats,params,seq):
         seq['allexecs'] = seq['allexecs'] + 1
     else:
         seq['execs'] = seq['execs'] + 1
-        df = calculatestats(trades,seq['tradetype'],
+        df = calculatestats(trades,seq['mintrades'],seq['tradetype'],
                         seq['openhour'],seq['closehour'],
                         seq['sl'],
                         seq['bar2from'],seq['bar2to'],seq['bar1from'],seq['bar1to'],
                         seq['gr2from'],seq['gr2to'],seq['gr1from'],seq['gr1to'], 
                         seq['gslopefrom'],seq['gslopeto'],seq['rslopefrom'],seq['rslopeto'],
                         seq['grcfrom'],seq['grcto'],
-                        seq['yearfrom'],seq['yearto'],
                         seq['redfrom'],seq['redto'],
                         seq['barnofrom'],seq['barnoto'],
                         seq['crossfrom'],seq['crossto']                      
@@ -635,12 +628,11 @@ def execstats(trades,stats,params,seq):
     return stats
                                
 
-def calculatestats(trades,tradetype,openhour,closehour,sl,
+def calculatestats(trades,mintrades,tradetype,openhour,closehour,sl,
                    bar2from,bar2to,bar1from,bar1to,
                    gr2from,gr2to,gr1from,gr1to,
                    gslopefrom,gslopeto,rslopefrom,rslopeto,
                    grcfrom,grcto,
-                   yearfrom,yearto,
                    redfrom,redto,
                    barnofrom,barnoto,
                    crossfrom,crossto
@@ -656,7 +648,6 @@ def calculatestats(trades,tradetype,openhour,closehour,sl,
                     (trades.tdi13green_slope>=gslopefrom)&(trades.tdi13green_slope<=gslopeto)&
                     (trades.tdi13red_slope>=rslopefrom)&(trades.tdi13red_slope<=rslopeto)&
                     (trades.tdi13green_red_change>=grcfrom)&(trades.tdi13green_red_change<=grcto)&
-                    (trades.year>=yearfrom)&(trades.year<=yearto)&
                     (trades.tdi13red1>=redfrom)&(trades.tdi13red1<=redto)&
                     (trades.tdi13barnumber1>=barnofrom)&(trades.tdi13barnumber1<=barnoto)&
                     (trades.tdi13green_red_cross>=crossfrom)&(trades.tdi13green_red_cross<=crossto)
@@ -665,7 +656,7 @@ def calculatestats(trades,tradetype,openhour,closehour,sl,
     pr_sum = stats0.profit.sum()
     pr_c_u = len(stats0[stats0.profit>=0])
     pr_c_d = len(stats0[stats0.profit<0])
-    if ((pr_c>0) and (pr_sum>0) and (pr_c_d>0)):
+    if ((pr_c>=mintrades) and (pr_sum>0)):
         pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
         if (pr_maxdown>0):
             pr_maxdown = 0
@@ -680,7 +671,6 @@ def calculatestats(trades,tradetype,openhour,closehour,sl,
               'rslopefrom':rslopefrom,'rslopeto':rslopeto,
               'gslopefrom':gslopefrom,'gslopeto':gslopeto,
               'grcfrom':grcfrom,'grcto':grcto,
-              'yearfrom':yearfrom,'yearto':yearto,
               'count':pr_c,'countup':pr_c_u,'countdown':pr_c_d,'profit_sum':pr_sum,
               'maxdown':pr_maxdown,'monthsup':monthsup,'monthsdown':monthsdown,
               'redfrom':redfrom,'redto':redto,
