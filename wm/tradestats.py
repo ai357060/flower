@@ -654,13 +654,14 @@ def calculatestats(trades,mintrades,tradetype,openhour,closehour,sl,
                    ]
     pr_c = len(stats0)
     pr_sum = stats0.profit.sum()
-    pr_c_u = len(stats0[stats0.profit>=0])
-    pr_c_d = len(stats0[stats0.profit<0])
+
     if ((pr_c>=mintrades) and (pr_sum>0)):
         pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
         if (pr_maxdown>0):
             pr_maxdown = 0
-        
+
+        pr_c_u = len(stats0[stats0.profit>=0])
+        pr_c_d = len(stats0[stats0.profit<0])            
         yearmonth = stats0.groupby(['year','month'])['profit'].sum().reset_index()
         monthsup = len(yearmonth[yearmonth.profit>0])
         monthsdown = len(yearmonth[yearmonth.profit<0])
