@@ -445,26 +445,51 @@ def stathyperparams(trades,params):
     stats = execstats_tradetype(trades,stats,params,seq)
     print('allexecs: ',seq['allexecs'])
 #index=range(10000),
-    stats = pd.DataFrame(columns=['tradetype',
-                                                     'openhour','closehour',
-                                                     'sl',
-                                                     'bar2from','bar2to','bar1from','bar1to',
-                                                     'gr2from','gr2to','gr1from','gr1to',
-                                                     'rslopefrom','rslopeto','gslopefrom','gslopeto',
-                                                     'grcfrom','grcto',
-                                                     'redfrom','redto',
-                                                     'barnofrom','barnoto',
-                                                     'crossfrom','crossto',
-                                                     'count','countup','countdown','updown_ratio',
-                                                     'monthsup','monthsdown',
-                                                     'profit_sum','profit_ratio',
-                                                     'maxdown','maxdown_ratio'
-                                                    ])
+    stats = pd.DataFrame(columns=['tradetype','openhour','closehour','sl',
+                                  'count','countup','countdown','updown_ratio',
+                                  'monthsup','monthsdown',
+                                  'profit_sum','profit_ratio',
+                                  'maxdown','maxdown_ratio',
+                                  'bar2from','bar2to','bar1from','bar1to',
+                                  'gr2from','gr2to','gr1from','gr1to',
+                                  'rslopefrom','rslopeto','gslopefrom','gslopeto',
+                                  'grcfrom','grcto',
+                                  'redfrom','redto',
+                                  'barnofrom','barnoto',
+                                  'crossfrom','crossto'
+                                 ])
     seq['dryrun'] = False
     seq['starttime'] = datetime.now()
     seq['lastrun'] = datetime.now()
     
     stats = execstats_tradetype(trades,stats,params,seq)
+
+    #scalanie
+    statsgb = stats.groupby(['tradetype',
+                             'openhour',
+                             'closehour',
+                             'sl',
+                             'count',
+                             'countup',
+                             'countdown',
+                             'monthsup',
+                             'monthsdown',
+                             'profit_sum',
+                             'maxdown'
+                            ])
+    stats = statsgb.size().to_frame(name='xx')
+    stats = stats.join(statsgb.agg({'bar2from': 'min','bar2to': 'max'}))
+    stats = stats.join(statsgb.agg({'bar1from': 'min','bar1to': 'max'}))
+    stats = stats.join(statsgb.agg({'gr2from': 'min','gr2to': 'max'}))
+    stats = stats.join(statsgb.agg({'gr1from': 'min','gr1to': 'max'}))
+    stats = stats.join(statsgb.agg({'rslopefrom': 'min','rslopeto': 'max'}))
+    stats = stats.join(statsgb.agg({'gslopefrom': 'min','gslopeto': 'max'}))
+    stats = stats.join(statsgb.agg({'grcfrom': 'min','grcto': 'max'}))
+    stats = stats.join(statsgb.agg({'redfrom': 'min','redto': 'max'}))
+    stats = stats.join(statsgb.agg({'barnofrom': 'min','barnoto': 'max'}))
+    stats = stats.join(statsgb.agg({'crossfrom': 'min','crossto': 'max'}))
+    stats = stats.reset_index()    
+    
     
     stats['profit_ratio'] = stats.profit_sum/stats.sl
     stats['maxdown_ratio'] = stats.maxdown/stats.sl
@@ -480,6 +505,14 @@ def stathyperparams(trades,params):
     stats0 = stats0.append(stats.sort_values("monthsdown",ascending=True).head(top))
     stats0 = stats0.append(stats.sort_values("mm_ratio",ascending=False).head(top))
     stats0 = stats0.drop_duplicates()
+    
+    stats0 = stats0[['tradetype','openhour','closehour','sl','count','countup','countdown','updown_ratio',
+                     'monthsup','monthsdown','mm_ratio','profit_sum','profit_ratio','maxdown','maxdown_ratio','xx',
+                     'bar2from','bar2to','bar1from','bar1to','gr2from','gr2to','gr1from','gr1to',
+                     'rslopefrom','rslopeto','gslopefrom','gslopeto','grcfrom','grcto',
+                     'redfrom','redto','barnofrom','barnoto','crossfrom','crossto']]
+    
+    
     stats0.to_csv(sep=';',
                   path_or_buf='../Data/stats_'+str(params['filename'])+'.csv',
                   date_format="%Y-%m-%d",index = False,na_rep='')
