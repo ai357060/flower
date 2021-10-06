@@ -152,14 +152,22 @@ def tdi1(prices,periods):
     df['mid1'] = df.rsi1/midperiod + df.rsi.shift(1).rolling(midperiod-1).sum()/midperiod
     df['green1_red1'] = df.green1 - df.red1
     df['red2'] = df.red.shift(1)
+    df['red3'] = df.red.shift(2)
     df['green2'] = df.green.shift(1)
+    df['green3'] = df.green.shift(2)
     df['mid2'] = df.mid.shift(1)
     df['green2_red2'] = df.green2 - df.red2
+    df['green3_red3'] = df.green3 - df.red3
     df['green_red_change'] = df.green1_red1 - df.green2_red2
+    df['green_red_change2'] = df.green2_red2 - df.green3_red3
     df['green_red_mul'] = df.green1_red1 * df.green2_red2
     df['green_red_cross'] = np.where(df.green_red_mul<=0,1,0)
+    df['green_red_mul2'] = df.green2_red2 * df.green3_red3
+    df['green_red_cross2'] = np.where(df.green_red_mul2<=0,1,0)
     df['red_slope'] = df.red1 - df.red2
+    df['red_slope2'] = df.red2 - df.red3
     df['green_slope'] = df.green1 - df.green2
+    df['green_slope2'] = df.green2 - df.green3
     df['green_red_slope_change'] = df.green_slope - df.red_slope
     df['green_red_dist'] = (df.green1 + df.green2)/2 - (df.red1 + df.red2)/2
     df['mid_slope'] = df.mid1 - df.mid2
@@ -169,7 +177,7 @@ def tdi1(prices,periods):
     df['haopen'] = (df.haopen.shift(1) + df.haclose.shift(1)) / 2
     df['hacolor'] = np.where(df.haclose>=df.haopen,1,-1)
     df['barnumber'] = df.groupby((df['hacolor'] != df['hacolor'].shift(1)).cumsum()).cumcount()+1
-
+    df['barnumber2'] = df.barnumber.shift(1)
     df['haclose1'] = prices['open']
     df['haopen1'] = df.haopen
     df['habarsize1'] = df.haclose1-df.haopen1
@@ -1220,3 +1228,73 @@ def runtrades_v2_4h_0(alltrades):
 
     stats = stathyperparams2(alltrades,params,conf)
     return stats
+
+def runtrades_v2_4h_1(alltrades):
+    conf   = {}
+    params = {}
+
+    conf['tradetype'] = 1
+    conf['openhour'] = 5
+    conf['closehour'] = 13
+    conf['sl'] = 30
+
+    params['tdi13habarsize2'] = [[-1000],[1000]]
+
+    params['tdi13habarsize1'] = [[-1000,-8,0,8,1000],[-1000,-8,0,8,1000]]
+
+    params['tdi13green2_red2'] = [[-1000],[1000]]
+
+    params['tdi13green1_red1'] = [[-1000,0,1000],[-1000,0,1000]]
+
+    params['tdi13red_slope'] = [[-1000,-3,0,3,1000],[-1000,-3,0,3,1000]]
+
+    params['tdi13green_slope'] = [[-1000,-8,-3,0,3,8,1000],[-1000,-8,-3,0,3,8,1000]]
+
+    params['tdi13green_red_change'] = [[-1000],[1000]]
+
+    params['tdi13red1'] = [[0,40,60,100],[0,40,60,100]]
+
+    params['tdi13barnumber1'] = [[1],[2,3,4,100]]
+
+    params['tdi13green_red_cross'] = [[0,1],[1,2]]
+
+    conf['filename'] = '2015_2021_5_13_30'
+
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
+
+def runtrades_v2_4h_2(alltrades):
+    conf   = {}
+    params = {}
+
+    conf['tradetype'] = 1
+    conf['openhour'] = 5
+    conf['closehour'] = 13
+    conf['sl'] = 10
+
+    params['tdi13habarsize2'] = [[-1000,-8,0,8,1000],[-1000,-8,0,8,1000]]
+
+#     params['tdi13habarsize1'] = [[-1000],[1000]]
+
+    params['tdi13green2_red2'] = [[-1000,-5,0,5,1000],[-1000,-5,0,5,1000]]
+
+#     params['tdi13green1_red1'] = [[-1000],[1000]]
+
+    params['tdi13red_slope2'] = [[-1000,-3,0,3,1000],[-1000,-3,0,3,1000]]
+
+    params['tdi13green_slope2'] = [[-1000,-8,-3,0,3,8,1000],[-1000,-8,-3,0,3,8,1000]]
+
+    params['tdi13green_red_change2'] = [[-1000,0,1000],[-1000,0,1000]]
+
+    params['tdi13red2'] = [[0,100],[0,100]]
+
+    params['tdi13barnumber2'] = [[1,100],[2,3,4,100]]
+
+    params['tdi13green_red_cross2'] = [[0,1],[1,2]]
+
+    conf['filename'] = '2015_2021_5_13_10'
+
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
+
+
