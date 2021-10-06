@@ -317,7 +317,10 @@ def cleartrades(df,save=False):
     
     df = df[df.closeindex!=-1]
     df = df.drop(['date'],1)
-    df = df.drop(['year'],1)
+#     df = df.drop(['year'],1)
+#     df = df.drop(['month'],1)
+    df = df.drop(['day'],1)
+    df = df.drop(['weekday'],1)
     df = df.drop(['open'],1)
     df = df.drop(['low'],1)
     df = df.drop(['high'],1)
@@ -331,7 +334,7 @@ def cleartrades(df,save=False):
     df = df.drop(['slprice'],1)
     df = df.drop(['id'],1)
 
-    df = df.drop(['profit'],1)
+#     df = df.drop(['profit'],1)
     
 #
     
@@ -367,13 +370,13 @@ def cleartrades(df,save=False):
     
 #     df = df[(df.tdi13habarsize1>-20)&(df.tdi13habarsize1<20)]
 #     df = df[(df.tdi13habarsize2>-20)&(df.tdi13habarsize2<20)]
-    df = df[(df.tdi13habarsize1<-10)|(df.tdi13habarsize1>10)]
-    df = df[(df.tdi13habarsize2<-10)|(df.tdi13habarsize2>10)]
-    df = df[(df.tradetype>0)]
+#     df = df[(df.tdi13habarsize1<-10)|(df.tdi13habarsize1>10)]
+#     df = df[(df.tdi13habarsize2<-10)|(df.tdi13habarsize2>10)]
+#     df = df[(df.tradetype>0)]
 
 #     df = df[(df.tdi13red_slope>-2.332) & (df.tdi13red_slope<=0.087)]
 #     df = df[(df.tdi13green_slope<=3.437)]
-#      df = df[(df.tdi13habarsize1>-2.519)&(df.tdi13habarsize1<=8.613)]
+#     df = df[(df.tdi13habarsize1>-2.519)&(df.tdi13habarsize1<=8.613)]
     
     
     
@@ -719,6 +722,145 @@ def find_maxdownseries(grouping):
     (group_label, df) = grouping 
     maxdownseries = (df.groupby((df['profit'] * df['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
     return({group_label: maxdownseries})
+
+
+def statsall(trades):
+    df = trades[trades.tradetype!=0]
+    df = df.reset_index()
+    
+    allcolumns = df.columns
+    staticcolumns = ['profit','profit1','hour','closehour','tradetype','index','year','month']
+    
+    dfcolumns = allcolumns
+    for cc in staticcolumns:
+        dfcolumns = np.delete(dfcolumns, np.where(dfcolumns == cc))    
+    
+#     dfcolumns = ['tdi13barnumber1','tdi13green_red_cross']
+    
+    ftcolumns = []
+    for cc in dfcolumns:
+        df[cc + '_f'] = df[cc]
+        df[cc + '_t'] = df[cc]
+#         ftcolumns.append(cc)
+        ftcolumns.append(cc + '_f')
+        ftcolumns.append(cc + '_t')
+    
+#     df = df[ftcolumns]
+    
+    df['id'] = df.index    
+
+    '''
+    low = .05
+    high = .95
+    quant_df = df[dfcolumns].quantile([low, high])
+    for cc in dfcolumns:
+        df[cc + '_f'] = np.where(df[cc + '_f']<quant_df.loc[low,cc],-1000,df[cc + '_f'])
+        df[cc + '_t'] = np.where(df[cc + '_f']<quant_df.loc[low,cc],quant_df.loc[low,cc],df[cc + '_t'])
+        df[cc + '_t'] = np.where(df[cc + '_t']>quant_df.loc[high,cc],1000,df[cc + '_t'])    
+        df[cc + '_f'] = np.where(df[cc + '_t']>quant_df.loc[high,cc],quant_df.loc[high,cc],df[cc + '_f'])    
+    '''
+# test   
+    '''
+    df = pd.DataFrame({'A' : [2,4,3,8,5],'B' : [5,8,6,4,7]})
+    dfcolumns = df.columns
+    for cc in dfcolumns:
+        df[cc + '_f'] = df[cc]
+        df[cc + '_t'] = df[cc]
+    dfcolumns1 = df.columns
+    df['id'] = df.index        
+    '''
+# test        
+        
+    mul = 1
+    for cc in dfcolumns:
+        df[cc + '_f'] = np.floor(df[cc + '_f']/mul)*mul
+        df[cc + '_t'] = np.where(np.ceil(df[cc + '_t']/mul)*mul==df[cc + '_t'],df[cc + '_t']+mul,np.ceil(df[cc + '_t']/mul)*mul)        
+        
+#     df.to_csv(sep=';',path_or_buf='../Data/trades_ranged_b_'+str(mul)+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+        
+    onemore=1
+    while onemore>0:
+        starttime = datetime.now()
+        lastrun   = datetime.now()
+        onemore=0
+        print('_x')
+        for i in range(1,len(df)):
+            df['ii'] = df.id.shift(-i)
+            df['mm'] = 1
+            df['dif'] = 0
+            for cc in dfcolumns:
+                df[cc + '_f_s'] = df[cc + '_f'].shift(-i)
+                df[cc + '_t_s'] = df[cc + '_t'].shift(-i)
+                df['mm'] = np.where(isoverlap(df[cc + '_f'],df[cc + '_t'],df[cc + '_f_s'],df[cc + '_t_s']),df.mm,0)
+                df['dif'] = np.where((df[cc + '_f']!=df[cc + '_f_s'])|(df[cc + '_t']!=df[cc + '_t_s']),1,df.dif)
+#             display(df)
+
+            df['m'] = df.mm * df.dif
+#             if (df.m.sum()>50):
+#                 df.to_csv(sep=';',path_or_buf='../Data/trades_ranged_b_'+str(mul)+'_'+str(i)+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+            if (df.m.sum()>0):
+#                 print(df.m.sum())
+                for cc in dfcolumns:
+                    df.loc[df.m==1,cc + '_f'] = df[[cc + '_f',cc + '_f_s']].min(axis=1)
+                    df.loc[df.m==1,cc + '_t'] = df[[cc + '_t',cc + '_t_s']].max(axis=1)
+                    df[cc + '_f'] = df[['id',cc + '_f',cc + '_t']].merge(df[df.m==1][['ii',cc + '_f',cc + '_t']],
+                                             left_on=['id'],suffixes=('', '_y'), 
+                                             right_on = ['ii'], how='left')[cc + '_f_y'].fillna(df[cc + '_f'])
+                    df[cc + '_t'] = df[['id',cc + '_f',cc + '_t']].merge(df[df.m==1][['ii',cc + '_f',cc + '_t']],
+                                             left_on=['id'],suffixes=('', '_y'), 
+                                             right_on = ['ii'], how='left')[cc + '_t_y'].fillna(df[cc + '_t'])
+#             display(df)
+
+            if ((i% np.ceil(len(df)/10))==0):
+                progress = (1.0*i/len(df))
+                print('____progress:  ', "{:.1f}".format(progress*100.00))
+                print('onemore:       ',onemore)
+                elapsedtime = datetime.now() - starttime
+                print('elapsed:       ',str(elapsedtime))
+                print('last run:      ',str(datetime.now() - lastrun))
+                lastrun   = datetime.now()
+                remainingtime = (elapsedtime.total_seconds()*(1-progress))/progress
+                print('remaining:     ',timedelta(seconds=remainingtime))
+                print('estimated end: ',str(datetime.now()+timedelta(seconds=remainingtime)))
+                
+            if onemore==0:
+                onemore = df.m.sum()
+    
+    df = df[np.concatenate((staticcolumns, ftcolumns))]
+    df.to_csv(sep=';',path_or_buf='../Data/trades_ranged_'+str(mul)+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+    
+    groupcolumns = ['hour','closehour','tradetype','year','month']
+    groupcolumns = np.append(groupcolumns, ftcolumns)
+    statsgb = df.groupby(by=list(groupcolumns))
+    stats = statsgb.size().to_frame(name='xx')
+    stats = stats.join(statsgb.agg({'profit': 'sum'}))
+    stats = stats.reset_index()   
+    stats['monthsup']   = np.where(stats.profit>0,1,0)
+    stats['monthsdown'] = np.where(stats.profit<0,1,0)
+
+    groupcolumns = ['hour','closehour','tradetype']
+    groupcolumns = np.append(groupcolumns, ftcolumns)
+    statsgb = stats.groupby(by=list(groupcolumns))
+    stats = statsgb.size().to_frame(name='yy')
+    stats = stats.join(statsgb.agg({'xx': 'sum'}).rename(columns={'xx': 'count'}))
+    stats = stats.join(statsgb.agg({'profit': 'sum'}).rename(columns={'profit': 'profit'}))
+    stats = stats.join(statsgb.agg({'monthsup': 'sum'}))
+    stats = stats.join(statsgb.agg({'monthsdown': 'sum'}))
+    stats = stats.reset_index()   
+    
+    stats.to_csv(sep=';',path_or_buf='../Data/stats_trades_ranged_'+str(mul)+'.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+    
+    
+    return df,stats
+
+def isoverlap(A,B,AA,BB):
+    slip = 0
+    return (
+            (((AA>=A)&(AA<=B+slip))|((BB>=A-slip)&(BB<=B)))
+            |
+            (((A>=AA)&(A<=BB+slip))|((B>=AA-slip)&(B<=BB)))
+    )
+
 
 #Bayesian Optimization
     
