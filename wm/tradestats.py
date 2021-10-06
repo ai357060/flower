@@ -1263,14 +1263,14 @@ def runtrades_v2_4h_1(alltrades):
     stats = stathyperparams2(alltrades,params,conf)
     return stats
 
-def runtrades_v2_4h_2(alltrades):
+def runtrades_v2_4h_2(alltrades,tt=1,oh=5,ch=13,sl=10):
     conf   = {}
     params = {}
 
-    conf['tradetype'] = 1
-    conf['openhour'] = 5
-    conf['closehour'] = 13
-    conf['sl'] = 10
+    conf['tradetype'] = tt
+    conf['openhour'] = oh
+    conf['closehour'] = ch
+    conf['sl'] = sl
 
     params['tdi13habarsize2'] = [[-1000,-8,0,8,1000],[-1000,-8,0,8,1000]]
 
@@ -1292,8 +1292,8 @@ def runtrades_v2_4h_2(alltrades):
 
     params['tdi13green_red_cross2'] = [[0,1],[1,2]]
 
-    conf['filename'] = '2015_2021_5_13_10'
-
+    conf['filename'] = '2015_2021_'+str(tt)+str(oh)+str(ch)+str(sl)
+    print(conf['filename'])
     stats = stathyperparams2(alltrades,params,conf)
     return stats
 
