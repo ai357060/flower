@@ -724,6 +724,158 @@ def find_maxdownseries(grouping):
     return({group_label: maxdownseries})
 
 
+def stathyperparams2(trades,params,conf):
+    starttime = datetime.now()
+
+    trades = trades[trades.tradetype!=0]
+    seq = {}
+    stats = pd.DataFrame()
+
+    seq['tradetype'] = conf['tradetype']
+    seq['openhour']  = conf['openhour']
+    seq['closehour'] = conf['closehour']
+    seq['sl']        = conf['sl']
+    
+    seq['execs'] = 0
+    seq['locs'] = 0
+    seq['allexecs'] = 0
+    alldays = len(trades.drop_duplicates(['year','month','day']))
+    seq['mintrades'] = alldays/25 #once a month
+    seq['dryrun'] = True
+    stats = execstats2_r(trades,stats,params,seq)
+    print('allexecs: ',seq['allexecs'])
+#index=range(10000),
+    statscolumns = ['tradetype','openhour','closehour','sl',
+                                  'count','countup','countdown','updown_ratio',
+                                  'monthsup','monthsdown','mm_ratio',
+                                  'profit_sum','profit_ratio',
+                                  'maxdown','maxdown_ratio','xx'
+                    ]
+    for key in params.keys():
+        statscolumns = np.append(statscolumns,key+'from')
+        statscolumns = np.append(statscolumns,key+'to')
+    
+    stats = pd.DataFrame(columns=statscolumns)
+    seq['dryrun'] = False
+    seq['starttime'] = datetime.now()
+    seq['lastrun'] = datetime.now()
+    
+    stats = execstats2_r(trades,stats,params,seq)
+
+    #scalanie
+    statsgb = stats.groupby(['tradetype',
+                             'openhour',
+                             'closehour',
+                             'sl',
+                             'count',
+                             'countup',
+                             'countdown',
+                             'monthsup',
+                             'monthsdown',
+                             'profit_sum',
+                             'maxdown'
+                            ])
+    stats = statsgb.size().to_frame(name='xx')
+    for key in params.keys():
+        stats = stats.join(statsgb.agg({key+'from': 'min',key+'to': 'max'}))
+    stats = stats.reset_index()    
+    
+    stats['profit_ratio'] = stats.profit_sum/stats.sl
+    stats['maxdown_ratio'] = stats.maxdown/stats.sl
+    stats['updown_ratio'] = (stats.countup*1.0)-(stats.countdown)
+    stats['mm_ratio'] = (stats.monthsup*1.0)-(stats.monthsdown)
+    top = 500
+    stats0 = stats.sort_values("count",ascending=False).head(top)
+    stats0 = stats0.append(stats.sort_values("profit_sum",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("profit_ratio",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("maxdown_ratio",ascending=True).head(top))
+    stats0 = stats0.append(stats.sort_values("updown_ratio",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("monthsup",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("monthsdown",ascending=True).head(top))
+    stats0 = stats0.append(stats.sort_values("mm_ratio",ascending=False).head(top))
+    stats0 = stats0.drop_duplicates()
+    
+#     statscolumns = np.append(statscolumns,['xx'])
+    stats0 = stats0[statscolumns]
+    
+    
+    stats0.to_csv(sep=';',
+                  path_or_buf='../Data/stats_v2_'+str(conf['filename'])+'.csv',
+                  date_format="%Y-%m-%d",index = False,na_rep='')
+    endtime = datetime.now()
+    print('finish:        ',str(datetime.now()))
+    print('duration:      ',str(endtime - starttime))
+    return stats0
+
+def execstats2_r(trades,stats,params,seq,cursor=0):
+    if (cursor<len(params)):
+        key = list(params.keys())[cursor]
+        for ifrom in params[key][0]:
+            for ito in params[key][1]:
+                if (ito>ifrom):
+                    seq[key] = [ifrom,ito]
+                    stats = execstats2_r(trades,stats,params,seq,cursor+1)
+    else:
+        stats = execstats2(trades,stats,params,seq)
+    return stats
+    
+def execstats2(trades,stats,params,seq):
+
+    if (seq['dryrun']):
+        seq['allexecs'] = seq['allexecs'] + 1
+    else:
+        seq['execs'] = seq['execs'] + 1
+        df = calculatestats2(trades,params,seq)                  
+        if (not df is None):
+            seq['locs'] = seq['locs'] + 1
+            stats = stats.append(df, ignore_index=True)
+            
+        if ((seq['execs'] % 1000)==0):
+            progress = (1.0*seq['execs']/seq['allexecs'])
+            print('____progress:  ', "{:.4f}".format(progress*100.00))
+            elapsedtime = datetime.now() - seq['starttime']
+            print('elapsed:       ',str(elapsedtime))
+            print('last run:      ',str(datetime.now() - seq['lastrun']))
+            seq['lastrun'] = datetime.now()
+            remainingtime = (elapsedtime.total_seconds()*(1-progress))/progress
+            print('remaining:     ',timedelta(seconds=remainingtime))
+            print('estimated end: ',str(datetime.now()+timedelta(seconds=remainingtime)))
+        
+    return stats
+
+def calculatestats2(trades,params,seq):
+    stats0 = trades[(trades.tradetype==seq['tradetype'])&
+                    (trades.hour==seq['openhour'])&
+                    (trades.closehour==seq['closehour'])&
+                    (trades.sl==seq['sl'])]
+    for kk in params.keys():
+        stats0 = stats0[(stats0[kk]>=seq[kk][0])&(stats0[kk]<seq[kk][1])]
+            
+    pr_c = len(stats0)
+    pr_sum = stats0.profit.sum()
+    if ((pr_c>=seq['mintrades']) and (pr_sum>0)):
+        pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
+        if (pr_maxdown>0):
+            pr_maxdown = 0
+
+        pr_c_u = len(stats0[stats0.profit>=0])
+        pr_c_d = len(stats0[stats0.profit<0])            
+        yearmonth = stats0.groupby(['year','month'])['profit'].sum().reset_index()
+        monthsup = len(yearmonth[yearmonth.profit>0])
+        monthsdown = len(yearmonth[yearmonth.profit<0])
+        
+        df = {'tradetype':seq['tradetype'],'openhour':seq['openhour'],'closehour':seq['closehour'],'sl':seq['sl'],
+              'count':pr_c,'countup':pr_c_u,'countdown':pr_c_d,'profit_sum':pr_sum,
+              'maxdown':pr_maxdown,'monthsup':monthsup,'monthsdown':monthsdown
+             }
+        for kk in params.keys():
+            df[kk+'from'] = seq[kk][0]
+            df[kk+'to'] = seq[kk][1]
+    else:
+        df = None
+    return df
+
+
 def statsall(trades):
     df = trades[trades.tradetype!=0]
     df = df.reset_index()
@@ -906,6 +1058,165 @@ with catch_warnings():
 print('Best Accuracy: %.3f' % (result.fun))
 print('Best Parameters: year=%d,closehour=%d, sl=%d' % (result.x[1], result.x[2], result.x[3]))
 """    
-    
-    
-    
+
+
+
+
+def runtrades_v0_4h_0(alltrades):
+    tradetypes = [1]
+    openhours = [5]
+    closehours = [13]
+    sls = [10]
+    bar2froms = [-1000,-20,-10,0,10,20,1000]
+    bar2tos = [-1000,-20,-10,0,10,20,1000]
+    bar1froms = [-1000,-20,-10,0,10,20,1000]
+    bar1tos =[-1000,-20,-10,0,10,20,1000]
+    bar2froms = [-1000,1000]
+    bar2tos = [-1000,1000]
+    bar1froms = [-1000,1000]
+    bar1tos =[-1000,1000]
+    gr2froms = [-1000,-8,-3,0,3,8,1000]
+    gr2tos = [-1000,-8,-3,0,3,8,1000]
+    gr1froms = [-1000,-8,-3,0,3,8,1000]
+    gr1tos = [-1000,-8,-3,0,3,8,1000]
+    gr2froms = [-1000,-10,-8,-6,-4,-2,0,2,4,6,8,10,1000]
+    gr2tos = [-1000,-10,-8,-6,-4,-2,0,2,4,6,8,10,1000]
+    gr1froms = [-1000,-10,-8,-6,-4,-2,0,2,4,6,8,10,1000]
+    gr1tos = [-1000,-10,-8,-6,-4,-2,0,2,4,6,8,10,1000]
+    starttime = datetime.now()
+    stats = stathyper(alltrades,tradetypes,openhours,closehours,sls,bar2froms,bar2tos,bar1froms,bar1tos,gr2froms,gr2tos,gr1froms,gr1tos)
+    endtime = datetime.now()
+    print(str(endtime - starttime))
+    return stats
+
+
+def runtrades_v1_4h_0(alltrades):
+    params = {}
+
+    params['tradetypes'] = [1]
+    params['openhours'] = [5]
+    params['closehours'] = [13]
+    params['sls'] = [10]
+
+    params['bar2froms'] = [-1000]
+    params['bar2tos'] = [1000]
+
+    params['bar1froms'] = [-1000]
+    params['bar1tos'] =[1000]
+
+    params['gr2froms'] = [-1000]
+    params['gr2tos'] = [1000]
+
+    params['gr1froms'] = [-1000]
+    params['gr1tos'] = [1000]
+
+    params['rslopefroms'] = [-1000,-3,0,3,1000]
+    params['rslopetos'] = [-1000,-3,0,3,1000]
+
+    params['gslopefroms'] = [-1000,-8,-3,0,3,8,1000]
+    params['gslopetos'] = [-1000,-8,-3,0,3,8,1000]
+
+    params['grcfroms'] = [-1000]
+    params['grctos'] = [1000]
+
+    params['redfroms'] = [0,100]
+    params['redtos'] = [0,100]
+
+    params['barnofroms'] = [1,100]
+    params['barnotos'] = [1,100]
+
+    params['crossfroms'] = [0,1]
+    params['crosstos'] = [0,1]
+
+    params['filename'] = '2015_2021_5_13_10'
+
+    stats = stathyperparams(alltrades,params)
+    return stats
+
+def runtrades_v1_4h_1(alltrades):
+    params = {}
+
+    params['tradetypes'] = [1]
+    params['openhours'] = [5]
+    params['closehours'] = [13]
+    params['sls'] = [10]
+
+    params['bar2froms'] = [-1000,-8,0,8,1000]
+    params['bar2tos'] = [-1000,-8,0,8,1000]
+    params['bar2froms'] = [-1000]
+    params['bar2tos'] = [1000]
+
+    params['bar1froms'] = [-1000,-8,0,8,1000]
+    params['bar1tos'] =[-1000,-8,0,8,1000]
+    # params['bar1froms'] = [-1000]
+    # params['bar1tos'] =[1000]
+
+    params['gr2froms'] = [-1000]
+    params['gr2tos'] = [1000]
+
+    params['gr1froms'] = [-1000,0,1000]
+    params['gr1tos'] = [-1000,0,1000]
+    # params['gr1froms'] = [-1000]
+    # params['gr1tos'] = [1000]
+
+    params['rslopefroms'] = [-1000,-3,0,3,1000]
+    params['rslopetos'] = [-1000,-3,0,3,1000]
+
+    params['gslopefroms'] = [-1000,-8,-3,0,3,8,1000]
+    params['gslopetos'] = [-1000,-8,-3,0,3,8,1000]
+
+    params['grcfroms'] = [-1000]
+    params['grctos'] = [1000]
+
+    params['redfroms'] = [0,40,60,100]
+    params['redtos'] = [0,40,60,100]
+    # params['redfroms'] = [0,100]
+    # params['redtos'] = [0,100]
+
+    params['barnofroms'] = [1]
+    params['barnotos'] = [1,2,3,100]
+    # params['barnofroms'] = [1,100]
+    # params['barnotos'] = [1,100]
+
+    params['crossfroms'] = [0,1]
+    params['crosstos'] = [0,1]
+
+    params['filename'] = '2015_2021_5_13_10'
+
+    stats = stathyperparams(alltrades,params)
+    return stats
+
+
+def runtrades_v2_4h_0(alltrades):
+    conf   = {}
+    params = {}
+
+    conf['tradetype'] = 1
+    conf['openhour'] = 5
+    conf['closehour'] = 13
+    conf['sl'] = 10
+
+    params['tdi13habarsize2'] = [[-1000],[1000]]
+
+    params['tdi13habarsize1'] = [[-1000],[1000]]
+
+    params['tdi13green2_red2'] = [[-1000],[1000]]
+
+    params['tdi13green1_red1'] = [[-1000],[1000]]
+
+    params['tdi13red_slope'] = [[-1000,-3,0,3,1000],[-1000,-3,0,3,1000]]
+
+    params['tdi13green_slope'] = [[-1000,-8,-3,0,3,8,1000],[-1000,-8,-3,0,3,8,1000]]
+
+    params['tdi13green_red_change'] = [[-1000],[1000]]
+
+    params['tdi13red1'] = [[0,100],[0,100]]
+
+    params['tdi13barnumber1'] = [[1,100],[2,100]]
+
+    params['tdi13green_red_cross'] = [[0,1],[1,2]]
+
+    conf['filename'] = '2015_2021_5_13_10'
+
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
