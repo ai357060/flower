@@ -620,7 +620,7 @@ def execstats_red(trades,stats,params,seq):
 def execstats_barno(trades,stats,params,seq):
     for barnofrom in params['barnofroms']:
         for barnoto in params['barnotos']:
-            if(barnoto>=barnofrom):
+            if(barnoto>barnofrom):
                 seq['barnofrom'] = barnofrom
                 seq['barnoto'] = barnoto
                 stats = execstats_cross(trades,stats,params,seq)
@@ -629,7 +629,7 @@ def execstats_barno(trades,stats,params,seq):
 def execstats_cross(trades,stats,params,seq):
     for crossfrom in params['crossfroms']:
         for crossto in params['crosstos']:
-            if(crossto>=crossfrom):
+            if(crossto>crossfrom):
                 seq['crossfrom'] = crossfrom
                 seq['crossto'] = crossto
                 stats = execstats(trades,stats,params,seq)
@@ -685,16 +685,16 @@ def calculatestats(trades,mintrades,tradetype,openhour,closehour,sl,
                     (trades.hour==openhour)&
                     (trades.closehour==closehour)&
                     (trades.sl==sl)&
-                    (trades.tdi13habarsize2>=bar2from)&(trades.tdi13habarsize2<=bar2to)&
-                    (trades.tdi13habarsize1>=bar1from)&(trades.tdi13habarsize1<=bar1to)&
-                    (trades.tdi13green2_red2>=gr2from)&(trades.tdi13green2_red2<=gr2to)&
-                    (trades.tdi13green1_red1>=gr1from)&(trades.tdi13green1_red1<=gr1to)&
-                    (trades.tdi13green_slope>=gslopefrom)&(trades.tdi13green_slope<=gslopeto)&
-                    (trades.tdi13red_slope>=rslopefrom)&(trades.tdi13red_slope<=rslopeto)&
-                    (trades.tdi13green_red_change>=grcfrom)&(trades.tdi13green_red_change<=grcto)&
-                    (trades.tdi13red1>=redfrom)&(trades.tdi13red1<=redto)&
-                    (trades.tdi13barnumber1>=barnofrom)&(trades.tdi13barnumber1<=barnoto)&
-                    (trades.tdi13green_red_cross>=crossfrom)&(trades.tdi13green_red_cross<=crossto)
+                    (trades.tdi13habarsize2>=bar2from)&(trades.tdi13habarsize2<bar2to)&
+                    (trades.tdi13habarsize1>=bar1from)&(trades.tdi13habarsize1<bar1to)&
+                    (trades.tdi13green2_red2>=gr2from)&(trades.tdi13green2_red2<gr2to)&
+                    (trades.tdi13green1_red1>=gr1from)&(trades.tdi13green1_red1<gr1to)&
+                    (trades.tdi13green_slope>=gslopefrom)&(trades.tdi13green_slope<gslopeto)&
+                    (trades.tdi13red_slope>=rslopefrom)&(trades.tdi13red_slope<rslopeto)&
+                    (trades.tdi13green_red_change>=grcfrom)&(trades.tdi13green_red_change<grcto)&
+                    (trades.tdi13red1>=redfrom)&(trades.tdi13red1<redto)&
+                    (trades.tdi13barnumber1>=barnofrom)&(trades.tdi13barnumber1<barnoto)&
+                    (trades.tdi13green_red_cross>=crossfrom)&(trades.tdi13green_red_cross<crossto)
                    ]
     pr_c = len(stats0)
     pr_sum = stats0.profit.sum()
@@ -1147,7 +1147,7 @@ def runtrades_v1_4h_1(alltrades):
     params['tradetypes'] = [1]
     params['openhours'] = [5]
     params['closehours'] = [13]
-    params['sls'] = [10]
+    params['sls'] = [30]
 
     params['bar2froms'] = [-1000,-8,0,8,1000]
     params['bar2tos'] = [-1000,-8,0,8,1000]
@@ -1182,14 +1182,14 @@ def runtrades_v1_4h_1(alltrades):
     # params['redtos'] = [0,100]
 
     params['barnofroms'] = [1]
-    params['barnotos'] = [1,2,3,100]
+    params['barnotos'] = [2,3,4,100]
     # params['barnofroms'] = [1,100]
     # params['barnotos'] = [1,100]
 
     params['crossfroms'] = [0,1]
-    params['crosstos'] = [0,1]
+    params['crosstos'] = [1,2]
 
-    params['filename'] = '2015_2021_5_13_10'
+    params['filename'] = '2015_2021_5_13_30'
 
     stats = stathyperparams(alltrades,params)
     return stats
@@ -1272,25 +1272,25 @@ def runtrades_v2_4h_2(alltrades,tt=1,oh=5,ch=13,sl=10):
     conf['closehour'] = ch
     conf['sl'] = sl
 
-    params['tdi13habarsize2'] = [[-1000,-8,0,8,1000],[-1000,-8,0,8,1000]]
+#     params['tdi13habarsize2'] = [[-1000,-8,0,8,1000],[-1000,-8,0,8,1000]]
 
 #     params['tdi13habarsize1'] = [[-1000],[1000]]
 
-    params['tdi13green2_red2'] = [[-1000,-5,0,5,1000],[-1000,-5,0,5,1000]]
+#     params['tdi13green2_red2'] = [[-1000,0,1000],[-1000,0,1000]]
 
 #     params['tdi13green1_red1'] = [[-1000],[1000]]
 
-    params['tdi13red_slope2'] = [[-1000,-3,0,3,1000],[-1000,-3,0,3,1000]]
+    params['tdi13red_slope2'] = [[-1000,-5,-3,-2,-1,0,1,2,3,5,1000],[-1000,-5,-3,-2,-1,0,1,2,3,5,1000]]
 
-    params['tdi13green_slope2'] = [[-1000,-8,-3,0,3,8,1000],[-1000,-8,-3,0,3,8,1000]]
+    params['tdi13green_slope2'] = [[-1000,-8,-5,-3,-2,-1,0,1,2,3,5,8,1000],[-1000,-8,-5,-3,-2,-1,0,1,2,3,5,8,1000]]
 
     params['tdi13green_red_change2'] = [[-1000,0,1000],[-1000,0,1000]]
 
-    params['tdi13red2'] = [[0,100],[0,100]]
+    params['tdi13red2'] = [[0,30,40,50,60,100],[0,30,40,50,60,100]]
 
     params['tdi13barnumber2'] = [[1,100],[2,3,4,100]]
 
-    params['tdi13green_red_cross2'] = [[0,1],[1,2]]
+#     params['tdi13green_red_cross2'] = [[0,1],[1,2]]
 
     conf['filename'] = '2015_2021_'+str(tt)+str(oh)+str(ch)+str(sl)
     print(conf['filename'])
