@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import math
 from datetime import timedelta
+import itertools
 """
 from scipy import stats
 import scipy.optimize
@@ -831,9 +832,21 @@ def stathyperparams2(trades,params,conf):
                                   'profit_sum',
                                   'maxdown','xx'
                     ]
+    groupbycolumns = ['count',
+                             'countup',
+                             'countdown',
+                             'monthsup',
+                             'monthsdown',
+                             'profit_sum',
+                             'maxdown'
+                            ]
+
     for key in params.keys():
         statscolumns = np.append(statscolumns,key+'from')
-        statscolumns = np.append(statscolumns,key+'to')
+        if (params[key][0] == 0):
+            statscolumns = np.append(statscolumns,key+'to')
+        if (params[key][0] == 1):
+            groupbycolumns = np.append(groupbycolumns,key+'from')
     
     stats = pd.DataFrame(columns=statscolumns)
     seq['dryrun'] = False
@@ -843,18 +856,12 @@ def stathyperparams2(trades,params,conf):
     stats = execstats2_r(trades,stats,params,seq)
     stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     #scalanie
-    statsgb = stats.groupby(['count',
-                             'countup',
-                             'countdown',
-                             'monthsup',
-                             'monthsdown',
-                             'profit_sum',
-                             'maxdown'
-                            ])
+    statsgb = stats.groupby(by=list(groupbycolumns))
     stats = statsgb.size().to_frame(name='xx')
     
     for key in params.keys():
-        stats = stats.join(statsgb.agg({key+'from': 'min',key+'to': 'max'}))
+        if (params[key][0] == 0):
+            stats = stats.join(statsgb.agg({key+'from': 'min',key+'to': 'max'}))
     stats = stats.reset_index()    
     
 #     stats['profit_ratio'] = stats.profit_sum/stats.sl
@@ -885,13 +892,25 @@ def stathyperparams2(trades,params,conf):
     return stats0
 
 def execstats2_r(trades,stats,params,seq,cursor=0):
+#     print(cursor)
     if (cursor<len(params)):
         key = list(params.keys())[cursor]
-        for ifrom in params[key][0]:
-            for ito in params[key][1]:
-                if (ito>ifrom):
-                    seq[key] = [ifrom,ito]
-                    stats = execstats2_r(trades,stats,params,seq,cursor+1)
+        imode = params[key][0]
+        if (imode == 0):
+            for ifrom in params[key][1]:
+                for ito in params[key][2]:
+                    if (ito>ifrom):
+                        seq[key] = [imode,ifrom,ito]
+                        stats = execstats2_r(trades,stats,params,seq,cursor+1)
+        elif (imode == 1):
+            ifrom = params[key][1]
+            a = []
+            for L in range(1, len(ifrom)+1):
+                for subset in itertools.combinations(ifrom, L):
+                    a.append(subset)
+            for ifrom in a:
+                seq[key] = [imode,ifrom]
+                stats = execstats2_r(trades,stats,params,seq,cursor+1)
     else:
         stats = execstats2(trades,stats,params,seq)
     return stats
@@ -924,7 +943,13 @@ def calculatestats2(trades,params,seq):
     stats0 = trades.copy()
 #     print('oryg',len(stats0))
     for kk in params.keys():
-        stats0 = stats0[(stats0[kk]>=seq[kk][0])&(stats0[kk]<seq[kk][1])]
+        imode = seq[kk][0]
+        if (imode == 0):
+            stats0 = stats0[(stats0[kk]>=seq[kk][1])&(stats0[kk]<seq[kk][2])]
+        if (imode == 1):
+#             print(kk)
+#             print(seq[kk][1])
+            stats0 = stats0[stats0[kk].isin(seq[kk][1])]
 #         print(kk,len(stats0))
             
     pr_c = len(stats0)
@@ -944,8 +969,14 @@ def calculatestats2(trades,params,seq):
               'maxdown':pr_maxdown,'monthsup':monthsup,'monthsdown':monthsdown
              }
         for kk in params.keys():
-            df[kk+'from'] = seq[kk][0]
-            df[kk+'to'] = seq[kk][1]
+            imode = seq[kk][0]
+            if (imode == 0):
+                df[kk+'from'] = seq[kk][1]
+                df[kk+'to'] = seq[kk][2]
+            if (imode == 1):
+                ifrom = seq[kk][1]
+                str1 = ','.join(str(e) for e in ifrom)
+                df[kk+'from'] = str1
     else:
         df = None
     return df
@@ -1526,11 +1557,11 @@ def runstats_pa_v1(alltrades):
     conf   = {}
     params = {}
 
-    params['tradetype'] = [[1],[1.1]]
-    params['weekday'] = [[0,1,2,3,4],[0,1,2,3,4,5]]
-    params['sl'] = [[10,20,30,40,50,60],[10,20,30,40,50,60,70]]
-    params['slip'] = [[0,0.0005,0.001,0.0015,0.002],[0,0.0005,0.001,0.0015,0.002,0.003]]
-    params['pa_prev'] =[[1,2,3,4],[1,2,3,4,5]]
+    params['tradetype'] = [0,[1],[1.1]]
+    params['weekday'] = [0,[0,1,2,3,4],[0,1,2,3,4,5]]
+    params['sl'] = [0,[10,20,30,40,50,60],[10,20,30,40,50,60,70]]
+    params['slip'] = [0,[0,0.0005,0.001,0.0015,0.002],[0,0.0005,0.001,0.0015,0.002,0.003]]
+    params['pa_prev'] =[0,[1,2,3,4],[1,2,3,4,5]]
     conf['filename'] = 'pa_2015_2021_'
     print(conf['filename'])
     stats = stathyperparams2(alltrades,params,conf)
@@ -1541,12 +1572,12 @@ def runstats_pa_v3(alltrades):
     conf   = {}
     params = {}
 
-    params['tradetype'] = [[1],[1.1]]
-    params['weekday'] = [[0,1,2,3,4],[0,1,2,3,4,5]]
-    params['sl'] = [[10,20,30,40,50,60],[10,20,30,40,50,60,70]]
-    params['slip'] = [[0,0.0005,0.001,0.0015,0.002],[0,0.0005,0.001,0.0015,0.002,0.003]]
-    params['pa_prev'] =[[1,2,3,4],[1,2,3,4,5]]
-    conf['filename'] = 'pa_2015_2021_'
+    params['tradetype'] = [1,[1]]
+    params['weekday'] = [1,[0,1,2,3,4]]
+    params['sl'] = [0,[10,20,30,40,50,60],[10,20,30,40,50,60,70]]
+    params['slip'] = [0,[0,0.0005,0.001,0.0015,0.002],[0,0.0005,0.001,0.0015,0.002,0.003]]
+    params['pa_prev'] =[1,[1,2,3,4]]
+    conf['filename'] = 'pa_2015_2021_3_'
     print(conf['filename'])
     stats = stathyperparams2(alltrades,params,conf)
     return stats
