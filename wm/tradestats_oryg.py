@@ -273,6 +273,14 @@ def priceaction(prices,periods):
     df['close_prev'] = prices['close'].shift(1)
     
     df['pa'] = 0
+    df.loc[(df[['open','close']].max(axis=1)>=df[['open_prev','close_prev']].max(axis=1)) 
+           & (df[['open','close']].min(axis=1)<=df[['open_prev','close_prev']].min(axis=1))
+           & (df.high>=df.high_prev) & (df.low<=df.low_prev) & (df.close>df.open)
+           ,'pa'] = 4
+    df.loc[(df[['open','close']].max(axis=1)>=df[['open_prev','close_prev']].max(axis=1)) 
+           & (df[['open','close']].min(axis=1)<=df[['open_prev','close_prev']].min(axis=1))
+           & (df.high>=df.high_prev) & (df.low<=df.low_prev) & (df.close<=df.open)
+           ,'pa'] = -4
     df.loc[(df.high>=df.high_prev) & (df.low<=df.low_prev) & (df.close>df.open)
            ,'pa'] = 2
     df.loc[(df.high>=df.high_prev) & (df.low<=df.low_prev) & (df.close<=df.open)
@@ -285,14 +293,6 @@ def priceaction(prices,periods):
            & (df[['open','close']].min(axis=1)<=df[['open_prev','close_prev']].min(axis=1))
            & (df.close<=df.open)
            ,'pa'] = -3
-    df.loc[(df[['open','close']].max(axis=1)>=df[['open_prev','close_prev']].max(axis=1)) 
-           & (df[['open','close']].min(axis=1)<=df[['open_prev','close_prev']].min(axis=1))
-           & (df.high>=df.high_prev) & (df.low<=df.low_prev) & (df.close>df.open)
-           ,'pa'] = 4
-    df.loc[(df[['open','close']].max(axis=1)>=df[['open_prev','close_prev']].max(axis=1)) 
-           & (df[['open','close']].min(axis=1)<=df[['open_prev','close_prev']].min(axis=1))
-           & (df.high>=df.high_prev) & (df.low<=df.low_prev) & (df.close<=df.open)
-           ,'pa'] = -4
     df['body'] = df.open-df.close
     df['body'] = df.body.abs()
     df['upwick'] = df.high-df[['open','close']].max(axis=1)
@@ -817,6 +817,11 @@ def stathyperparams2(trades,params,conf):
     seq = {}
     stats = pd.DataFrame()
 
+    seq['tradetype'] = conf['tradetype']
+    seq['openhour']  = conf['openhour']
+    seq['closehour'] = conf['closehour']
+    seq['sl']        = conf['sl']
+    
     seq['execs'] = 0
     seq['locs'] = 0
     seq['allexecs'] = 0
@@ -826,10 +831,11 @@ def stathyperparams2(trades,params,conf):
     stats = execstats2_r(trades,stats,params,seq)
     print('allexecs: ',seq['allexecs'])
 #index=range(10000),
-    statscolumns = ['count','countup','countdown','updown_ratio',
+    statscolumns = ['tradetype','openhour','closehour','sl',
+                                  'count','countup','countdown','updown_ratio',
                                   'monthsup','monthsdown','mm_ratio',
-                                  'profit_sum',
-                                  'maxdown','xx'
+                                  'profit_sum','profit_ratio',
+                                  'maxdown','maxdown_ratio','xx'
                     ]
     for key in params.keys():
         statscolumns = np.append(statscolumns,key+'from')
@@ -841,9 +847,13 @@ def stathyperparams2(trades,params,conf):
     seq['lastrun'] = datetime.now()
     
     stats = execstats2_r(trades,stats,params,seq)
-    stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+#     stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     #scalanie
-    statsgb = stats.groupby(['count',
+    statsgb = stats.groupby(['tradetype',
+                             'openhour',
+                             'closehour',
+                             'sl',
+                             'count',
                              'countup',
                              'countdown',
                              'monthsup',
@@ -857,15 +867,15 @@ def stathyperparams2(trades,params,conf):
         stats = stats.join(statsgb.agg({key+'from': 'min',key+'to': 'max'}))
     stats = stats.reset_index()    
     
-#     stats['profit_ratio'] = stats.profit_sum/stats.sl
-#     stats['maxdown_ratio'] = stats.maxdown/stats.sl
+    stats['profit_ratio'] = stats.profit_sum/stats.sl
+    stats['maxdown_ratio'] = stats.maxdown/stats.sl
     stats['updown_ratio'] = (stats.countup*1.0)-(stats.countdown)
     stats['mm_ratio'] = (stats.monthsup*1.0)-(stats.monthsdown)
     top = 500
     stats0 = stats.sort_values("count",ascending=False).head(top)
     stats0 = stats0.append(stats.sort_values("profit_sum",ascending=False).head(top))
-#     stats0 = stats0.append(stats.sort_values("profit_ratio",ascending=False).head(top))
-#     stats0 = stats0.append(stats.sort_values("maxdown_ratio",ascending=True).head(top))
+    stats0 = stats0.append(stats.sort_values("profit_ratio",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("maxdown_ratio",ascending=True).head(top))
     stats0 = stats0.append(stats.sort_values("updown_ratio",ascending=False).head(top))
     stats0 = stats0.append(stats.sort_values("monthsup",ascending=False).head(top))
     stats0 = stats0.append(stats.sort_values("monthsdown",ascending=True).head(top))
@@ -921,11 +931,12 @@ def execstats2(trades,stats,params,seq):
     return stats
 
 def calculatestats2(trades,params,seq):
-    stats0 = trades.copy()
-#     print('oryg',len(stats0))
+    stats0 = trades[(trades.tradetype==seq['tradetype'])&
+                    (trades.hour==seq['openhour'])&
+                    (trades.closehour==seq['closehour'])&
+                    (trades.sl==seq['sl'])]
     for kk in params.keys():
         stats0 = stats0[(stats0[kk]>=seq[kk][0])&(stats0[kk]<seq[kk][1])]
-#         print(kk,len(stats0))
             
     pr_c = len(stats0)
     pr_sum = stats0.profit.sum()
@@ -940,7 +951,8 @@ def calculatestats2(trades,params,seq):
         monthsup = len(yearmonth[yearmonth.profit>0])
         monthsdown = len(yearmonth[yearmonth.profit<0])
         
-        df = {'count':pr_c,'countup':pr_c_u,'countdown':pr_c_d,'profit_sum':pr_sum,
+        df = {'tradetype':seq['tradetype'],'openhour':seq['openhour'],'closehour':seq['closehour'],'sl':seq['sl'],
+              'count':pr_c,'countup':pr_c_u,'countdown':pr_c_d,'profit_sum':pr_sum,
               'maxdown':pr_maxdown,'monthsup':monthsup,'monthsdown':monthsdown
              }
         for kk in params.keys():
@@ -1266,10 +1278,10 @@ def runtrades_v2_4h_0(alltrades):
     conf   = {}
     params = {}
 
-    params['tradetype'] = [[1],[2]]
-    params['hour'] = [[5],[6]]
-    params['closehour'] = [[13],[14]]
-    params['sl'] = [[10],[11]]
+    conf['tradetype'] = 1
+    conf['openhour'] = 5
+    conf['closehour'] = 13
+    conf['sl'] = 10
 
     params['tdi13habarsize2'] = [[-1000],[1000]]
 
@@ -1300,10 +1312,10 @@ def runtrades_v2_4h_1(alltrades):
     conf   = {}
     params = {}
 
-    params['tradetype'] = [[1],[1.1]]
-    params['hour'] = [[5],[5.1]]
-    params['closehour'] = [[13],[13.1]]
-    params['sl'] = [[30],[30.1]]
+    conf['tradetype'] = 1
+    conf['openhour'] = 5
+    conf['closehour'] = 13
+    conf['sl'] = 30
 
     params['tdi13habarsize2'] = [[-1000],[1000]]
 
@@ -1334,14 +1346,10 @@ def runtrades_v2_4h_2(alltrades,tt=1,oh=5,ch=13,sl=10):
     conf   = {}
     params = {}
 
-#     conf['tradetype'] = tt
-#     conf['openhour'] = oh
-#     conf['closehour'] = ch
-#     conf['sl'] = sl
-    params['tradetype'] = [[tt],[tt+0.1]]
-    params['hour'] = [[oh],[oh+0.1]]
-    params['closehour'] = [[ch],[ch+0.1]]
-    params['sl'] = [[sl],[sl+0.1]]
+    conf['tradetype'] = tt
+    conf['openhour'] = oh
+    conf['closehour'] = ch
+    conf['sl'] = sl
 
 #     params['tdi13habarsize2'] = [[-1000,-8,0,8,1000],[-1000,-8,0,8,1000]]
 
@@ -1522,31 +1530,36 @@ def stattrades_pa(trades):
     
     return stats
 
-def runstats_pa_v1(alltrades):
+def runstats_pa_v1(alltrades,tt=1,oh=5,ch=13,sl=10):
     conf   = {}
     params = {}
 
-    params['tradetype'] = [[1],[1.1]]
-    params['weekday'] = [[0,1,2,3,4],[0,1,2,3,4,5]]
-    params['sl'] = [[10,20,30,40,50,60],[10,20,30,40,50,60,70]]
-    params['slip'] = [[0,0.0005,0.001,0.0015,0.002],[0,0.0005,0.001,0.0015,0.002,0.003]]
-    params['pa_prev'] =[[1,2,3,4],[1,2,3,4,5]]
-    conf['filename'] = 'pa_2015_2021_'
-    print(conf['filename'])
-    stats = stathyperparams2(alltrades,params,conf)
-    return stats
+    conf['tradetype'] = tt
+    conf['openhour'] = oh
+    conf['closehour'] = ch
+    conf['sl'] = sl
 
+#     params['tdi13habarsize2'] = [[-1000,-8,0,8,1000],[-1000,-8,0,8,1000]]
 
-def runstats_pa_v3(alltrades):
-    conf   = {}
-    params = {}
+#     params['tdi13habarsize1'] = [[-1000],[1000]]
 
-    params['tradetype'] = [[1],[1.1]]
-    params['weekday'] = [[0,1,2,3,4],[0,1,2,3,4,5]]
-    params['sl'] = [[10,20,30,40,50,60],[10,20,30,40,50,60,70]]
-    params['slip'] = [[0,0.0005,0.001,0.0015,0.002],[0,0.0005,0.001,0.0015,0.002,0.003]]
-    params['pa_prev'] =[[1,2,3,4],[1,2,3,4,5]]
-    conf['filename'] = 'pa_2015_2021_'
+#     params['tdi13green2_red2'] = [[-1000,0,1000],[-1000,0,1000]]
+
+#     params['tdi13green1_red1'] = [[-1000],[1000]]
+
+    params['tdi13red_slope2'] = [[-1000,-5,-3,-2,-1,0,1,2,3,5,1000],[-1000,-5,-3,-2,-1,0,1,2,3,5,1000]]
+
+    params['tdi13green_slope2'] = [[-1000,-8,-5,-3,-2,-1,0,1,2,3,5,8,1000],[-1000,-8,-5,-3,-2,-1,0,1,2,3,5,8,1000]]
+
+    params['tdi13green_red_change2'] = [[-1000,0,1000],[-1000,0,1000]]
+
+    params['tdi13red2'] = [[0,30,40,50,60,100],[0,30,40,50,60,100]]
+
+    params['tdi13barnumber2'] = [[1,100],[2,3,4,100]]
+
+#     params['tdi13green_red_cross2'] = [[0,1],[1,2]]
+
+    conf['filename'] = '2015_2021_'+str(tt)+str(oh)+str(ch)+str(sl)
     print(conf['filename'])
     stats = stathyperparams2(alltrades,params,conf)
     return stats
