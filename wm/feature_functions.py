@@ -325,7 +325,24 @@ def macd(prices,periods):
     dict[periods[0]] = macddf
     results.df = dict
     return results
+
+def ma(prices,periods):
+    '''
+    :param prices; dataframe of OHLC currency data
+    :param periods; ema1, ema2, signal period
+    :return; macd
+    '''
+    results = holder()
+    dict = {}
     
+    madf = pd.DataFrame(index=prices.index)
+    madf['EMA'] = prices.close.ewm(span=periods[0]).mean()
+    madf['SMA'] = prices.close.rolling(window=periods[0]).mean()
+    dict[periods[0]] = madf
+    results.df = dict
+    return results
+
+
 def cci(prices, periods):
     '''
     :param prices; dataframe of OHLC currency data
