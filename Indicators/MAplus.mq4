@@ -48,10 +48,10 @@ extern int SMAperiod = 5;
 int OnInit()
   {
 //--- indicator buffers mapping
-   SetIndexBuffer(0,SMABuffer);
+   SetIndexBuffer(0,SMAdiffBuffer);
    SetIndexBuffer(1,SMAdiffdiffBuffer);
-   SetIndexBuffer(2,SMAdiff2Buffer);
-   SetIndexBuffer(3,SMAcloseBuffer);
+//   SetIndexBuffer(2,SMAdiff2Buffer);
+//   SetIndexBuffer(3,SMAcloseBuffer);
    
 //---
    return(INIT_SUCCEEDED);
@@ -76,17 +76,18 @@ int OnCalculate(const int rates_total,
    limit=rates_total-prev_calculated;
    if(prev_calculated>0)
       limit++;
-   ArrayResize(SMAdiffBuffer,limit,10);      
+//   ArrayResize(SMAdiffBuffer,limit,10);      
+   ArrayResize(SMABuffer,limit,10);      
    for(i=0; i<limit; i++)
       SMABuffer[i]=iMA(NULL,0,SMAperiod,0,MODE_SMA,PRICE_CLOSE,i);
    for(i=0; i<limit-1; i++)
       SMAdiffBuffer[i]=SMABuffer[i]-SMABuffer[i+1];
    for(i=0; i<limit-2; i++)
-      SMAdiffdiffBuffer[i]=(SMAdiffBuffer[i]-SMAdiffBuffer[i+1])*100;
-   for(i=0; i<limit-2; i++)
-      SMAdiff2Buffer[i]=(SMABuffer[i]-SMABuffer[i+2])*100;
-   for(i=0; i<limit-1; i++)
-      SMAcloseBuffer[i]=(Close[i]-SMABuffer[i])*100;
+      SMAdiffdiffBuffer[i]=(SMAdiffBuffer[i]-SMAdiffBuffer[i+1])*1;
+//   for(i=0; i<limit-2; i++)
+//      SMAdiff2Buffer[i]=(SMABuffer[i]-SMABuffer[i+2]);
+//   for(i=0; i<limit-1; i++)
+//      SMAcloseBuffer[i]=(Close[i]-SMABuffer[i])*100;
    
 //--- return value of prev_calculated for next call
    return(rates_total);
