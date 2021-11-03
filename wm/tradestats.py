@@ -869,7 +869,12 @@ def stathyperparams2(trades,params,conf):
     '''
     starttime = datetime.now()
 
+    
     trades = trades[trades.tradetype!=0]
+    tradecolumns = ['year','month','day','profit']
+    for key in params.keys():
+        tradecolumns = np.append(tradecolumns,key)
+    trades = trades[tradecolumns]    
     seq = {}
     stats = pd.DataFrame()
 
