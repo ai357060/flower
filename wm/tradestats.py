@@ -334,10 +334,11 @@ def ma(prices,periods):
         madf['SMAclose'] = prices.close - madf.SMA
         madf['SMA_prev'] = madf.SMA.shift(1)
         madf['SMAdiff_prev'] = madf.SMAdiff.shift(1)
-        madf['SMAdiff2_prev'] = madf.SMAdiff2.shift(1)
-        madf['SMAdiffdiff_prev'] = madf.SMAdiffdiff.shift(1)
+#         madf['SMAdiff2_prev'] = madf.SMAdiff2.shift(1)
+#         madf['SMAdiffdiff_prev'] = madf.SMAdiffdiff.shift(1)
         madf['SMAclose_prev'] = madf.SMAclose.shift(1)
         
+        madf = madf.drop(['SMA'],1)
         madf = madf.drop(['SMAdiff'],1)
         madf = madf.drop(['SMAdiff2'],1)
         madf = madf.drop(['SMAdiffdiff'],1)
@@ -863,15 +864,16 @@ def find_maxdownseries(grouping):
 
 def stathyperparams2(trades,params,conf):
     '''
-    mode 0 - ranges
+    mode 0 - ranges combinations
     mode 1 - combinations
     mode 2 - one of the list
+    mode 3 - ranges selected
     '''
     starttime = datetime.now()
 
     
     trades = trades[trades.tradetype!=0]
-    tradecolumns = ['year','month','day','profit']
+    tradecolumns = ['year','month','day','profit','sl_val']
     for key in params.keys():
         tradecolumns = np.append(tradecolumns,key)
     trades = trades[tradecolumns]    
@@ -890,7 +892,7 @@ def stathyperparams2(trades,params,conf):
     statscolumns = ['count','countup','countdown','updown_ratio',
                                   'monthsup','monthsdown','mm_ratio',
                                   'profit_sum',
-                                  'maxdown','xx'
+                                  'maxdown','maxdown_c','xx','avgsl'
                     ]
     groupbycolumns = ['count',
                              'countup',
@@ -898,12 +900,13 @@ def stathyperparams2(trades,params,conf):
                              'monthsup',
                              'monthsdown',
                              'profit_sum',
-                             'maxdown'
+                             'maxdown','maxdown_c','avgsl'
                             ]
 
     for key in params.keys():
         statscolumns = np.append(statscolumns,key+'from')
-        if (params[key][0] == 0):
+        mode = params[key][0]
+        if ( (mode == 0) or (mode == 3)):
             statscolumns = np.append(statscolumns,key+'to')
         else:
             groupbycolumns = np.append(groupbycolumns,key+'from')
@@ -920,7 +923,8 @@ def stathyperparams2(trades,params,conf):
     stats = statsgb.size().to_frame(name='xx')
     
     for key in params.keys():
-        if (params[key][0] == 0):
+        mode = params[key][0]
+        if ( (mode == 0) or (mode == 3)):
             stats = stats.join(statsgb.agg({key+'from': 'min',key+'to': 'max'}))
     stats = stats.reset_index()    
     
@@ -975,6 +979,14 @@ def execstats2_r(trades,stats,params,seq,cursor=0):
             for ifrom in params[key][1]:
                 seq[key] = [imode,ifrom]
                 stats = execstats2_r(trades,stats,params,seq,cursor+1)
+        elif (imode == 3):
+            for ii in range(0, len(params[key][1])):
+                ifrom = params[key][1][ii]
+                ito   = params[key][2][ii]
+                if (ito>ifrom):
+                    seq[key] = [imode,ifrom,ito]
+                    stats = execstats2_r(trades,stats,params,seq,cursor+1)
+                
     else:
         stats = execstats2(trades,stats,params,seq)
     return stats
@@ -1009,7 +1021,7 @@ def calculatestats2(trades,params,seq):
 #     print('oryg',len(stats0))
     for kk in params.keys():
         imode = seq[kk][0]
-        if (imode == 0):
+        if ((imode == 0) or (imode == 3)):
             stats0 = stats0[(stats0[kk]>=seq[kk][1])&(stats0[kk]<seq[kk][2])]
         elif (imode == 1):
             stats0 = stats0[stats0[kk].isin(seq[kk][1])]
@@ -1017,11 +1029,14 @@ def calculatestats2(trades,params,seq):
             stats0 = stats0[stats0[kk]==seq[kk][1]]
             
     pr_c = len(stats0)
+    avgsl = stats0.sl_val.mean()
     pr_sum = stats0.profit.sum()
     if ((pr_c>=seq['mintrades']) and (pr_sum>0)):
         pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
+        pr_maxdown_c = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumcount()).max()
         if (pr_maxdown>0):
             pr_maxdown = 0
+            pr_maxdown_c = 0
 
         pr_c_u = len(stats0[stats0.profit>=0])
         pr_c_d = len(stats0[stats0.profit<0])            
@@ -1030,11 +1045,11 @@ def calculatestats2(trades,params,seq):
         monthsdown = len(yearmonth[yearmonth.profit<0])
         
         df = {'count':pr_c,'countup':pr_c_u,'countdown':pr_c_d,'profit_sum':pr_sum,
-              'maxdown':pr_maxdown,'monthsup':monthsup,'monthsdown':monthsdown
+              'maxdown':pr_maxdown,'maxdown_c':pr_maxdown_c,'monthsup':monthsup,'monthsdown':monthsdown,'avgsl':avgsl
              }
         for kk in params.keys():
             imode = seq[kk][0]
-            if (imode == 0):
+            if ((imode == 0) or (imode == 3)):
                 df[kk+'from'] = seq[kk][1]
                 df[kk+'to'] = seq[kk][2]
             elif (imode == 1):
@@ -1693,17 +1708,20 @@ def opentrades_brut(mode,df):
 
 
 def closetrades_tsl(df,stoploss,takeprofit,trailsl):
-    df['sl'] = stoploss
-    df['tp'] = takeprofit
-    df['tsl'] = trailsl
     if (stoploss<=0.01):
-        df['sl_val'] = df.sl;
-        df['tp_val'] = df.tp
-        df['tsl_val'] = df.tsl
+        df['sl'] = stoploss   * 10000
+        df['tp'] = takeprofit * 10000
+        df['tsl'] = trailsl   * 10000
+        df['sl_val'] = stoploss
+        df['tp_val'] = takeprofit
+        df['tsl_val'] = trailsl
     else:
-        df['sl_val'] = df.sl * df.atr14atr
-        df['tp_val'] = df.tp * df.atr14atr
-        df['tsl_val'] = df.tsl * df.atr14atr
+        df['sl'] = stoploss
+        df['tp'] = takeprofit
+        df['tsl'] = trailsl
+        df['sl_val'] = stoploss   * df.atr140atr_prev
+        df['tp_val'] = takeprofit * df.atr140atr_prev
+        df['tsl_val'] = trailsl   * df.atr140atr_prev
     
     df.loc[df.tradetype==1,'stoploss'] = df.openprice - df.sl_val
     df.loc[df.tradetype==-1,'stoploss'] = df.openprice + df.sl_val
@@ -1721,7 +1739,7 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl):
     lastclose = df.tail(1).id.values[0] - 10
 #     print(lastclose)
     i = 0
-    while ((len(df[(df.tradetype!=0) & (df.closeindex==-1) & (df.id<=lastclose)])>0) & (i>=-20)):
+    while ((len(df[(df.tradetype!=0) & (df.closeindex==-1) & (df.id<=lastclose)])>0) & (i>=-30)):
         df['nextbar_open'] = df.open.shift(i)
         df['nextbar_close'] = df.close.shift(i)
         df['nextbar_low'] = df.low.shift(i)
@@ -1755,17 +1773,16 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl):
         df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'closeindex'] = -2
         
         #update SL - trailing SL
-        df.loc[(df.tradetype==1)  & (df.closeindex==-2) & (df.nextbar_close - df.tsl > df.stoploss),'stoploss'] = df.nextbar_close - df.tsl
-        df.loc[(df.tradetype==-1) & (df.closeindex==-2) & (df.nextbar_close + df.tsl < df.stoploss),'stoploss'] = df.nextbar_close + df.tsl
+        df.loc[(df.tradetype==1)  & (df.closeindex==-2) & (df.nextbar_close - df.tsl_val > df.stoploss),'stoploss'] = df.nextbar_close - df.tsl_val
+        df.loc[(df.tradetype==-1) & (df.closeindex==-2) & (df.nextbar_close + df.tsl_val < df.stoploss),'stoploss'] = df.nextbar_close + df.tsl_val
         
         
         i-=1
     
     print(i)
-    if (stoploss<=0.01):
-        df['sl'] = df.sl * 10000
-        df['tp'] = df.tp * 10000
-        df['tsl'] = df.tsl * 10000
+    df['sl_val'] = df.sl_val * 10000
+    df['tp_val'] = df.tp_val * 10000
+    df['tsl_val'] = df.tsl_val * 10000
 
     df['profit'] = df.profit * 10000
     df['profit1'] = np.where(df.profit>=20,1,-1)
@@ -1783,12 +1800,14 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl):
     return df
 
 def closetrades_tp(df,stoploss,takeprofit):
-    df['sl'] = stoploss
-    df['tp'] = takeprofit
     if (stoploss<=0.01):
-        df['sl_val'] = df.sl;
-        df['tp_val'] = df.tp
+        df['sl'] = stoploss   * 10000
+        df['tp'] = takeprofit * 10000
+        df['sl_val'] = stoploss
+        df['tp_val'] = takeprofit
     else:
+        df['sl'] = stoploss
+        df['tp'] = takeprofit
         df['sl_val'] = df.sl * df.atr140atr_prev
         df['tp_val'] = df.tp * df.atr140atr_prev
         
@@ -1808,7 +1827,7 @@ def closetrades_tp(df,stoploss,takeprofit):
     lastclose = df.tail(1).id.values[0] - 10
 #     print(lastclose)
     i = 0
-    while ((len(df[(df.tradetype!=0) & (df.closeindex==-1) & (df.id<=lastclose)])>0) & (i>=-20)):
+    while ((len(df[(df.tradetype!=0) & (df.closeindex==-1) & (df.id<=lastclose)])>0) & (i>=-30)):
         df['nextbar_open'] = df.open.shift(i)
         df['nextbar_close'] = df.close.shift(i)
         df['nextbar_low'] = df.low.shift(i)
@@ -1845,9 +1864,8 @@ def closetrades_tp(df,stoploss,takeprofit):
     
     print(i)
 
-    if (stoploss<=0.01):
-        df['sl'] = df.sl * 10000
-        df['tp'] = df.tp * 10000
+    df['sl_val'] = df.sl_val * 10000
+    df['tp_val'] = df.tp_val * 10000
     
     
     df['profit'] = df.profit * 10000
@@ -1951,6 +1969,8 @@ def runstats_ma_v5(alltrades,a,b,c,d):
     params['tradetype'] = [1,[1]]
     params['sl'] = [2,[0.1,0.2,0.3,0.4,0.5,0.6]]
     params['tp'] = [2,[0.1,0.2,0.3,0.4,0.5,0.6]]
+#     params['sl'] = [2,[0.6]]
+#     params['tp'] = [2,[0.6]]
 #     params['tsl'] = [2,[10,20,30,40,50,60]]
     params[a]      = [0,[-1000,0,1000],[-1000,0,1000]]
     params[b]  = [0,[-1000,0,1000],[-1000,0,1000]]
@@ -1965,3 +1985,24 @@ def runstats_ma_v5(alltrades,a,b,c,d):
     stats = stathyperparams2(alltrades,params,conf)
     return stats
 
+
+def runstats_ma_v6(alltrades,a,b,c,d):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] =      [1,[1]]
+#     params['sl'] =             [2,[30,40,50,60,70,80,90,100]]
+#     params['tp'] =             [2,[30,40,50,60,70,80,90,100]]
+    params['sl'] =             [2,[0.5,0.6,0.7,0.8,0.9,1,1.1,1.2,1.3]]
+    params['tp'] =             [2,[0.5,0.6,0.7,0.8,0.9,1,1.1,1.2,1.3]]
+    params['atr140atr_prev'] = [3,[-1000,0.005,0.008,0.01,0.015],[0.005,0.008,0.01,0.015,1000]]
+    params[a]      =           [0,[-1000,0,1000],[-1000,0,1000]]
+#     params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+#     params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
+#     params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] = 'ma_2015_2021_1_'+a
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
