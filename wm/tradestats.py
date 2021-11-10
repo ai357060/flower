@@ -1726,7 +1726,7 @@ def opentrades_brut(mode,df):
 
 
 def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
-    if (stoploss<=0.01):
+    if (stoploss<=0.09):
         df['sl'] = stoploss   * 10000
         df['tp'] = takeprofit * 10000
         df['tsl'] = trailsl   * 10000
@@ -1818,7 +1818,7 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
     return df
 
 def closetrades_tp(df,stoploss,takeprofit,atr=''):
-    if (stoploss<=0.01):
+    if (stoploss<=0.09):
         df['sl'] = stoploss   * 10000
         df['tp'] = takeprofit * 10000
         df['sl_val'] = stoploss
@@ -1880,7 +1880,7 @@ def closetrades_tp(df,stoploss,takeprofit,atr=''):
         
         i-=1
     
-    print(i)
+    print(stoploss,':',takeprofit,':',i)
 
     df['sl_val'] = df.sl_val * 10000
     df['tp_val'] = df.tp_val * 10000
@@ -2011,14 +2011,14 @@ def runstats_ma_v6(alltrades,a,b,c,d,atr='atr140atr_prev'):
     params['tradetype'] =      [1,[1]]
     params['sl'] =             [2,[0.5,0.6,0.7,0.8,0.9,1,1.1,1.2,1.3]]
     params['tp'] =             [2,[0.5,0.6,0.7,0.8,0.9,1,1.1,1.2,1.3]]
-    params[atr] =              [3,[-1000,0.005,0.007,0.009,0.01],[0.005,0.007,0.009,0.01,1000]]
+    params[atr] =              [3,[-1000,0.005,0.0075,0.01,0.015,0.02],[0.005,0.0075,0.01,0.015,0.02,1000]]
     params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
 #    params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
 #    params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
-    conf['filename'] = 'ma_2015_2021_1_'+atr+'_'+a
+    conf['filename'] = 'ma_frac_2015_2021_1_'+atr+'_'+a
     print(conf['filename'])
     stats = stathyperparams2(alltrades,params,conf)
     return stats
@@ -2030,7 +2030,7 @@ def runstats_ma_v7(alltrades,a,b,c,d,atr='atr140atr_prev'):
     params['tradetype'] =      [1,[1]]
     params['sl'] =             [2,[30,40,50,60,70,80,100,120,140]]
     params['tp'] =             [2,[30,40,50,60,70,80,100,120,140]]
-    params[atr] =              [3,[-1000,0.005,0.007,0.009,0.01],[0.005,0.007,0.009,0.01,1000]]
+    params[atr] =              [3,[-1000,0.005,0.0075,0.01,0.015,0.02],[0.005,0.0075,0.01,0.015,0.02,1000]]
     params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
@@ -2041,3 +2041,43 @@ def runstats_ma_v7(alltrades,a,b,c,d,atr='atr140atr_prev'):
     print(conf['filename'])
     stats = stathyperparams2(alltrades,params,conf)
     return stats
+
+def runstats_ma_v8(alltrades,a,b,c,d,atr='atr140atr_prev'):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] =      [1,[1]]
+    params['sl'] =             [2,[30,40,50,60,70,80,100,120,140]]
+    params['tp'] =             [2,[30,40,50,60,70,80,100,120,140]]
+    params[atr] =              [3,[-1000,-1000,-1000,-1000,-1000],[0.006,0.007,0.008,0.009,0.01]]
+    params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
+#    params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
+#    params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] = 'ma_2015_2021_1_'+atr+'_'+a
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
+
+def runstats_ma_v9(alltrades,a,b,c,d,atr='atr140atr_prev'):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] =      [1,[-1]]
+    params['sl'] =             [2,[0.7,0.8,0.9]]
+    params['tp'] =             [2,[0.5,0.6,0.7,0.8,0.9,1,1.1,1.2,1.3]]
+    params[atr] =              [3,[-1000],[0.015]]
+    params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[d]     =            [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] = 'ma_frac_2015_2021_1_'+atr+'_'+a
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
+
