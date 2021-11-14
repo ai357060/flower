@@ -1,14 +1,14 @@
 #property strict
-//#property indicator_separate_window
-#property indicator_chart_window
-//#property indicator_buffers 3
-//#property indicator_plots   3
+#property indicator_separate_window
+//#property indicator_chart_window
+#property indicator_buffers 1
+#property indicator_plots   1
 //--- plot Label1
-//#property indicator_label1  "Label1"
-//#property indicator_type1   DRAW_HISTOGRAM
-//#property indicator_color1  clrRed
-//#property indicator_style1  STYLE_SOLID
-//#property indicator_width1  1
+#property indicator_label1  "Label1"
+#property indicator_type1   DRAW_HISTOGRAM
+#property indicator_color1  clrRed
+#property indicator_style1  STYLE_SOLID
+#property indicator_width1  1
 //--- plot Label2
 //#property indicator_label2  "Label2"
 //#property indicator_type2   DRAW_HISTOGRAM
@@ -23,7 +23,7 @@
 //#property indicator_width3  1
 //--- indicator buffers
 //double         SR_st[];
-//double         SR_break[];
+double         SR_break_show[];
 //double         SR_stop[];
 extern ENUM_TIMEFRAMES Period1 = PERIOD_MN1;
 extern ENUM_TIMEFRAMES Period2 = PERIOD_W1;
@@ -44,7 +44,7 @@ int OnInit()
 {
 
    IndicatorShortName("SRs");
-//   SetIndexBuffer(0,SR_st);
+   SetIndexBuffer(0,SR_break_show);
 //   SetIndexBuffer(1,SR_break);
 //   SetIndexBuffer(2,SR_stop);
 
@@ -118,6 +118,14 @@ void FindSRs(int drawperiod,int period,int srcolor,int slip)
             }   
             RectangleCreate(0,"RR1"+IntegerToString(period)+IntegerToString(iR),0,starttime,RR+slipvalue,breaktime,RR+slipvalue,srcolor,drawperiod,STYLE_DOT);
             RectangleCreate(0,"RR2"+IntegerToString(period)+IntegerToString(iR),0,breaktime,RR+slipvalue,endtime,RR+slipvalue,srcolor,drawperiod,STYLE_SOLID);
+            int pp=1;
+            if (period==PERIOD_MN1)
+               pp=3;
+            if (period==PERIOD_W1)
+               pp=2;
+            int ii = iBarShift(Symbol(),Period(),breaktime);
+            if (ii>0)
+               SR_break_show[ii] = pp;
          }   
             
       }   
@@ -155,6 +163,14 @@ void FindSRs(int drawperiod,int period,int srcolor,int slip)
                
             RectangleCreate(0,"SS1"+IntegerToString(period)+IntegerToString(iR),0,starttime,RR+slipvalue,breaktime,RR+slipvalue,srcolor,drawperiod,STYLE_SOLID);
             RectangleCreate(0,"SS2"+IntegerToString(period)+IntegerToString(iR),0,breaktime,RR+slipvalue,endtime,RR+slipvalue,srcolor,drawperiod,STYLE_DOT);
+            int pp=-1;
+            if (period==PERIOD_MN1)
+               pp=-3;
+            if (period==PERIOD_W1)
+               pp=-2;
+            int ii = iBarShift(Symbol(),Period(),breaktime);
+            if (ii>0)
+               SR_break_show[ii] = pp;
          }   
       }   
          
