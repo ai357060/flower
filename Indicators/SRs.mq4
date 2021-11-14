@@ -1,14 +1,45 @@
 #property strict
 #property indicator_separate_window
 //#property indicator_chart_window
-#property indicator_buffers 1
-#property indicator_plots   1
+#property indicator_buffers 5
+#property indicator_plots   5
+#property indicator_minimum -3.5
+#property indicator_maximum 3.5
+#property indicator_level1 0
+#property indicator_levelcolor clrSilver
+#property indicator_levelstyle STYLE_DOT
+
 //--- plot Label1
-#property indicator_label1  "Label1"
+#property indicator_label1  "M1"
 #property indicator_type1   DRAW_HISTOGRAM
 #property indicator_color1  clrRed
 #property indicator_style1  STYLE_SOLID
 #property indicator_width1  1
+
+#property indicator_label2  "M2"
+#property indicator_type2   DRAW_LINE
+#property indicator_color2  clrRed
+#property indicator_style2  STYLE_DOT
+#property indicator_width2  1
+
+#property indicator_label3  "W1"
+#property indicator_type3   DRAW_HISTOGRAM
+#property indicator_color3  clrGreen
+#property indicator_style3  STYLE_SOLID
+#property indicator_width3  1
+
+#property indicator_label4  "W2"
+#property indicator_type4   DRAW_LINE
+#property indicator_color4  clrGreen
+#property indicator_style4  STYLE_DOT
+#property indicator_width4  1
+
+#property indicator_label5  "D1"
+#property indicator_type5   DRAW_HISTOGRAM
+#property indicator_color5  clrBlue
+#property indicator_style5  STYLE_SOLID
+#property indicator_width5  1
+
 //--- plot Label2
 //#property indicator_label2  "Label2"
 //#property indicator_type2   DRAW_HISTOGRAM
@@ -23,14 +54,18 @@
 //#property indicator_width3  1
 //--- indicator buffers
 //double         SR_st[];
-double         SR_break_show[];
+double         SR_break_showM1[];
+double         SR_break_showM2[];
+double         SR_break_showW1[];
+double         SR_break_showW2[];
+double         SR_break_showD1[];
 //double         SR_stop[];
-extern ENUM_TIMEFRAMES Period1 = PERIOD_MN1;
-extern ENUM_TIMEFRAMES Period2 = PERIOD_W1;
-extern ENUM_TIMEFRAMES Period3 = PERIOD_M1;
-extern color color1 = clrRed;
-extern color color2 = clrGreen;
-extern color color3 = clrBlue ;
+//extern ENUM_TIMEFRAMES Period1 = PERIOD_MN1;
+//extern ENUM_TIMEFRAMES Period2 = PERIOD_W1;
+//extern ENUM_TIMEFRAMES Period3 = PERIOD_M1;
+extern color colorMN1 = clrRed;
+extern color colorW1 = clrGreen;
+extern color colorD1 = clrNONE ;
 
 string      sObject;
 
@@ -44,8 +79,11 @@ int OnInit()
 {
 
    IndicatorShortName("SRs");
-   SetIndexBuffer(0,SR_break_show);
-//   SetIndexBuffer(1,SR_break);
+   SetIndexBuffer(0,SR_break_showM1);
+   SetIndexBuffer(1,SR_break_showM2);
+   SetIndexBuffer(2,SR_break_showW1);
+   SetIndexBuffer(3,SR_break_showW2);
+   SetIndexBuffer(4,SR_break_showD1);
 //   SetIndexBuffer(2,SR_stop);
 
    sObject = "SRs"+Symbol();
@@ -91,7 +129,7 @@ void FindSRs(int drawperiod,int period,int srcolor,int slip)
 //            SR_st[iR] = RR;
             SR_break[iB] = 1;
             iT = FindDownBreak(RR,iB,period);
-            //SR_break[iT] = -1;
+            //SR_break[iT] = -1;//
             if (iT>0)
                if (drawperiod!=period)
                   endtime = iTime(Symbol(),period,iT-1);//-1
@@ -118,14 +156,29 @@ void FindSRs(int drawperiod,int period,int srcolor,int slip)
             }   
             RectangleCreate(0,"RR1"+IntegerToString(period)+IntegerToString(iR),0,starttime,RR+slipvalue,breaktime,RR+slipvalue,srcolor,drawperiod,STYLE_DOT);
             RectangleCreate(0,"RR2"+IntegerToString(period)+IntegerToString(iR),0,breaktime,RR+slipvalue,endtime,RR+slipvalue,srcolor,drawperiod,STYLE_SOLID);
-            int pp=1;
-            if (period==PERIOD_MN1)
-               pp=3;
-            if (period==PERIOD_W1)
-               pp=2;
             int ii = iBarShift(Symbol(),Period(),breaktime);
             if (ii>0)
-               SR_break_show[ii] = pp;
+            {
+               if (period==PERIOD_MN1)
+                  SR_break_showM1[ii] = 3;
+               else if (period==PERIOD_W1)
+                  SR_break_showW1[ii] = 2;
+               else //if (period==PERIOD_D1)
+                  SR_break_showD1[ii] = 1;
+                  
+            }
+//            ii = iBarShift(Symbol(),Period(),endtime);
+//            if (ii>0)
+//            {
+//               if (period==PERIOD_MN1)
+//                  SR_break_showM1[ii] = -3;
+//               else if (period==PERIOD_W1)
+//                  SR_break_showW1[ii] = -2;
+//              else //if (period==PERIOD_D1)
+//                  SR_break_showD1[ii] = -1;
+//                 
+//            }
+               
          }   
             
       }   
@@ -141,7 +194,7 @@ void FindSRs(int drawperiod,int period,int srcolor,int slip)
 //            SR_st[iR] = RR;
             SR_break[iB] = -1;
             iT = FindUpBreak(RR,iB,period);
-            //SR_break[iT] = 1;
+            //SR_break[iT] = 1;//
             if (iT>0)
                if (drawperiod!=period)
                   endtime = iTime(Symbol(),period,iT-1);//-1
@@ -163,18 +216,33 @@ void FindSRs(int drawperiod,int period,int srcolor,int slip)
                
             RectangleCreate(0,"SS1"+IntegerToString(period)+IntegerToString(iR),0,starttime,RR+slipvalue,breaktime,RR+slipvalue,srcolor,drawperiod,STYLE_SOLID);
             RectangleCreate(0,"SS2"+IntegerToString(period)+IntegerToString(iR),0,breaktime,RR+slipvalue,endtime,RR+slipvalue,srcolor,drawperiod,STYLE_DOT);
-            int pp=-1;
-            if (period==PERIOD_MN1)
-               pp=-3;
-            if (period==PERIOD_W1)
-               pp=-2;
             int ii = iBarShift(Symbol(),Period(),breaktime);
             if (ii>0)
-               SR_break_show[ii] = pp;
+            {
+               if (period==PERIOD_MN1)
+                  SR_break_showM1[ii] = -3;
+               else if (period==PERIOD_W1)
+                  SR_break_showW1[ii] = -2;
+               else //if (period==PERIOD_D1)
+                  SR_break_showD1[ii] = -1;
+                  
+            }
+//            ii = iBarShift(Symbol(),Period(),endtime);
+//            if (ii>0)
+//            {
+//               if (period==PERIOD_MN1)
+//                  SR_break_showM1[ii] = 3;
+//               else if (period==PERIOD_W1)
+//                  SR_break_showW1[ii] = 2;
+//              else //if (period==PERIOD_D1)
+//                  SR_break_showD1[ii] = 1;
+//                  
+//            }
          }   
       }   
          
    }
+
 }
 bool isItAllTimesHigh(double RR,int limit, int j, int period)
 {
@@ -291,13 +359,29 @@ int OnCalculate(const int rates_total,
    int limit = Bars-counted_bars;
    if (limit>1)
    {
-      if ((Period()<=Period1) && (Period1!=PERIOD_M1))
-         FindSRs(Period(),Period1,color1,0);
-      if ((Period()<=Period2) && (Period2!=PERIOD_M1))
-         FindSRs(Period(),Period2,color2,0);
-      if ((Period()<=Period3) && (Period3!=PERIOD_M1))
-         FindSRs(Period(),Period3,color3,0);
+      if (colorMN1!=clrNONE)
+         FindSRs(Period(),PERIOD_MN1,colorMN1,0);
+      if ((colorW1!=clrNONE) &&(Period()<=PERIOD_W1))
+         FindSRs(Period(),PERIOD_W1,colorW1,0);
+      if ((colorD1!=clrNONE) &&(Period()<=PERIOD_D1))
+         FindSRs(Period(),PERIOD_D1,colorD1,0);
    }
+   
+   double pp;
+   for(int i=limit-1; i>0; i--)
+   {
+      pp = SR_break_showM1[i];
+      if (pp==3 || pp==-3)
+         for(int j=i; j>=0; j--)
+            SR_break_showM2[j] = pp;
+      pp = SR_break_showW1[i];
+      if (pp==2 || pp==-2)
+         for(int j=i; j>=0; j--)
+            SR_break_showW2[j] = pp;
+   } 
+   //SR_break_showM2[1] = 4.0;
+
+   
    return(rates_total);
   }
   
