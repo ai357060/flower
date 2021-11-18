@@ -370,21 +370,44 @@ def atr(prices, periods):
     results.df = dict
     return results
 
-def atr_multi(prices, periods):
+def srs(prices, periods):
     results = holder()
     dict = {}
-    resdf = pd.DataFrame(index=prices.index)
-    resdf0 = pd.DataFrame(index=prices.index)
-    resdf0['tr1'] = prices['high'] - prices['low']
-    resdf0['tr2'] = abs (prices['high'] - prices['close'].shift())
-    resdf0['tr3'] = abs (prices['low'] - prices['close'].shift())
-    resdf['tr'] = resdf0.max(axis=1)
-    for i in [20,60,100,140,180]:
-        resdf['atr_period'] = i
-        resdf['atr'] = resdf.tr.rolling(i).mean()
-        resdf['atr_prev'] = resdf.atr.shift(1)
-    dict[periods[0]] = resdf
+    resdf = prices[['id','open','high','low','close']]
+
+    resdf['close_prev'] = prices.close.shift(1)
+    resdf['close_next'] = prices.close.shift(-1)
+    resdf['high_next'] = prices.high.shift(-1)
+    resdf['low_next'] = prices.low.shift(-1)
+    resdf['close_max'] = prices.close.cummax()
+    resdf['close_min'] = prices.close.cummin()
     
+    resdf['horn'] = 0
+    resdf['horn_v'] = 0
+    resdf.loc[(resdf.close>=resdf.close_next) & (resdf.close>resdf.close_prev), 'horn'] = 1
+    resdf.loc[(resdf.close<=resdf.close_next) & (resdf.close<resdf.close_prev), 'horn'] = -1
+    resdf.loc[resdf.horn==1,'horn_v'] = resdf[['high','high_next']].max(axis=1)
+    resdf.loc[resdf.horn==-1,'horn_v'] = resdf[['low','low_next']].min(axis=1)
+
+#     alltimeshigh/low
+    resdf.loc[(resdf.horn==1)&(resdf.horn_v>resdf.close_max),'horn'] = 10
+    resdf.loc[(resdf.horn==-1)&(resdf.horn_v<resdf.close_min),'horn'] = -10
+
+    resdf['horn_broke_id'] = 0
+    resdf['sr_broke'] = 0
+    
+    i = -1
+    resdf['nextbar_open'] = resdf.open.shift(i)
+    resdf['nextbar_id_1'] = resdf.id.shift(i+1)
+    while ((len(resdf[((resdf.horn==10)|(resdf.horn==-10)) & (resdf.horn_broke_id==0) & (resdf.nextbar_open>0)])>0) & (i>-len(resdf))):
+        resdf['nextbar_open'] = resdf.open.shift(i)
+        resdf['nextbar_id_1'] = resdf.id.shift(i+1)
+        resdf.loc[(resdf.horn==10) & (resdf.nextbar_open>resdf.horn_v) & (resdf.horn_broke_id==0),'horn_broke_id'] = resdf.nextbar_id_1
+        resdf.loc[(resdf.horn==-10) & (resdf.nextbar_open<resdf.horn_v) & (resdf.horn_broke_id==0),'horn_broke_id'] = resdf.nextbar_id_1
+        i-=1
+    
+    print(i+1)
+    dict[periods[0]] = resdf
     results.df = dict
     return results
 
@@ -2027,10 +2050,10 @@ def runstats_ma_v7(alltrades,a,b,c,d,atr='atr140atr_prev'):
     conf   = {}
     params = {}
 
-    params['tradetype'] =      [1,[1]]
+    params['tradetype'] =      [1,[-1]]
     params['sl'] =             [2,[30,40,50,60,70,80,100,120,140]]
     params['tp'] =             [2,[30,40,50,60,70,80,100,120,140]]
-    params[atr] =              [3,[-1000,0.005,0.0075,0.01,0.015,0.02],[0.005,0.0075,0.01,0.015,0.02,1000]]
+    params[atr] =              [3,[-1000,0.0075,0.01,0.015],[0.0075,0.01,0.015,1000]]
     params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
@@ -2066,18 +2089,57 @@ def runstats_ma_v9(alltrades,a,b,c,d,atr='atr140atr_prev'):
     params = {}
 
     params['tradetype'] =      [1,[-1]]
-    params['sl'] =             [2,[0.7,0.8,0.9]]
+    params['sl'] =             [2,[0.5,0.6,0.7,0.8,0.9]]
     params['tp'] =             [2,[0.5,0.6,0.7,0.8,0.9,1,1.1,1.2,1.3]]
     params[atr] =              [3,[-1000],[0.015]]
     params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
-    params[d]     =            [0,[-1000,0,1000],[-1000,0,1000]]
+#     params[d]     =            [0,[-1000,0,1000],[-1000,0,1000]]
     params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
     params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
-    params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
-    conf['filename'] = 'ma_frac_2015_2021_1_'+atr+'_'+a
+#     params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] = 'ma_frac_2003_2021_1_'+atr+'_'+a
     print(conf['filename'])
     stats = stathyperparams2(alltrades,params,conf)
     return stats
 
+def runstats_ma_v10(alltrades,a,b,c,d,atr='atr140atr_prev'):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] =      [1,[1]]
+    params['sl'] =             [2,[0.3,0.4,0.5,0.6,0.7,0.8,0.9]]
+    params['tp'] =             [2,[0.6,0.7,0.8,0.9,1,1.1,1.2,1.3,1.4,1.5]]
+    params[atr] =              [3,[-1000],[0.015]]
+    params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+#     params[d]     =            [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
+#     params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] = 'ma_frac_2003_2021_1_'+atr+'_'+a
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
+
+def runstats_ma_v11(alltrades,a,b,c,d,atr='atr140atr_prev'):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] =      [1,[1]]
+    params['sl'] =             [2,[0.4,0.5,0.6,0.7,0.8,0.9]]
+    params['tp'] =             [2,[0.6,0.7,0.8,0.9,1,1.1,1.2]]
+    params[atr] =              [3,[-1000,0.006,0.007,0.008,0.009,0.01,0.0125,0.015],[0.006,0.007,0.008,0.009,0.01,0.0125,0.015,1000]]
+    params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+#     params[d]     =            [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
+#     params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
+#     params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] = 'ma_frac_2003_2021_1_'+atr+'_'+a
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
