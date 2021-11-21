@@ -393,30 +393,41 @@ def srs(prices, periods):
     resdf['sr_broke_id'] = -1
     resdf['sr_broke'] = 0    
 
-    srs0 = 0
+# przełamanie hornow        
+    nonbroken_horns0 = len(resdf[((resdf.horn==1)|(resdf.horn==-1))&(resdf.horn_broke_id==-1)])
+    print('nonbroken_horns0:',nonbroken_horns0)
+    i = -1
+    resdf['nextbar_open'] = resdf.open.shift(i)
+    while ((len(resdf[((resdf.horn==1)|(resdf.horn==-1)) & (resdf.horn_broke_id==-1) & (resdf.nextbar_open>0)])>0) & (i>-len(resdf))):
+        resdf['nextbar_open'] = resdf.open.shift(i)
+        resdf['nextbar_id_1'] = resdf.id.shift(i+1)
+        resdf.loc[(resdf.horn==1) & (resdf.nextbar_open>resdf.horn_v) & (resdf.horn_broke_id==-1),'horn_broke_id'] = resdf.nextbar_id_1
+        resdf.loc[(resdf.horn==-1) & (resdf.nextbar_open<resdf.horn_v) & (resdf.horn_broke_id==-1),'horn_broke_id'] = resdf.nextbar_id_1
+        i-=1
+    print('breaksr:',i+1)
+    nonbroken_horns1 = len(resdf[((resdf.horn==1)|(resdf.horn==-1))&(resdf.horn_broke_id==-1)])
+    print('nonbroken_horns1:',nonbroken_horns1)
+    
 #     alltimeshigh/low
     resdf.loc[(resdf.horn==1)&(resdf.horn_v>resdf.close_max),'horn'] = 10
     resdf.loc[(resdf.horn==-1)&(resdf.horn_v<resdf.close_min),'horn'] = -10
-    srs1 = len(resdf[(resdf.horn==10)|(resdf.horn==-10)])
-    while(srs1>srs0):
 
-# przełamanie srs        
-        nonbroken_srs0 = len(resdf[((resdf.horn==10)|(resdf.horn==-10))&(resdf.horn_broke_id==-1)])
-        i = -1
-        resdf['nextbar_open'] = resdf.open.shift(i)
-        while ((len(resdf[((resdf.horn==10)|(resdf.horn==-10)) & (resdf.horn_broke_id==-1) & (resdf.nextbar_open>0)])>0) & (i>-len(resdf))):
-            resdf['nextbar_open'] = resdf.open.shift(i)
-            resdf['nextbar_id_1'] = resdf.id.shift(i+1)
-            resdf.loc[(resdf.horn==10) & (resdf.nextbar_open>resdf.horn_v) & (resdf.horn_broke_id==-1),'horn_broke_id'] = resdf.nextbar_id_1
-            resdf.loc[(resdf.horn==-10) & (resdf.nextbar_open<resdf.horn_v) & (resdf.horn_broke_id==-1),'horn_broke_id'] = resdf.nextbar_id_1
-            i-=1
-        print('breaksr:',i+1)
-        nonbroken_srs1 = len(resdf[((resdf.horn==10)|(resdf.horn==-10))&(resdf.horn_broke_id==-1)])
-        if (nonbroken_srs0==nonbroken_srs1):
-            print('nonewbreaksr')
-            break
+    resdf = resdf.drop(['close_prev'],1)
+    resdf = resdf.drop(['close_next'],1)
+    resdf = resdf.drop(['high_next'],1)
+    resdf = resdf.drop(['low_next'],1)
+    resdf = resdf.drop(['close_max'],1)
+    resdf = resdf.drop(['close_min'],1)
+    resdf = resdf.drop(['close'],1)
+    resdf = resdf.drop(['high'],1)
+    resdf = resdf.drop(['low'],1)
+    
+    srs0 = 0
+    srs1 = len(resdf[(resdf.horn==10)|(resdf.horn==-10)])
+    print('srs:',srs1)
+    while(srs1>srs0):
             
-        xxx = resdf[['id']].merge(resdf[['id','horn','horn_broke_id']],
+        xxx = resdf[['id']].merge(resdf[(resdf.horn==10) | (resdf.horn==-10)][['id','horn','horn_broke_id']],
                                                  left_on=['id'],suffixes=('', '_y'), 
                                                  right_on = ['horn_broke_id'], how='left')
 #         xxx.to_csv(sep=';',path_or_buf='../Data/xxx1.csv',date_format="%Y-%m-%d",index = False,na_rep='')
@@ -426,7 +437,7 @@ def srs(prices, periods):
         stats = stats.join(statsgb.agg({'horn': 'min'}))
         xxx = stats.reset_index().set_index('id')
 #         xxx.to_csv(sep=';',path_or_buf='../Data/xxx2.csv',date_format="%Y-%m-%d",index = False,na_rep='')
-        resdf['sr_broke'] = xxx['horn'].fillna(resdf['sr_broke'])    
+        resdf['sr_broke']    = xxx['horn'].fillna(resdf['sr_broke'])    
         resdf['sr_broke_id'] = xxx['id_y'].fillna(resdf['sr_broke_id'])    
 
 #     z hd zrobic się ss gdy się znajdzie po hd jakiś broke=rr, a z hu->rr gdy broke=ss
@@ -437,12 +448,13 @@ def srs(prices, periods):
             resdf['nextbar_sr_broke'] = resdf.sr_broke.shift(i)
             resdf['nextbar_sr_broke_id'] = resdf.sr_broke_id.shift(i)
             resdf['nextbar_id'] = resdf.id.shift(i)
-            resdf.loc[(resdf.horn==1) & (resdf.nextbar_sr_broke==-10) &(resdf.nextbar_sr_broke_id<=resdf.id),'horn'] = 10
-            resdf.loc[(resdf.horn==-1) & (resdf.nextbar_sr_broke==10) &(resdf.nextbar_sr_broke_id<=resdf.id),'horn'] = -10
+            resdf.loc[(resdf.horn==1) & (resdf.nextbar_sr_broke==-10) &(resdf.nextbar_sr_broke_id<=resdf.id) &(resdf.nextbar_id<=resdf.horn_broke_id),'horn'] = 10
+            resdf.loc[(resdf.horn==-1) & (resdf.nextbar_sr_broke==10) &(resdf.nextbar_sr_broke_id<=resdf.id) &(resdf.nextbar_id<=resdf.horn_broke_id),'horn'] = -10
             i-=1
         print('newsr:',i+1)
         srs0 = srs1
         srs1 = len(resdf[(resdf.horn==10)|(resdf.horn==-10)])
+        print('srs:',srs1)
 
     
     resdf = resdf.drop(['id'],1)
