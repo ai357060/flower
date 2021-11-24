@@ -52,25 +52,25 @@ int OnCalculate(const int rates_total,
             PutSymbolOnChartB(i,"E");  
          else
             PutSymbolOnChartT(i,"E");  
-      else if (High[i]>=High[i+1] && Low[i]<=Low[i+1])
-         if (Close[i]>Open[i])
-            PutSymbolOnChartB(i,"O");  
-         else
-            PutSymbolOnChartT(i,"O");  
-      else if ((High[i]-MathMax(Open[i],Close[i]))>=2*MathAbs(Open[i]-Close[i]) && (MathMin(Open[i],Close[i])-Low[i])<2*MathAbs(Open[i]-Close[i]))
+//      else if (High[i]>=High[i+1] && Low[i]<=Low[i+1])
+//         if (Close[i]>Open[i])
+//            PutSymbolOnChartB(i,"O");  
+//         else
+//            PutSymbolOnChartT(i,"O");  
+      else if ((High[i]-MathMax(Open[i],Close[i]))>=2*MathAbs(Open[i]-Close[i]) && (MathMin(Open[i],Close[i])-Low[i])<1*MathAbs(Open[i]-Close[i]))
          PutSymbolOnChartT(i,"S");  
-      else if ((MathMin(Open[i],Close[i])-Low[i])>=2*MathAbs(Open[i]-Close[i]) && (High[i]-MathMax(Open[i],Close[i]))<2*MathAbs(Open[i]-Close[i]))
+      else if ((MathMin(Open[i],Close[i])-Low[i])>=2*MathAbs(Open[i]-Close[i]) && (High[i]-MathMax(Open[i],Close[i]))<1*MathAbs(Open[i]-Close[i]))
          PutSymbolOnChartB(i,"H");  
          
          
-      if (Period()==PERIOD_D1)
-         if(TimeDayOfWeek(Time[i])==1)
-         {
-            string name = "HL"+IntegerToString(i);
-            ObjectCreate(0,name,OBJ_VLINE,0,Time[i],0);  
-            ObjectSetInteger(0,name,OBJPROP_STYLE,STYLE_DOT);
-            ObjectSetInteger(0,name,OBJPROP_COLOR,Gray); 
-         }   
+//      if (Period()==PERIOD_D1)
+//         if(TimeDayOfWeek(Time[i])==1)
+//         {
+//            string name = "HL"+IntegerToString(i);
+//            ObjectCreate(0,name,OBJ_VLINE,0,Time[i],0);  
+//            ObjectSetInteger(0,name,OBJPROP_STYLE,STYLE_DOT);
+//            ObjectSetInteger(0,name,OBJPROP_COLOR,Gray); 
+//         }   
             
    
    }   

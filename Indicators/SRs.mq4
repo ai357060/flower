@@ -113,11 +113,20 @@ void FindSRs(int drawperiod,int period,int srcolor,int slip)
    double SR_break[];
    ArrayResize(SR_break,limit,10);
    double slipvalue = slip * MarketInfo(Symbol(),MODE_POINT);
+   int wd = 1;
+   if (period==PERIOD_W1 && drawperiod==PERIOD_D1) wd = 2;
+   if (period==PERIOD_MN1 && drawperiod==PERIOD_D1) wd = 3;
+   if (period==PERIOD_MN1 && drawperiod==PERIOD_W1) wd = 2;
+   ENUM_LINE_STYLE st = STYLE_DOT;
+   if (period==PERIOD_W1 && drawperiod==PERIOD_D1) st = STYLE_DASHDOT;
+   if (period==PERIOD_MN1 && drawperiod==PERIOD_D1) st = STYLE_DASHDOTDOT;
+   if (period==PERIOD_MN1 && drawperiod==PERIOD_W1) st = STYLE_DASHDOT;
    for(int i=limit-1; i>0; i--)
    {
       //if (iBarShift(Symbol(),drawperiod,iTime(Symbol(),period,i)==-1))
       //   continue;
       if ((iClose(Symbol(),period,i)>=iClose(Symbol(),period,i-1)) && (iClose(Symbol(),period,i)>iClose(Symbol(),period,i+1)))
+//      if ((iClose(Symbol(),period,i)>=iClose(Symbol(),period,i-1)) && (iClose(Symbol(),period,i)>iOpen(Symbol(),period,i)))
       {
          iR = i;
          RR = MathMax(iHigh(Symbol(),period,iR),iHigh(Symbol(),period,iR-1));
@@ -129,7 +138,7 @@ void FindSRs(int drawperiod,int period,int srcolor,int slip)
 //            SR_st[iR] = RR;
             SR_break[iB] = 1;
             iT = FindDownBreak(RR,iB,period);
-            //SR_break[iT] = -1;//
+            if (period!=PERIOD_D1) SR_break[iT] = -1;//
             if (iT>0)
                if (drawperiod!=period)
                   endtime = iTime(Symbol(),period,iT-1);//-1
@@ -154,8 +163,8 @@ void FindSRs(int drawperiod,int period,int srcolor,int slip)
                //starttime = iTime(Symbol(),Period(),iBarShift(Symbol(),Period(),iTime(Symbol(),period,wB),false));
                starttime = iTime(Symbol(),period,wB);
             }   
-            RectangleCreate(0,"RR1"+IntegerToString(period)+IntegerToString(iR),0,starttime,RR+slipvalue,breaktime,RR+slipvalue,srcolor,drawperiod,STYLE_DOT);
-            RectangleCreate(0,"RR2"+IntegerToString(period)+IntegerToString(iR),0,breaktime,RR+slipvalue,endtime,RR+slipvalue,srcolor,drawperiod,STYLE_SOLID);
+            RectangleCreate(0,"RR1"+IntegerToString(period)+IntegerToString(iR),0,starttime,RR+slipvalue,breaktime,RR+slipvalue,srcolor,drawperiod,st,1);
+            RectangleCreate(0,"RR2"+IntegerToString(period)+IntegerToString(iR),0,breaktime,RR+slipvalue,endtime,RR+slipvalue,srcolor,drawperiod,STYLE_SOLID,wd);
             int ii = iBarShift(Symbol(),Period(),breaktime);
             if (ii>0)
             {
@@ -183,6 +192,7 @@ void FindSRs(int drawperiod,int period,int srcolor,int slip)
             
       }   
       if ((iClose(Symbol(),period,i)<=iClose(Symbol(),period,i-1)) && (iClose(Symbol(),period,i)<iClose(Symbol(),period,i+1)))
+//      if ((iClose(Symbol(),period,i)<=iClose(Symbol(),period,i-1)) && (iClose(Symbol(),period,i)<iOpen(Symbol(),period,i)))
       {
          iR = i;
          RR = MathMin(iLow(Symbol(),period,iR),iLow(Symbol(),period,iR-1));
@@ -194,7 +204,7 @@ void FindSRs(int drawperiod,int period,int srcolor,int slip)
 //            SR_st[iR] = RR;
             SR_break[iB] = -1;
             iT = FindUpBreak(RR,iB,period);
-            //SR_break[iT] = 1;//
+            if (period!=PERIOD_D1) SR_break[iT] = 1;//
             if (iT>0)
                if (drawperiod!=period)
                   endtime = iTime(Symbol(),period,iT-1);//-1
@@ -214,8 +224,8 @@ void FindSRs(int drawperiod,int period,int srcolor,int slip)
             else   
                starttime = iTime(Symbol(),period,wB);
                
-            RectangleCreate(0,"SS1"+IntegerToString(period)+IntegerToString(iR),0,starttime,RR+slipvalue,breaktime,RR+slipvalue,srcolor,drawperiod,STYLE_SOLID);
-            RectangleCreate(0,"SS2"+IntegerToString(period)+IntegerToString(iR),0,breaktime,RR+slipvalue,endtime,RR+slipvalue,srcolor,drawperiod,STYLE_DOT);
+            RectangleCreate(0,"SS1"+IntegerToString(period)+IntegerToString(iR),0,starttime,RR+slipvalue,breaktime,RR+slipvalue,srcolor,drawperiod,STYLE_SOLID,wd);
+            RectangleCreate(0,"SS2"+IntegerToString(period)+IntegerToString(iR),0,breaktime,RR+slipvalue,endtime,RR+slipvalue,srcolor,drawperiod,st,1);
             int ii = iBarShift(Symbol(),Period(),breaktime);
             if (ii>0)
             {
