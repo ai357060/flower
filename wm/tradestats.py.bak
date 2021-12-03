@@ -79,9 +79,7 @@ def loaddata_1D(datafile):
 
     df['year'] = pd.DatetimeIndex(df['date']).year
     df['month'] = pd.DatetimeIndex(df['date']).month
-#     df['week'] = pd.DatetimeIndex(df['date']).week
-#     df['week'] = pd.Int64Index(df.date.isocalendar().week)
-    df['week'] = pd.DatetimeIndex(df.date).isocalendar().week
+    df['week'] = pd.DatetimeIndex(df['date']).week
     df['day'] = pd.DatetimeIndex(df['date']).day 
     df['weekday'] = df.date.dt.dayofweek
     df=df[df.volume!=0] 
@@ -126,13 +124,13 @@ def rsi(prices, periods):
     rsidf['rsi1'] = 100 - (100/(1 + rsidf['ma_up1'] / rsidf['ma_down1']))
 
         
-    rsidf = rsidf.drop(columns='close_delta')
-    rsidf = rsidf.drop(columns='up')
-    rsidf = rsidf.drop(columns='down')
-    rsidf = rsidf.drop(columns='ma_up')
-    rsidf = rsidf.drop(columns='ma_down')
-    rsidf = rsidf.drop(columns='ma_up1')
-    rsidf = rsidf.drop(columns='ma_down1')
+    rsidf = rsidf.drop(['close_delta'],1)
+    rsidf = rsidf.drop(['up'],1)
+    rsidf = rsidf.drop(['down'],1)
+    rsidf = rsidf.drop(['ma_up'],1)
+    rsidf = rsidf.drop(['ma_down'],1)
+    rsidf = rsidf.drop(['ma_up1'],1)
+    rsidf = rsidf.drop(['ma_down1'],1)
 
     
     dict = {}
@@ -156,7 +154,7 @@ def tdi(prices,periods):
     df['haopen'] = (df.haopen.shift(1) + df.haclose.shift(1)) / 2
     df['hacolor'] = np.where(df.haclose>=df.haopen,1,-1)
     df['barnumber'] = df.groupby((df['hacolor'] != df['hacolor'].shift(1)).cumsum()).cumcount()+1
-    df = df.drop(columns='rsi1')
+    df = df.drop(['rsi1'],1)
 
     dict = {}
     dict[periods[0]] = df
@@ -220,15 +218,15 @@ def tdi1(prices,periods):
 
     df['barnumber1'] = df.apply(lambda row : barnumber([row['hacolor1'],row['hacolor2'],row['hacolor3'],row['hacolor4'],row['hacolor5'],row['hacolor6'],row['hacolor7'],row['hacolor8'],row['hacolor9'],row['hacolor10']]), axis = 1)    
 
-    df = df.drop(columns='hacolor2')
-    df = df.drop(columns='hacolor3')
-    df = df.drop(columns='hacolor4')
-    df = df.drop(columns='hacolor5')
-    df = df.drop(columns='hacolor6')
-    df = df.drop(columns='hacolor7')
-    df = df.drop(columns='hacolor8')
-    df = df.drop(columns='hacolor9')
-    df = df.drop(columns='hacolor10')
+    df = df.drop(['hacolor2'],1)
+    df = df.drop(['hacolor3'],1)
+    df = df.drop(['hacolor4'],1)
+    df = df.drop(['hacolor5'],1)
+    df = df.drop(['hacolor6'],1)
+    df = df.drop(['hacolor7'],1)
+    df = df.drop(['hacolor8'],1)
+    df = df.drop(['hacolor9'],1)
+    df = df.drop(['hacolor10'],1)
 
     
     df['haopen2'] = df.haopen.shift(1)
@@ -236,19 +234,19 @@ def tdi1(prices,periods):
     df['habarsize2'] = df.haclose.shift(1)-df.haopen.shift(1)
     
     """
-    df = df.drop(columns='red')
-    df = df.drop(columns='green')
-    df = df.drop(columns='haclose')
-    df = df.drop(columns='haopen')
-    df = df.drop(columns='hacolor')
-    df = df.drop(columns='barnumber')
-    df = df.drop(columns='haclose2')
-    df = df.drop(columns='haopen2')
+    df = df.drop(['red'],1)
+    df = df.drop(['green'],1)
+    df = df.drop(['haclose'],1)
+    df = df.drop(['haopen'],1)
+    df = df.drop(['hacolor'],1)
+    df = df.drop(['barnumber'],1)
+    df = df.drop(['haclose2'],1)
+    df = df.drop(['haopen2'],1)
 
-    df = df.drop(columns='haclose1')
-    df = df.drop(columns='haopen1')
+    df = df.drop(['haclose1'],1)
+    df = df.drop(['haopen1'],1)
 
-    df = df.drop(columns='rsi')
+    df = df.drop(['rsi'],1)
     """
     dict = {}
     dict[periods[0]] = df
@@ -304,14 +302,14 @@ def priceaction(prices,periods):
     df.loc[(df.upwick<=2*df.body)&(df.downwick>=2*df.body),'pa'] = 1
 
     
-    df = df.drop(columns='open')
-    df = df.drop(columns='high')
-    df = df.drop(columns='low')
-    df = df.drop(columns='close')
-    df = df.drop(columns='open_prev')
-    df = df.drop(columns='high_prev')
-    df = df.drop(columns='low_prev')
-    df = df.drop(columns='close_prev')
+    df = df.drop(['open'],1)
+    df = df.drop(['high'],1)
+    df = df.drop(['low'],1)
+    df = df.drop(['close'],1)
+    df = df.drop(['open_prev'],1)
+    df = df.drop(['high_prev'],1)
+    df = df.drop(['low_prev'],1)
+    df = df.drop(['close_prev'],1)
 
     
     dict = {}
@@ -340,11 +338,11 @@ def ma(prices,periods):
         madf['SMAdiffdiff_prev'] = madf.SMAdiffdiff.shift(1)
         madf['SMAclose_prev'] = madf.SMAclose.shift(1)
         
-        madf = madf.drop(columns='SMA')
-        madf = madf.drop(columns='SMAdiff')
-        madf = madf.drop(columns='SMAdiff2')
-        madf = madf.drop(columns='SMAdiffdiff')
-        madf = madf.drop(columns='SMAclose')
+        madf = madf.drop(['SMA'],1)
+        madf = madf.drop(['SMAdiff'],1)
+        madf = madf.drop(['SMAdiff2'],1)
+        madf = madf.drop(['SMAdiffdiff'],1)
+        madf = madf.drop(['SMAclose'],1)
     #     madf['EMA'] = prices.close.ewm(span=periods[0]).mean()
     #     madf['EMAdiff'] = madf.EMA.diff(1)
     #     madf['EMAdiffdiff'] = madf.EMAdiff.diff(1)
@@ -365,8 +363,8 @@ def atr(prices, periods):
         resdf['tr'] = resdf0.max(axis=1)
         resdf['atr'] = resdf.tr.rolling(periods[i]).mean()
         resdf['atr_prev'] = resdf.atr.shift(1)
-        resdf = resdf.drop(columns='atr')
-        resdf = resdf.drop(columns='tr')
+        resdf = resdf.drop(['atr'],1)
+        resdf = resdf.drop(['tr'],1)
         dict[periods[i]] = resdf
     
     results.df = dict
@@ -416,18 +414,18 @@ def srs(prices, periods):
     resdf.loc[(resdf.horn==1)&(resdf.horn_v>resdf.close_max),'horn'] = 10
     resdf.loc[(resdf.horn==-1)&(resdf.horn_v<resdf.close_min),'horn'] = -10
 
-    resdf = resdf.drop(columns='close_prev')
-    resdf = resdf.drop(columns='close_next')
-    resdf = resdf.drop(columns='high_next')
-    resdf = resdf.drop(columns='low_next')
-    resdf = resdf.drop(columns='close_max')
-    resdf = resdf.drop(columns='close_min')
-    resdf = resdf.drop(columns='close')
-    resdf = resdf.drop(columns='high')
-    resdf = resdf.drop(columns='low')
-    resdf = resdf.drop(columns='horn_v')
-    resdf = resdf.drop(columns='nextbar_open')
-    resdf = resdf.drop(columns='nextbar_id_1')
+    resdf = resdf.drop(['close_prev'],1)
+    resdf = resdf.drop(['close_next'],1)
+    resdf = resdf.drop(['high_next'],1)
+    resdf = resdf.drop(['low_next'],1)
+    resdf = resdf.drop(['close_max'],1)
+    resdf = resdf.drop(['close_min'],1)
+    resdf = resdf.drop(['close'],1)
+    resdf = resdf.drop(['high'],1)
+    resdf = resdf.drop(['low'],1)
+    resdf = resdf.drop(['horn_v'],1)
+    resdf = resdf.drop(['nextbar_open'],1)
+    resdf = resdf.drop(['nextbar_id_1'],1)
     
     srs0 = 0
     srs1 = len(resdf[(resdf.horn==10)|(resdf.horn==-10)])
@@ -468,14 +466,14 @@ def srs(prices, periods):
         print('srs:',srs1)
 
     
-    resdf = resdf.drop(columns='id')
-    resdf = resdf.drop(columns='nextbar_sr_broke')
-    resdf = resdf.drop(columns='nextbar_sr_broke_id')
-    resdf = resdf.drop(columns='nextbar_id')
-    resdf = resdf.drop(columns='open')
-    resdf = resdf.drop(columns='horn_broke_id')
-    resdf = resdf.drop(columns='horn')
-    resdf = resdf.drop(columns='sr_broke_id')
+    resdf = resdf.drop(['id'],1)
+    resdf = resdf.drop(['nextbar_sr_broke'],1)
+    resdf = resdf.drop(['nextbar_sr_broke_id'],1)
+    resdf = resdf.drop(['nextbar_id'],1)
+    resdf = resdf.drop(['open'],1)
+    resdf = resdf.drop(['horn_broke_id'],1)
+    resdf = resdf.drop(['horn'],1)
+    resdf = resdf.drop(['sr_broke_id'],1)
     
     
     resdf['sr_broke_prev'] = resdf.sr_broke.shift(1)
@@ -486,7 +484,7 @@ def srs(prices, periods):
         i+=1
     print('broke prop:',i-1)
     
-    resdf = resdf.drop(columns='prevbar_sr_broke_prev')
+    resdf = resdf.drop(['prevbar_sr_broke_prev'],1)
     
     dict[periods[0]] = resdf
     results.df = dict
@@ -564,11 +562,11 @@ def closetrades(df,hour,stoploss):
     df['tdi13habarsize2'] = df.tdi13habarsize2 * 10000
     
     
-    df = df.drop(columns='nextbar_hour')
-    df = df.drop(columns='nextbar_open')
-    df = df.drop(columns='nextbar_low')
-    df = df.drop(columns='nextbar_high')
-    df = df.drop(columns='nextbar_id')
+    df = df.drop(['nextbar_hour'],1)
+    df = df.drop(['nextbar_open'],1)
+    df = df.drop(['nextbar_low'],1)
+    df = df.drop(['nextbar_high'],1)
+    df = df.drop(['nextbar_id'],1)
     
     return df
 
@@ -578,56 +576,56 @@ def cleartrades(df,save=False):
         df.to_csv(sep=';',path_or_buf='../Data/trades.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     
     df = df[df.closeindex!=-1]
-    df = df.drop(columns='date')
-#     df = df.drop(columns='year')
-#     df = df.drop(columns='month')
-    df = df.drop(columns='day')
-    df = df.drop(columns='weekday')
-    df = df.drop(columns='open')
-    df = df.drop(columns='low')
-    df = df.drop(columns='high')
-    df = df.drop(columns='close')
-    df = df.drop(columns='volume')
-    df = df.drop(columns='openprice')
-    df = df.drop(columns='openindex')
-    df = df.drop(columns='closeindex')
-    df = df.drop(columns='closeprice')
-    df = df.drop(columns='slindex')
-    df = df.drop(columns='slprice')
-    df = df.drop(columns='id')
+    df = df.drop(['date'],1)
+#     df = df.drop(['year'],1)
+#     df = df.drop(['month'],1)
+    df = df.drop(['day'],1)
+    df = df.drop(['weekday'],1)
+    df = df.drop(['open'],1)
+    df = df.drop(['low'],1)
+    df = df.drop(['high'],1)
+    df = df.drop(['close'],1)
+    df = df.drop(['volume'],1)
+    df = df.drop(['openprice'],1)
+    df = df.drop(['openindex'],1)
+    df = df.drop(['closeindex'],1)
+    df = df.drop(['closeprice'],1)
+    df = df.drop(['slindex'],1)
+    df = df.drop(['slprice'],1)
+    df = df.drop(['id'],1)
 
-#     df = df.drop(columns='profit')
+#     df = df.drop(['profit'],1)
     
 #
     
-#     df = df.drop(columns='tdi13green1_red1')
-#     df = df.drop(columns='tdi13green2_red2')
-#     df = df.drop(columns='tdi13green_red_change')
-#     df = df.drop(columns='tdi13green_red_slope_change')
-#     df = df.drop(columns='tdi13rsi1')
-#     df = df.drop(columns='tdi13green1')
-#     df = df.drop(columns='tdi13red1')
-#     df = df.drop(columns='tdi13green2')
-#     df = df.drop(columns='tdi13red2')
-#     df = df.drop(columns='tdi13green_red_mul')
+#     df = df.drop(['tdi13green1_red1'],1)
+#     df = df.drop(['tdi13green2_red2'],1)
+#     df = df.drop(['tdi13green_red_change'],1)
+#     df = df.drop(['tdi13green_red_slope_change'],1)
+#     df = df.drop(['tdi13rsi1'],1)
+#     df = df.drop(['tdi13green1'],1)
+#     df = df.drop(['tdi13red1'],1)
+#     df = df.drop(['tdi13green2'],1)
+#     df = df.drop(['tdi13red2'],1)
+#     df = df.drop(['tdi13green_red_mul'],1)
 
-#     df = df.drop(columns='tdi13red_slope')
-#     df = df.drop(columns='tdi13green_slope')
+#     df = df.drop(['tdi13red_slope'],1)
+#     df = df.drop(['tdi13green_slope'],1)
 
-    df = df.drop(columns='tdi13haclose2')
-    df = df.drop(columns='tdi13haopen2')
+    df = df.drop(['tdi13haclose2'],1)
+    df = df.drop(['tdi13haopen2'],1)
 
-    df = df.drop(columns='tdi13haclose1')
-    df = df.drop(columns='tdi13haopen1')
+    df = df.drop(['tdi13haclose1'],1)
+    df = df.drop(['tdi13haopen1'],1)
 
-    df = df.drop(columns='tdi13rsi')
-    df = df.drop(columns='tdi13red')
-    df = df.drop(columns='tdi13green')
-    df = df.drop(columns='tdi13mid')
-    df = df.drop(columns='tdi13haclose')
-    df = df.drop(columns='tdi13haopen')
-    df = df.drop(columns='tdi13hacolor')
-    df = df.drop(columns='tdi13barnumber')
+    df = df.drop(['tdi13rsi'],1)
+    df = df.drop(['tdi13red'],1)
+    df = df.drop(['tdi13green'],1)
+    df = df.drop(['tdi13mid'],1)
+    df = df.drop(['tdi13haclose'],1)
+    df = df.drop(['tdi13haopen'],1)
+    df = df.drop(['tdi13hacolor'],1)
+    df = df.drop(['tdi13barnumber'],1)
 
     
 #     df = df[(df.tdi13habarsize1>-20)&(df.tdi13habarsize1<20)]
@@ -691,7 +689,7 @@ def stattrades(trades):
     stats = stats.merge(maxdowns_df,left_on=['tradetype','hour','closehour','sl'], right_on = ['level_0','level_1','level_2','level_3'], how='left')
     stats['maxdown_ratio'] = stats.maxdown/stats.sl
 
-    stats = stats.drop(columns=['level_0','level_1','level_2','level_3'])
+    stats = stats.drop(['level_0','level_1','level_2','level_3'],1)
     
     return stats
 
@@ -1694,12 +1692,12 @@ def closetrades_pa(df,stoploss):
 
     df['sl'] = df.sl * 10000
     
-    df = df.drop(columns='nextbar_pa')
-    df = df.drop(columns='nextbar_close')
-    df = df.drop(columns='nextbar_open')
-    df = df.drop(columns='nextbar_low')
-    df = df.drop(columns='nextbar_high')
-    df = df.drop(columns='nextbar_id')
+    df = df.drop(['nextbar_pa'],1)
+    df = df.drop(['nextbar_close'],1)
+    df = df.drop(['nextbar_open'],1)
+    df = df.drop(['nextbar_low'],1)
+    df = df.drop(['nextbar_high'],1)
+    df = df.drop(['nextbar_id'],1)
     
     return df
 
@@ -1709,23 +1707,23 @@ def cleartrades_pa(df,save=False):
         df.to_csv(sep=';',path_or_buf='../Data/trades.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     
     df = df[df.closeindex!=-1]
-    df = df.drop(columns='date')
-#     df = df.drop(columns='year')
-#     df = df.drop(columns='month')
-    df = df.drop(columns='day')
-    df = df.drop(columns='weekday')
-    df = df.drop(columns='open')
-    df = df.drop(columns='low')
-    df = df.drop(columns='high')
-    df = df.drop(columns='close')
-    df = df.drop(columns='volume')
-    df = df.drop(columns='openprice')
-    df = df.drop(columns='openindex')
-    df = df.drop(columns='closeindex')
-    df = df.drop(columns='closeprice')
-    df = df.drop(columns='slindex')
-    df = df.drop(columns='slprice')
-    df = df.drop(columns='id')
+    df = df.drop(['date'],1)
+#     df = df.drop(['year'],1)
+#     df = df.drop(['month'],1)
+    df = df.drop(['day'],1)
+    df = df.drop(['weekday'],1)
+    df = df.drop(['open'],1)
+    df = df.drop(['low'],1)
+    df = df.drop(['high'],1)
+    df = df.drop(['close'],1)
+    df = df.drop(['volume'],1)
+    df = df.drop(['openprice'],1)
+    df = df.drop(['openindex'],1)
+    df = df.drop(['closeindex'],1)
+    df = df.drop(['closeprice'],1)
+    df = df.drop(['slindex'],1)
+    df = df.drop(['slprice'],1)
+    df = df.drop(['id'],1)
     return df
 
 def stattrades_pa(trades):
@@ -1753,7 +1751,7 @@ def stattrades_pa(trades):
     stats = stats.merge(maxdowns_df,left_on=['tradetype','weekday','pa_prev','sl','slip'], right_on = ['level_0','level_1','level_2','level_3','level_4'], how='left')
     stats['maxdown_ratio'] = stats.maxdown/stats.sl
 
-    stats = stats.drop(columns=['level_0','level_1','level_2','level_3','level_4'])
+    stats = stats.drop(['level_0','level_1','level_2','level_3','level_4'],1)
     
     return stats
 
@@ -1788,31 +1786,21 @@ def runstats_pa_v3(alltrades):
 
 
 
-def preparetrades_brut_tsl(masterFrame, trtypes, sls, tps, tsls, yearfrom, yearto,atr=''):
+def preparetrades_brut_tsl(masterFrame, trtypes, sls, tps, tsls, yearfrom, yearto):
     first = True
     masterFrame = masterFrame[(masterFrame.year>=yearfrom)&(masterFrame.year<=yearto)]
     for trtype in trtypes:
         for sl in sls:                
-            for tp in tps:
-                if (tp==100):
+            for tp in tps:                
+                for tsl in tsls:                
                     df = masterFrame.copy()
                     df = opentrades_brut(trtype,df)
-                    df = closetrades_tsl(df,sl,tp,0,atr)
+                    df = closetrades_tsl(df,sl,tp,tsl)
                     if (first==True): 
                         trades=df 
                         first = False
                     else:
                         trades=trades.append(df)
-                else:
-                    for tsl in tsls:                
-                        df = masterFrame.copy()
-                        df = opentrades_brut(trtype,df)
-                        df = closetrades_tsl(df,sl,tp,tsl,atr)
-                        if (first==True): 
-                            trades=df 
-                            first = False
-                        else:
-                            trades=trades.append(df)
     return trades
 
 def preparetrades_brut_tp(masterFrame, trtypes, sls, tps, yearfrom, yearto,atr=''):
@@ -1871,7 +1859,7 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
     lastclose = df.tail(1).id.values[0] - 10
 #     print(lastclose)
     i = 0
-    while ((len(df[(df.tradetype!=0) & (df.closeindex==-1) & (df.id<=lastclose)])>0) & (i>=-500)):
+    while ((len(df[(df.tradetype!=0) & (df.closeindex==-1) & (df.id<=lastclose)])>0) & (i>=-50)):
         df['nextbar_open'] = df.open.shift(i)
         df['nextbar_close'] = df.close.shift(i)
         df['nextbar_low'] = df.low.shift(i)
@@ -1881,7 +1869,7 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
         df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),'slprice'] = df.nextbar_low
         df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),'slindex'] = df.nextbar_id
         df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),'closeprice'] = df.stoploss
-        df.loc[(df.tradetype==1) & (df.closeindex==-1)&(df.nextbar_low<=df.stoploss),'profit'] = df.closeprice - df.openprice
+        df.loc[(df.tradetype==1) & (df.closeindex==-1)&(df.nextbar_low<=df.stoploss),'profit'] = df.stoploss - df.openprice
         df.loc[(df.tradetype==1) & (df.closeindex==-2)&(df.nextbar_low<=df.stoploss),'profit'] = df.profit + (df.closeprice - df.openprice)/2
         df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),'closeindex'] = df.nextbar_id
 
@@ -1889,29 +1877,25 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
         df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),'slprice'] = df.nextbar_high
         df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),'slindex'] = df.nextbar_id
         df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),'closeprice'] = df.stoploss
-        df.loc[(df.tradetype==-1) & (df.closeindex==-1)&(df.nextbar_high>=df.stoploss),'profit'] = df.openprice - df.closeprice
+        df.loc[(df.tradetype==-1) & (df.closeindex==-1)&(df.nextbar_high>=df.stoploss),'profit'] = df.openprice - df.stoploss
         df.loc[(df.tradetype==-1) & (df.closeindex==-2)&(df.nextbar_high>=df.stoploss),'profit'] = df.profit + (df.openprice - df.closeprice)/2
         df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),'closeindex'] = df.nextbar_id
         
         #TP buy
         df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'tpcloseprice'] = df.nextbar_high
         df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'tpcloseindex'] = df.nextbar_id
-        df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'profit'] = df.tp_val/2
+        df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'profit'] = df.tp/2
         df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'closeindex'] = -2
         #TP sell
         df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'tpcloseprice'] = df.nextbar_low
         df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'tpcloseindex'] = df.nextbar_id
-        df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'profit'] = df.tp_val/2
+        df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'profit'] = df.tp/2
         df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'closeindex'] = -2
         
         #update SL - trailing SL
-        if (takeprofit==100):
-            df.loc[(df.tradetype==1) & (df.closeindex<0) & (df.nextbar_close - df.sl_val > df.stoploss),'stoploss'] = df.nextbar_close - df.sl_val
-            df.loc[(df.tradetype==-1) & (df.closeindex<0) & (df.nextbar_close + df.sl_val < df.stoploss),'stoploss'] = df.nextbar_close + df.sl_val
-        else:
-            df.loc[(df.tradetype==1)  & (df.closeindex==-2) & (df.nextbar_close - df.tsl_val > df.stoploss),'stoploss'] = df.nextbar_close - df.tsl_val
-            df.loc[(df.tradetype==-1) & (df.closeindex==-2) & (df.nextbar_close + df.tsl_val < df.stoploss),'stoploss'] = df.nextbar_close + df.tsl_val
-
+        df.loc[(df.tradetype==1)  & (df.closeindex==-2) & (df.nextbar_close - df.tsl_val > df.stoploss),'stoploss'] = df.nextbar_close - df.tsl_val
+        df.loc[(df.tradetype==-1) & (df.closeindex==-2) & (df.nextbar_close + df.tsl_val < df.stoploss),'stoploss'] = df.nextbar_close + df.tsl_val
+        
         
         i-=1
     
@@ -1923,15 +1907,15 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
     df['profit'] = df.profit * 10000
     df['profit1'] = np.where(df.profit>=20,1,-1)
 
-    df = df.drop(columns='nextbar_close')
-    df = df.drop(columns='nextbar_open')
-    df = df.drop(columns='nextbar_low')
-    df = df.drop(columns='nextbar_high')
-    df = df.drop(columns='nextbar_id')
-#     df = df.drop(columns='sl_val')
-#     df = df.drop(columns='tp_val')
-#     df = df.drop(columns='tsl_val')
-#     df = df.drop(columns='takeprofit')
+    df = df.drop(['nextbar_close'],1)
+    df = df.drop(['nextbar_open'],1)
+    df = df.drop(['nextbar_low'],1)
+    df = df.drop(['nextbar_high'],1)
+    df = df.drop(['nextbar_id'],1)
+#     df = df.drop(['sl_val'],1)
+#     df = df.drop(['tp_val'],1)
+#     df = df.drop(['tsl_val'],1)
+#     df = df.drop(['takeprofit'],1)
     
     return df
 
@@ -1963,7 +1947,7 @@ def closetrades_tp(df,stoploss,takeprofit,atr=''):
     lastclose = df.tail(1).id.values[0] - 10
 #     print(lastclose)
     i = 0
-    while ((len(df[(df.tradetype!=0) & (df.closeindex==-1) & (df.id<=lastclose)])>0) & (i>=-500)):
+    while ((len(df[(df.tradetype!=0) & (df.closeindex==-1) & (df.id<=lastclose)])>0) & (i>=-50)):
         df['nextbar_open'] = df.open.shift(i)
         df['nextbar_close'] = df.close.shift(i)
         df['nextbar_low'] = df.low.shift(i)
@@ -2007,14 +1991,14 @@ def closetrades_tp(df,stoploss,takeprofit,atr=''):
     df['profit'] = df.profit * 10000
     df['profit1'] = np.where(df.profit>=20,1,-1)
 
-    df = df.drop(columns='nextbar_close')
-    df = df.drop(columns='nextbar_open')
-    df = df.drop(columns='nextbar_low')
-    df = df.drop(columns='nextbar_high')
-    df = df.drop(columns='nextbar_id')
-#     df = df.drop(columns='sl_val')
-#     df = df.drop(columns='tp_val')
-#     df = df.drop(columns='takeprofit')
+    df = df.drop(['nextbar_close'],1)
+    df = df.drop(['nextbar_open'],1)
+    df = df.drop(['nextbar_low'],1)
+    df = df.drop(['nextbar_high'],1)
+    df = df.drop(['nextbar_id'],1)
+#     df = df.drop(['sl_val'],1)
+#     df = df.drop(['tp_val'],1)
+#     df = df.drop(['takeprofit'],1)
     
     return df
 
@@ -2027,23 +2011,23 @@ def cleartrades_brut(df,save=False):
         df.to_csv(sep=';',path_or_buf='../Data/trades.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     
     df = df[df.closeindex!=-1]
-    df = df.drop(columns='date')
-#     df = df.drop(columns='year')
-#     df = df.drop(columns='month')
-    df = df.drop(columns='day')
-    df = df.drop(columns='weekday')
-    df = df.drop(columns='open')
-    df = df.drop(columns='low')
-    df = df.drop(columns='high')
-    df = df.drop(columns='close')
-    df = df.drop(columns='volume')
-    df = df.drop(columns='openprice')
-    df = df.drop(columns='openindex')
-    df = df.drop(columns='closeindex')
-    df = df.drop(columns='closeprice')
-    df = df.drop(columns='slindex')
-    df = df.drop(columns='slprice')
-    df = df.drop(columns='id')
+    df = df.drop(['date'],1)
+#     df = df.drop(['year'],1)
+#     df = df.drop(['month'],1)
+    df = df.drop(['day'],1)
+    df = df.drop(['weekday'],1)
+    df = df.drop(['open'],1)
+    df = df.drop(['low'],1)
+    df = df.drop(['high'],1)
+    df = df.drop(['close'],1)
+    df = df.drop(['volume'],1)
+    df = df.drop(['openprice'],1)
+    df = df.drop(['openindex'],1)
+    df = df.drop(['closeindex'],1)
+    df = df.drop(['closeprice'],1)
+    df = df.drop(['slindex'],1)
+    df = df.drop(['slprice'],1)
+    df = df.drop(['id'],1)
     return df
 
 
@@ -2308,11 +2292,11 @@ def runstats_ma_v15(alltrades,a,b,c,d,atr='atr140atr_prev'):
     params['tradetype'] =      [2,[1]]
     params['sl'] =             [2,[0.3,0.4,0.5,0.6,0.7,0.8,0.9]]
     params['tp'] =             [2,[0.6,0.7,0.8,0.9,1,1.1,1.2,1.3,1.4,1.5]]
-#     params[atr] =              [3,[-1000],[0.015]]
+    params[atr] =              [3,[-1000],[0.015]]
     params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
-#     params[d]     =            [0,[-1000,0,1000],[-1000,0,1000]]
+    params[d]     =            [0,[-1000,0,1000],[-1000,0,1000]]
     params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
     params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
     params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
@@ -2327,7 +2311,7 @@ def runstats_ma_v16(alltrades,a,b,c,d,atr='atr140atr_prev'):
     params['tradetype'] =      [2,[1]]
     params['sl'] =             [2,[30,40,50,60,70,80,90,100]]
     params['tp'] =             [2,[60,70,80,90,100,110,120,130,140,150]]
-#     params[atr] =              [3,[-1000],[0.015]]
+    params[atr] =              [3,[-1000],[0.015]]
     params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
@@ -2340,14 +2324,14 @@ def runstats_ma_v16(alltrades,a,b,c,d,atr='atr140atr_prev'):
     stats = stathyperparams2(alltrades,params,conf)
     return stats
 
-def runstats_ma_v17(alltrades,a,b,c,d,atr='atr140atr_prev'):
+def runstats_ma_v15(alltrades,a,b,c,d,atr='atr140atr_prev'):
     conf   = {}
     params = {}
 
     params['tradetype'] =      [2,[-1]]
     params['sl'] =             [2,[0.3,0.4,0.5,0.6,0.7,0.8,0.9]]
     params['tp'] =             [2,[0.6,0.7,0.8,0.9,1,1.1,1.2,1.3,1.4,1.5]]
-#     params[atr] =              [3,[-1000],[0.015]]
+    params[atr] =              [3,[-1000],[0.015]]
     params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
@@ -2360,61 +2344,3 @@ def runstats_ma_v17(alltrades,a,b,c,d,atr='atr140atr_prev'):
     stats = stathyperparams2(alltrades,params,conf)
     return stats
 
-def runstats_ma_v18(alltrades,a,b,c,d,atr='atr140atr_prev'):
-    conf   = {}
-    params = {}
-
-    params['tradetype'] =      [2,[-1]]
-    params['sl'] =             [2,[30,40,50,60,70,80,90,100]]
-    params['tp'] =             [2,[60,70,80,90,100,110,120,130,140,150]]
-#     params[atr] =              [3,[-1000],[0.015]]
-    params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
-    params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
-    params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
-#     params[d]     =            [0,[-1000,0,1000],[-1000,0,1000]]
-    params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
-    params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
-    params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
-    conf['filename'] = 'ma_frac_2003_2021_1_'+atr+'_'+a
-    print(conf['filename'])
-    stats = stathyperparams2(alltrades,params,conf)
-    return stats
-
-def runstats_ma_v20(alltrades,a,b,c,d,atr='atr140atr_prev'):
-    conf   = {}
-    params = {}
-
-    params['tradetype'] =      [2,[1]]
-    params['sl'] =             [2,[1]]
-    params['tp'] =             [2,[10]]
-    params['tsl'] =            [2,[2]]
-#     params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
-#     params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
-#     params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
-#     params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
-#     params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
-#     params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
-    conf['filename'] = 'ma_frac_2003_2021_1_'+atr+'_'+a
-    print(conf['filename'])
-    stats = stathyperparams2(alltrades,params,conf)
-    return stats
-
-def runstats_ma_v21(alltrades,a,b,c,d,atr='atr140atr_prev'):
-    conf   = {}
-    params = {}
-
-    params['tradetype'] =      [2,[1]]
-    params['sl'] =             [2,[1,1.2,1.4,1.6,1.8,2,2.2]]
-    params['tp'] =             [2,[1.2,1.4,1.6,1.8,2,2.2,2.4,2.6,2.8,3,3.2]]
-#     params[atr] =              [3,[-1000],[0.015]]
-    params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
-    params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
-    params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
-#     params[d]     =            [0,[-1000,0,1000],[-1000,0,1000]]
-    params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
-    params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
-    params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
-    conf['filename'] = 'ma_frac_2003_2021_1_'+atr+'_'+a
-    print(conf['filename'])
-    stats = stathyperparams2(alltrades,params,conf)
-    return stats
