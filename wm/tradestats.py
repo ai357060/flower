@@ -2475,7 +2475,17 @@ def runstats_ma_v23(alltrades,a,b,c,d,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
     stats = stathyperparams2(alltrades,params,conf)
     return stats    
 
-def runstats_ma_v24(alltrades,a,b,c,d,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
+
+def runstats(ma1,atrperiod,sl,tp,tsl):
+    ma2 = '5'
+    stats1 = runstats_ma_v24(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev','ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,tp,tsl)
+    ma2 = '10'
+    stats1 = runstats_ma_v24(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev','ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,tp,tsl)
+    ma2 = '20'
+    stats1 = runstats_ma_v24(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev','ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,tp,tsl)
+    return stats1
+
+def runstats_ma_v24(alltrades,a,b,c,d,aa,bb,cc,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
     conf   = {}
     params = {}
 
@@ -2489,6 +2499,7 @@ def runstats_ma_v24(alltrades,a,b,c,d,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl
     params[d]    =        [0,[-1000,0,1000],[-1000,0,1000]]
     params[aa]   =        [0,[-1000,0,1000],[-1000,0,1000]]
     params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[cc]   =        [0,[-1000,0,1000],[-1000,0,1000]]
     conf['filename'] =    'ma_24_2003_2021_1_'+atr+'_'+d
     print(conf['filename'])
     stats = stathyperparams2(alltrades,params,conf)
