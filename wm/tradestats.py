@@ -330,26 +330,35 @@ def ma(prices,periods):
     for i in range(0,len(periods)):
         madf = pd.DataFrame(index=prices.index)
         madf['SMA'] = prices.close.rolling(window=periods[i]).mean()
+        madf['SMA5'] = prices.close.rolling(window=5).mean()
+        madf['SMA10'] = prices.close.rolling(window=10).mean()
+        madf['SMA20'] = prices.close.rolling(window=20).mean()
         madf['SMAdiff'] = madf.SMA.diff(1)
         madf['SMAdiff2'] = madf.SMA.diff(2)
         madf['SMAdiffdiff'] = madf.SMAdiff.diff(1)
-        madf['SMAclose'] = prices.close - madf.SMA
+        madf['SMAvs5'] = madf.SMA5-madf.SMA
+        madf['SMAvs10'] = madf.SMA10-madf.SMA
+        madf['SMAvs20'] = madf.SMA20-madf.SMA
         madf['SMA_prev'] = madf.SMA.shift(1)
         madf['SMAdiff_prev'] = madf.SMAdiff.shift(1)
         madf['SMAdiff2_prev'] = madf.SMAdiff2.shift(1)
         madf['SMAdiffdiff_prev'] = madf.SMAdiffdiff.shift(1)
-        madf['SMAclose_prev'] = madf.SMAclose.shift(1)
+        madf['SMAvs5_prev'] = madf.SMAvs5.shift(1)
+        madf['SMAvs10_prev'] = madf.SMAvs10.shift(1)
+        madf['SMAvs20_prev'] = madf.SMAvs20.shift(1)
         
         madf = madf.drop(columns='SMA')
         madf = madf.drop(columns='SMAdiff')
         madf = madf.drop(columns='SMAdiff2')
         madf = madf.drop(columns='SMAdiffdiff')
-        madf = madf.drop(columns='SMAclose')
+        madf = madf.drop(columns='SMAvs5')
+        madf = madf.drop(columns='SMAvs10')
+        madf = madf.drop(columns='SMAvs20')
     #     madf['EMA'] = prices.close.ewm(span=periods[0]).mean()
     #     madf['EMAdiff'] = madf.EMA.diff(1)
     #     madf['EMAdiffdiff'] = madf.EMAdiff.diff(1)
     #     madf['EMAclose'] = prices.close - madf.EMA
-        dict[periods[i]] = madf
+        dict[periods[i]] = madf.copy()
     results.df = dict
     return results
 
@@ -367,7 +376,7 @@ def atr(prices, periods):
         resdf['atr_prev'] = resdf.atr.shift(1)
         resdf = resdf.drop(columns='atr')
         resdf = resdf.drop(columns='tr')
-        dict[periods[i]] = resdf
+        dict[periods[i]] = resdf.copy()
     
     results.df = dict
     return results
@@ -1042,6 +1051,8 @@ def stathyperparams2(trades,params,conf):
     
     stats = execstats2_r(trades,stats,params,seq)
     stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+    if (len(stats)==0):
+        print('no profit')
     #scalanie
     statsgb = stats.groupby(by=list(groupbycolumns))
     stats = statsgb.size().to_frame(name='xx')
@@ -1151,8 +1162,9 @@ def calculatestats2(trades,params,seq):
             stats0 = stats0[stats0[kk].isin(seq[kk][1])]
         elif (imode == 2):
             stats0 = stats0[stats0[kk]==seq[kk][1]]
-            
+    
     pr_c = len(stats0)
+
     avgsl = stats0.sl_val.mean()
     pr_sum = stats0.profit.sum()
     if ((pr_c>=seq['mintrades']) and (pr_sum>0)):
@@ -1789,6 +1801,8 @@ def runstats_pa_v3(alltrades):
 
 
 def preparetrades_brut_tsl(masterFrame, trtypes, sls, tps, tsls, yearfrom, yearto,atr=''):
+    if (tsls==[]):
+        return preparetrades_brut_tp(masterFrame, trtypes, sls, tps, yearfrom, yearto,atr)
     first = True
     masterFrame = masterFrame[(masterFrame.year>=yearfrom)&(masterFrame.year<=yearto)]
     for trtype in trtypes:
@@ -1868,10 +1882,9 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
     df['slprice'] = -1
     df['profit'] = 0
     
-    lastclose = df.tail(1).id.values[0] - 10
-#     print(lastclose)
     i = 0
-    while ((len(df[(df.tradetype!=0) & (df.closeindex==-1) & (df.id<=lastclose)])>0) & (i>=-500)):
+    df['nextbar_id'] = df.id.shift(i)
+    while ((len(df[(df.tradetype!=0) & (df.closeindex<0) & (df.nextbar_id>0)])>0) ):#& (i>=-500)):
         df['nextbar_open'] = df.open.shift(i)
         df['nextbar_close'] = df.close.shift(i)
         df['nextbar_low'] = df.low.shift(i)
@@ -1915,7 +1928,7 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
         
         i-=1
     
-    print(i)
+    print(stoploss,':',takeprofit,':',trailsl,':',i,' open:',len(df[(df.tradetype!=0) & (df.closeindex<0)]))
     df['sl_val'] = df.sl_val * 10000
     df['tp_val'] = df.tp_val * 10000
     df['tsl_val'] = df.tsl_val * 10000
@@ -1928,6 +1941,8 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
     df = df.drop(columns='nextbar_low')
     df = df.drop(columns='nextbar_high')
     df = df.drop(columns='nextbar_id')
+    
+    
 #     df = df.drop(columns='sl_val')
 #     df = df.drop(columns='tp_val')
 #     df = df.drop(columns='tsl_val')
@@ -2406,7 +2421,7 @@ def runstats_ma_v21(alltrades,a,b,c,d,atr='atr140atr_prev'):
     params['tradetype'] =      [2,[1]]
     params['sl'] =             [2,[1,1.2,1.4,1.6,1.8,2,2.2]]
     params['tp'] =             [2,[1.2,1.4,1.6,1.8,2,2.2,2.4,2.6,2.8,3,3.2]]
-#     params[atr] =              [3,[-1000],[0.015]]
+    params[atr] =              [3,[-1000],[0.015]]
     params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
     params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
@@ -2415,6 +2430,66 @@ def runstats_ma_v21(alltrades,a,b,c,d,atr='atr140atr_prev'):
     params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
     params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
     conf['filename'] = 'ma_frac_2003_2021_1_'+atr+'_'+a
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
+
+def runstats_ma_v22(alltrades,a,b,c,d,atr='atr140atr_prev',sl=[],tp=[]):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] =      [2,[1]]
+    params['sl'] =             [2,sl]
+    params['tp'] =             [2,tp]
+    params[atr] =              [3,[-1000],[0.015]]
+    params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+#     params[d]     =            [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
+#     params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] = 'ma_frac_2003_2021_1_'+atr+'_'+a
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
+
+def runstats_ma_v23(alltrades,a,b,c,d,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] =      [2,[1]]
+    params['sl'] =             [2,sl]
+    params['tp'] =             [2,tp]
+    params['tsl'] =            [2,tsl]
+    params[atr] =              [3,[-1000],[0.015]]
+    params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+#     params[d]     =            [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
+#     params['ma5SMAclose_prev']=[0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] = 'ma_23_2003_2021_1_'+atr+'_'+a
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats    
+
+def runstats_ma_v24(alltrades,a,b,c,d,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [2,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[d]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[aa]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] =    'ma_24_2003_2021_1_'+atr+'_'+d
     print(conf['filename'])
     stats = stathyperparams2(alltrades,params,conf)
     return stats
