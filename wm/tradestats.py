@@ -40,6 +40,14 @@ from warnings import simplefilter
 
 class holder:
     1
+
+# ducascopy
+# BID EET GMT
+# do daty trzeba dodać jeden dzień
+# Ostatni w pliku pokazuje aktualny kurs z bieżącego dnia.
+# date,open,high,low,close,volume
+# 02.08.2003 21:00:00.000,0.65130,0.65130,0.65130,0.65130,0
+
     
 def loaddata_4h(datafile):
     df = pd.read_csv('../Data/'+datafile)
@@ -325,35 +333,50 @@ def ma(prices,periods):
     :param periods; ema1, ema2, signal period
     :return; macd
     '''
+    m1 = '5'
+    m2 = '10'
+    m3 = '20'
     results = holder()
     dict = {}
     for i in range(0,len(periods)):
         madf = pd.DataFrame(index=prices.index)
         madf['SMA'] = prices.close.rolling(window=periods[i]).mean()
-        madf['SMA5'] = prices.close.rolling(window=5).mean()
-        madf['SMA10'] = prices.close.rolling(window=10).mean()
-        madf['SMA20'] = prices.close.rolling(window=20).mean()
+        madf['SMA'+m1] = prices.close.rolling(window=int(m1)).mean()
+        madf['SMA'+m2] = prices.close.rolling(window=int(m2)).mean()
+        madf['SMA'+m3] = prices.close.rolling(window=int(m3)).mean()
         madf['SMAdiff'] = madf.SMA.diff(1)
         madf['SMAdiff2'] = madf.SMA.diff(2)
+        madf['SMAdiff2n'] = madf.SMA.shift(1) - madf.SMA.shift(2)
+        madf['SMAdiff3'] = madf.SMA.diff(3)
+        madf['SMAdiff4'] = madf.SMA.diff(4)
         madf['SMAdiffdiff'] = madf.SMAdiff.diff(1)
-        madf['SMAvs5'] = madf.SMA5-madf.SMA
-        madf['SMAvs10'] = madf.SMA10-madf.SMA
-        madf['SMAvs20'] = madf.SMA20-madf.SMA
+        madf['SMAvs'+m1] = madf['SMA'+m1]-madf.SMA
+        madf['SMAvs'+m2] = madf['SMA'+m2]-madf.SMA
+        madf['SMAvs'+m3] = madf['SMA'+m3]-madf.SMA
         madf['SMA_prev'] = madf.SMA.shift(1)
         madf['SMAdiff_prev'] = madf.SMAdiff.shift(1)
         madf['SMAdiff2_prev'] = madf.SMAdiff2.shift(1)
+        madf['SMAdiff2n_prev'] = madf.SMAdiff2n.shift(1)
+        madf['SMAdiff3_prev'] = madf.SMAdiff3.shift(1)
+        madf['SMAdiff4_prev'] = madf.SMAdiff4.shift(1)
         madf['SMAdiffdiff_prev'] = madf.SMAdiffdiff.shift(1)
-        madf['SMAvs5_prev'] = madf.SMAvs5.shift(1)
-        madf['SMAvs10_prev'] = madf.SMAvs10.shift(1)
-        madf['SMAvs20_prev'] = madf.SMAvs20.shift(1)
+        madf['SMAvs'+m1+'_prev'] = madf['SMAvs'+m1].shift(1)
+        madf['SMAvs'+m2+'_prev'] = madf['SMAvs'+m2].shift(1)
+        madf['SMAvs'+m3+'_prev'] = madf['SMAvs'+m3].shift(1)
         
         madf = madf.drop(columns='SMA')
+        madf = madf.drop(columns='SMA'+m1)
+        madf = madf.drop(columns='SMA'+m2)
+        madf = madf.drop(columns='SMA'+m3)
         madf = madf.drop(columns='SMAdiff')
         madf = madf.drop(columns='SMAdiff2')
+        madf = madf.drop(columns='SMAdiff2n')
+        madf = madf.drop(columns='SMAdiff3')
+        madf = madf.drop(columns='SMAdiff4')
         madf = madf.drop(columns='SMAdiffdiff')
-        madf = madf.drop(columns='SMAvs5')
-        madf = madf.drop(columns='SMAvs10')
-        madf = madf.drop(columns='SMAvs20')
+        madf = madf.drop(columns='SMAvs'+m1)
+        madf = madf.drop(columns='SMAvs'+m2)
+        madf = madf.drop(columns='SMAvs'+m3)
     #     madf['EMA'] = prices.close.ewm(span=periods[0]).mean()
     #     madf['EMAdiff'] = madf.EMA.diff(1)
     #     madf['EMAdiffdiff'] = madf.EMAdiff.diff(1)
@@ -501,7 +524,68 @@ def srs(prices, periods):
     results.df = dict
     return results
 
+#Momentum
+def momentum(prices,periods):
+    '''
+    :param prices; dataframe of OHLC currency data
+    :param periods; list of periods for which to compute the function [3,5,10,...]
+    :return; momentum indicator
+    '''    
 
+    results = holder()
+    dict = {}
+    for i in range(0, len(periods)):
+        resdf = pd.DataFrame(index=prices.index)
+        resdf['close'] = prices.close.diff(periods=periods[i])
+        resdf['direction'] = -1
+        resdf.loc[prices.close>prices.open,'direction'] = 1
+        resdf['close_prev'] = resdf.close.shift(1)
+        resdf['direction_prev'] = resdf.direction.shift(1)
+        resdf = resdf.drop(columns='close')
+        resdf = resdf.drop(columns='direction')
+        
+        dict[periods[i]] = resdf
+    
+    results.df = dict
+    return results
+
+def macd(prices,periods):
+    '''
+    :param prices; dataframe of OHLC currency data
+    :param periods; ema1, ema2, signal period
+    :return; macd
+    '''
+    results = holder()
+    dict = {}
+    
+    EMA1 = prices.close.ewm(span=periods[0]).mean()
+    EMA2 = prices.close.ewm(span=periods[1]).mean()
+    macddf = pd.DataFrame(index=prices.index)
+    macddf['MACD'] = EMA1-EMA2
+    macddf['SigMACD'] = macddf.MACD.ewm(span=periods[2]).mean()
+    macddf['HistMACD'] = macddf['MACD'] - macddf['SigMACD']
+    macddf['HistMACD_prev'] = macddf.HistMACD.shift(1)
+    macddf = macddf.drop(columns='MACD')
+    macddf = macddf.drop(columns='SigMACD')
+    macddf = macddf.drop(columns='HistMACD')
+    dict[periods[0]] = macddf
+    results.df = dict
+    return results
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#-----------------------------------------------------------------------------------------
 def opentrades(mode,df,hours):
     df['tradetype'] = 0
     
@@ -1025,7 +1109,7 @@ def stathyperparams2(trades,params,conf):
     statscolumns = ['c','cu','cd','cc',
                                   'mu','md','mm',
                                   'p_sm',
-                                  'maxd','xx','avgsl'
+                                  'maxd','maxd2','xx','avgsl'
                     ]
     groupbycolumns = ['c',
                              'cu',
@@ -1033,7 +1117,7 @@ def stathyperparams2(trades,params,conf):
                              'mu',
                              'md',
                              'p_sm',
-                             'maxd','avgsl'
+                             'maxd','maxd2','avgsl'
                             ]
 
     for key in params.keys():
@@ -1050,7 +1134,7 @@ def stathyperparams2(trades,params,conf):
     seq['lastrun'] = datetime.now()
     
     stats = execstats2_r(trades,stats,params,seq)
-    stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+#     stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     if (len(stats)==0):
         print('no profit')
     #scalanie
@@ -1169,8 +1253,20 @@ def calculatestats2(trades,params,seq):
     pr_sum = stats0.profit.sum()
     if ((pr_c>=seq['mintrades']) and (pr_sum>0)):
         pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
+        cumsum        = stats0.profit.cumsum()
+        cumsumcummax  = cumsum.cummax()
+        cumsum_cummax = cumsum-cumsumcummax
+# 
+#         stats0['cumsum'] = cumsum
+#         stats0['cumsumcummax'] = cumsumcummax
+#         stats0['cumsum_cummax'] = cumsum_cummax
+#         stats0.to_csv(sep=';',path_or_buf='../Data/raw.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+#         
+        pr_maxdown2 = cumsum_cummax.min()
         if (pr_maxdown>0):
             pr_maxdown = 0
+        if (pr_maxdown2>0):
+            pr_maxdown2 = 0
 
         pr_c_u = len(stats0[stats0.profit>=0])
         pr_c_d = len(stats0[stats0.profit<0])            
@@ -1179,7 +1275,7 @@ def calculatestats2(trades,params,seq):
         monthsdown = len(yearmonth[yearmonth.profit<0])
         
         df = {'c':pr_c,'cu':pr_c_u,'cd':pr_c_d,'p_sm':pr_sum,
-              'maxd':pr_maxdown,'mu':monthsup,'md':monthsdown,'avgsl':avgsl
+              'maxd':pr_maxdown,'maxd2':pr_maxdown2,'mu':monthsup,'md':monthsdown,'avgsl':avgsl
              }
         for kk in params.keys():
             imode = seq[kk][0]
@@ -1975,10 +2071,10 @@ def closetrades_tp(df,stoploss,takeprofit,atr=''):
     df['slprice'] = -1
     df['profit'] = 0
     
-    lastclose = df.tail(1).id.values[0] - 10
-#     print(lastclose)
     i = 0
-    while ((len(df[(df.tradetype!=0) & (df.closeindex==-1) & (df.id<=lastclose)])>0) & (i>=-500)):
+    df['nextbar_id'] = df.id.shift(i)
+    while ((len(df[(df.tradetype!=0) & (df.closeindex<0) & (df.nextbar_id>0)])>0) ):#& (i>=-500)):
+#     while ((len(df[(df.tradetype!=0) & (df.closeindex==-1) & (df.id<=lastclose)])>0) & (i>=-500)):
         df['nextbar_open'] = df.open.shift(i)
         df['nextbar_close'] = df.close.shift(i)
         df['nextbar_low'] = df.low.shift(i)
@@ -2476,7 +2572,7 @@ def runstats_ma_v23(alltrades,a,b,c,d,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
     return stats    
 
 
-def runstats(ma1,atrperiod,sl,tp,tsl):
+def runstats(alltrades,ma1,atrperiod,sl,tp,tsl):
     ma2 = '5'
     stats1 = runstats_ma_v24(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev','ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,tp,tsl)
     ma2 = '10'
@@ -2501,6 +2597,150 @@ def runstats_ma_v24(alltrades,a,b,c,d,aa,bb,cc,atr='atr140atr_prev',sl=[],tp=[],
     params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
     params[cc]   =        [0,[-1000,0,1000],[-1000,0,1000]]
     conf['filename'] =    'ma_24_2003_2021_1_'+atr+'_'+d
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
+
+
+def runstats_ma_v25(alltrades,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] =      [2,[1]]
+    params['sl'] =             [2,sl]
+    params['tp'] =             [2,tp]
+    if (tsl!=[]):
+        params['tsl'] =            [2,tsl]
+    params[atr] =              [3,[-1000],[0.015]]
+    params['momentum7close_prev']      =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params['momentum7direction_prev']  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params['macd12HistMACD_prev']      =               [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] = 'ma_25_2003_2021_1_'+atr
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats   
+
+
+
+def runstats_ma_v26(alltrades,a,b,c,d,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] =      [2,[1]]
+    params['sl'] =             [2,sl]
+    params['tp'] =             [2,tp]
+    params['tsl'] =            [2,tsl]
+    params[atr] =              [3,[-1000],[0.015]]
+    params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[d]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
+#     params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] = 'ma_26_2003_2021_1_'+atr+'_'+a
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats    
+
+def runstats_ma_v27(alltrades,a,b,c,d,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] =      [2,[1]]
+    params['sl'] =             [2,sl]
+    params['tp'] =             [2,tp]
+#     params['tsl'] =            [2,tsl]
+    params[atr] =              [3,[-1000],[0.015]]
+    params[a]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params[d]  =               [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiff_prev']= [0,[-1000,0,1000],[-1000,0,1000]]
+    params['ma5SMAdiffdiff_prev']  = [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] = 'ma_27_2003_2021_1_'+atr+'_'+a
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats    
+
+def runstats28(alltrades,ma1,atrperiod,sl,tp,tsl):
+    ma2 = '5'
+    stats1 = runstats_ma_v28(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev','ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,tp,tsl)
+    ma2 = '10'
+    stats1 = runstats_ma_v28(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev','ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,tp,tsl)
+    ma2 = '20'
+    stats1 = runstats_ma_v28(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev','ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,tp,tsl)
+    return stats1
+
+def runstats_ma_v28(alltrades,a,b,c,d,aa,bb,cc,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [2,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params['tsl'] =       [2,tsl]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[d]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[aa]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[cc]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] =    'ma_28_2003_2021_1_'+atr+'_'+d
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
+
+
+def runstats29(alltrades,ma1,atrperiod,sl,tp,tsl):
+    ma2 = '5'
+    stats1 = runstats_ma_v29(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev','ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,tp,tsl)
+    return stats1
+
+def runstats_ma_v29(alltrades,a,b,c,d,aa,bb,cc,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [2,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params['tsl'] =       [2,tsl]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[d]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[aa]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[cc]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] =    'ma_29_2003_2021_1_'+atr+'_'+d
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return stats
+
+def runstats_test1(alltrades,ma1,atrperiod,sl,tp,tsl):
+    ma2 = '5'
+    stats1 = runstats_ma_test1(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev','ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,tp,tsl)
+    return stats1
+
+def runstats_ma_test1(alltrades,a,b,c,d,aa,bb,cc,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [2,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params['tsl'] =       [2,tsl]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [3,[-1000],[1000]]
+    params[b]    =        [3,[-1000],[1000]]
+    params[c]    =        [3,[0],[1000]]
+    params[d]    =        [3,[-1000],[1000]]
+    params[aa]   =        [3,[-1000],[1000]]
+    params[bb]   =        [3,[-1000],[0]]
+    params[cc]   =        [3,[-1000],[1000]]
+    conf['filename'] =    'ma_29_2003_2021_1_'+atr+'_'+d
     print(conf['filename'])
     stats = stathyperparams2(alltrades,params,conf)
     return stats

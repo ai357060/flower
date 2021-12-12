@@ -48,7 +48,14 @@ def loaddata(datafile='uj_d.csv'):
     df['day'] = pd.DatetimeIndex(df['date']).day 
     df = df.drop(['date'],1)
     return df
-    
+
+# ducascopy
+# BID EET GMT
+# do daty trzeba dodać jeden dzień
+# Ostatni w pliku pokazuje aktualny kurs z bieżącego dnia.
+# date,open,high,low,close,volume
+# 02.08.2003 21:00:00.000,0.65130,0.65130,0.65130,0.65130,0
+
 def loaddata_nodateindex(datafile='uj_d.csv'):
     df = pd.read_csv('../Data/'+datafile)
     #df.columns = ['date','open','high','low','close']
