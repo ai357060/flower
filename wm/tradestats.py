@@ -4,6 +4,7 @@ from datetime import datetime
 import math
 from datetime import timedelta
 import itertools
+from time import time
 """
 from scipy import stats
 import scipy.optimize
@@ -40,7 +41,20 @@ from warnings import simplefilter
 
 class holder:
     1
+    
+def timedump(stamp):
+    return    
+'''
+global tt
+tt = time()
 
+def timedump(stamp):
+    global tt
+    print(stamp,time()-tt)
+    tt=time()
+'''
+
+    
 # ducascopy
 # BID EET GMT
 # do daty trzeba dodać jeden dzień
@@ -384,6 +398,85 @@ def ma(prices,periods):
         dict[periods[i]] = madf.copy()
     results.df = dict
     return results
+
+
+def ma2(prices,periods):
+    '''
+    :param prices; dataframe of OHLC currency data
+    :param periods; ema1, ema2, signal period
+    :return; macd
+    '''
+    m1 = '5'
+    m2 = '10'
+    m3 = '20'
+    results = holder()
+    dict = {}
+    for i in range(0,len(periods)):
+        madf = pd.DataFrame(index=prices.index)
+        madf['SMA'] = prices.close.rolling(window=periods[i]).mean()
+        madf['SMA'+m1] = prices.close.rolling(window=int(m1)).mean()
+        madf['SMA'+m2] = prices.close.rolling(window=int(m2)).mean()
+        madf['SMA'+m3] = prices.close.rolling(window=int(m3)).mean()
+        madf['SMAdiff1n'] = madf.SMA.diff(1)
+        madf['SMAdiff2n'] = madf.SMA.shift(1) - madf.SMA.shift(2)
+        madf['SMAdiff3n'] = madf.SMA.shift(2) - madf.SMA.shift(3)
+        madf['SMAdiff4n'] = madf.SMA.shift(3) - madf.SMA.shift(4)
+        madf['SMAdiff5n'] = madf.SMA.shift(4) - madf.SMA.shift(5)
+        madf['SMAdiffdiff'] = madf.SMAdiff1n.diff(1)
+        madf['SMAvs'+m1] = madf['SMA'+m1]-madf.SMA
+        madf['SMAvs'+m2] = madf['SMA'+m2]-madf.SMA
+        madf['SMAvs'+m3] = madf['SMA'+m3]-madf.SMA
+
+        madf['SMA_prev'] = madf.SMA.shift(1)
+        madf['SMAdiff1n_prev']   = madf.SMAdiff1n.shift(1)
+        madf['SMAdiff2n_prev'] = madf.SMAdiff2n.shift(1)
+        madf['SMAdiff3n_prev'] = madf.SMAdiff3n.shift(1)
+        madf['SMAdiff4n_prev'] = madf.SMAdiff4n.shift(1)
+        madf['SMAdiff5n_prev'] = madf.SMAdiff5n.shift(1)
+        madf['SMAdiffdiff_prev'] = madf.SMAdiffdiff.shift(1)
+        madf['SMAvs'+m1+'_prev'] = madf['SMAvs'+m1].shift(1)
+        madf['SMAvs'+m2+'_prev'] = madf['SMAvs'+m2].shift(1)
+        madf['SMAvs'+m3+'_prev'] = madf['SMAvs'+m3].shift(1)
+        
+        madf['SMAdiffseq_prev'] = 0
+        madf.loc[madf.SMAdiff1n_prev>=0,'SMAdiffseq_prev'] = 1
+        madf.loc[(madf.SMAdiff1n_prev>=0) & (madf.SMAdiff2n_prev>=0),'SMAdiffseq_prev'] = 2
+        madf.loc[(madf.SMAdiff1n_prev>=0) & (madf.SMAdiff2n_prev>=0) & (madf.SMAdiff3n_prev>=0),'SMAdiffseq_prev'] = 3
+        madf.loc[(madf.SMAdiff1n_prev>=0)&(madf.SMAdiff2n_prev>=0)&(madf.SMAdiff3n_prev>=0)&(madf.SMAdiff4n_prev>=0),'SMAdiffseq_prev'] = 4
+        madf.loc[(madf.SMAdiff1n_prev>=0)&(madf.SMAdiff2n_prev>=0)&(madf.SMAdiff3n_prev>=0)&(madf.SMAdiff4n_prev>=0)& (madf.SMAdiff5n_prev>=0),'SMAdiffseq_prev'] = 5
+        madf.loc[madf.SMAdiff1n_prev<0,'SMAdiffseq_prev'] = -1
+        madf.loc[(madf.SMAdiff1n_prev<0) & (madf.SMAdiff2n_prev<0),'SMAdiffseq_prev'] = -2
+        madf.loc[(madf.SMAdiff1n_prev<0) & (madf.SMAdiff2n_prev<0) & (madf.SMAdiff3n_prev<0),'SMAdiffseq_prev'] = -3
+        madf.loc[(madf.SMAdiff1n_prev<0)&(madf.SMAdiff2n_prev<0)&(madf.SMAdiff3n_prev<0)&(madf.SMAdiff4n_prev<0),'SMAdiffseq_prev'] = -4
+        madf.loc[(madf.SMAdiff1n_prev<0)&(madf.SMAdiff2n_prev<0)&(madf.SMAdiff3n_prev<0)&(madf.SMAdiff4n_prev<0)& (madf.SMAdiff5n_prev<0),'SMAdiffseq_prev'] = -5
+
+        madf = madf.drop(columns='SMA')
+        madf = madf.drop(columns='SMA'+m1)
+        madf = madf.drop(columns='SMA'+m2)
+        madf = madf.drop(columns='SMA'+m3)
+        madf = madf.drop(columns='SMAdiff1n')
+        madf = madf.drop(columns='SMAdiff2n')
+        madf = madf.drop(columns='SMAdiff3n')
+        madf = madf.drop(columns='SMAdiff4n')
+        madf = madf.drop(columns='SMAdiff5n')
+        madf = madf.drop(columns='SMAdiffdiff')
+        madf = madf.drop(columns='SMAvs'+m1)
+        madf = madf.drop(columns='SMAvs'+m2)
+        madf = madf.drop(columns='SMAvs'+m3)
+        madf = madf.drop(columns='SMAdiff1n_prev')
+        madf = madf.drop(columns='SMAdiff2n_prev')
+        madf = madf.drop(columns='SMAdiff3n_prev')
+        madf = madf.drop(columns='SMAdiff4n_prev')
+        madf = madf.drop(columns='SMAdiff5n_prev')
+    #     madf['EMA'] = prices.close.ewm(span=periods[0]).mean()
+    #     madf['EMAdiff'] = madf.EMA.diff(1)
+    #     madf['EMAdiffdiff'] = madf.EMAdiff.diff(1)
+    #     madf['EMAclose'] = prices.close - madf.EMA
+        dict[periods[i]] = madf.copy()
+    results.df = dict
+    return results
+
+
 
 def atr(prices, periods):
     results = holder()
@@ -1108,8 +1201,8 @@ def stathyperparams2(trades,params,conf):
 #index=range(10000),
     statscolumns = ['c','cu','cd','cc',
                                   'mu','md','mm',
-                                  'p_sm',
-                                  'maxd','maxd2','xx','avgsl'
+                                  'p_sm','r',
+                                  'maxd','maxd2','d','rd','xx','avgsl'
                     ]
     groupbycolumns = ['c',
                              'cu',
@@ -1129,11 +1222,14 @@ def stathyperparams2(trades,params,conf):
             groupbycolumns = np.append(groupbycolumns,key+'from')
     
     stats = pd.DataFrame(columns=statscolumns)
+    
     seq['dryrun'] = False
     seq['starttime'] = datetime.now()
     seq['lastrun'] = datetime.now()
-    
+    stats = stats.values.tolist()
     stats = execstats2_r(trades,stats,params,seq)
+    stats = pd.DataFrame(stats)
+
 #     stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     if (len(stats)==0):
         print('no profit')
@@ -1147,19 +1243,24 @@ def stathyperparams2(trades,params,conf):
             stats = stats.join(statsgb.agg({key+'from': 'min',key+'to': 'max'}))
     stats = stats.reset_index()    
     
-#     stats['profit_ratio'] = stats.profit_sum/stats.sl
-#     stats['maxdown_ratio'] = stats.maxdown/stats.sl
-    stats['cc'] = (stats.cu*1.0)-(stats.cd)
-    stats['mm'] = (stats.mu*1.0)-(stats.md)
+    stats['cc'] = stats.cu-stats.cd
+    stats['mm'] = stats.mu-stats.md
+    stats['r']  = stats.p_sm/stats.avgsl
+    stats['d']  = stats.maxd2/stats.avgsl
+    stats['rd'] = -1*stats.p_sm/stats.maxd2
+    
     top = 500
     stats0 = stats.sort_values("c",ascending=False).head(top)
     stats0 = stats0.append(stats.sort_values("p_sm",ascending=False).head(top))
-#     stats0 = stats0.append(stats.sort_values("profit_ratio",ascending=False).head(top))
-#     stats0 = stats0.append(stats.sort_values("maxdown_ratio",ascending=True).head(top))
+    stats0 = stats0.append(stats.sort_values("maxd",ascending=True).head(top))
+    stats0 = stats0.append(stats.sort_values("maxd2",ascending=True).head(top))
     stats0 = stats0.append(stats.sort_values("cc",ascending=False).head(top))
     stats0 = stats0.append(stats.sort_values("mu",ascending=False).head(top))
     stats0 = stats0.append(stats.sort_values("md",ascending=True).head(top))
     stats0 = stats0.append(stats.sort_values("mm",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("r",ascending=False).head(top))
+    stats0 = stats0.append(stats.sort_values("d",ascending=True).head(top))
+    stats0 = stats0.append(stats.sort_values("rd",ascending=False).head(top))
     stats0 = stats0.drop_duplicates()
     
 #     statscolumns = np.append(statscolumns,['xx'])
@@ -1172,7 +1273,7 @@ def stathyperparams2(trades,params,conf):
     endtime = datetime.now()
     print('finish:        ',str(datetime.now()))
     print('duration:      ',str(endtime - starttime))
-    return stats0
+    return 
 
 def execstats2_r(trades,stats,params,seq,cursor=0):
 #     print(cursor)
@@ -1211,7 +1312,7 @@ def execstats2_r(trades,stats,params,seq,cursor=0):
     return stats
     
 def execstats2(trades,stats,params,seq):
-
+    
     if (seq['dryrun']):
         seq['allexecs'] = seq['allexecs'] + 1
     else:
@@ -1219,7 +1320,10 @@ def execstats2(trades,stats,params,seq):
         df = calculatestats2(trades,params,seq)                  
         if (not df is None):
             seq['locs'] = seq['locs'] + 1
-            stats = stats.append(df, ignore_index=True)
+            timedump('10')
+#             stats = stats.append(df, ignore_index=True)
+            stats.append(df)
+            timedump('11')
             
 #         if ((seq['execs'] % 1000)==0):
         if ((datetime.now() - seq['lastrun']).total_seconds()>30):
@@ -1236,26 +1340,55 @@ def execstats2(trades,stats,params,seq):
     return stats
 
 def calculatestats2(trades,params,seq):
+    
     stats0 = trades.copy()
 #     print('oryg',len(stats0))
+    timedump('1')
+
+#     for kk in params.keys():
+#         imode = seq[kk][0]
+#         if ((imode == 0) or (imode == 3)):
+#             stats0 = stats0[(stats0[kk]>=seq[kk][1])&(stats0[kk]<seq[kk][2])]
+#             timedump('1a')
+#         elif (imode == 1):
+#             stats0 = stats0[stats0[kk].isin(seq[kk][1])]
+#             timedump('1b')
+#         elif (imode == 2):
+#             stats0 = stats0[stats0[kk]==seq[kk][1]]
+#             timedump('1c')
+
+    conditions = None            
     for kk in params.keys():
         imode = seq[kk][0]
         if ((imode == 0) or (imode == 3)):
-            stats0 = stats0[(stats0[kk]>=seq[kk][1])&(stats0[kk]<seq[kk][2])]
+            cond = (stats0[kk].values>=seq[kk][1])&(stats0[kk].values<seq[kk][2])
+            timedump('1a')
         elif (imode == 1):
-            stats0 = stats0[stats0[kk].isin(seq[kk][1])]
+            cond = stats0[kk].isin(seq[kk][1])
+            timedump('1b')
         elif (imode == 2):
-            stats0 = stats0[stats0[kk]==seq[kk][1]]
-    
-    pr_c = len(stats0)
+            cond = stats0[kk].values==seq[kk][1]
+            timedump('1c')
+        if conditions is None:
+            conditions = cond
+        else:
+            conditions = conditions & cond            
 
+    stats0 = trades[conditions]        
+            
+    timedump('2')
+    pr_c = len(stats0)
+    
     avgsl = stats0.sl_val.mean()
     pr_sum = stats0.profit.sum()
+#     print('pr_c',pr_c,'pr_sum',pr_sum)
     if ((pr_c>=seq['mintrades']) and (pr_sum>0)):
-        pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
+#         pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
+        pr_maxdown = 0
         cumsum        = stats0.profit.cumsum()
         cumsumcummax  = cumsum.cummax()
         cumsum_cummax = cumsum-cumsumcummax
+        timedump('3')
 # 
 #         stats0['cumsum'] = cumsum
 #         stats0['cumsumcummax'] = cumsumcummax
@@ -1267,13 +1400,15 @@ def calculatestats2(trades,params,seq):
             pr_maxdown = 0
         if (pr_maxdown2>0):
             pr_maxdown2 = 0
-
+        timedump('4')
         pr_c_u = len(stats0[stats0.profit>=0])
         pr_c_d = len(stats0[stats0.profit<0])            
-        yearmonth = stats0.groupby(['year','month'])['profit'].sum().reset_index()
-        monthsup = len(yearmonth[yearmonth.profit>0])
-        monthsdown = len(yearmonth[yearmonth.profit<0])
-        
+#         yearmonth = stats0.groupby(['year','month'])['profit'].sum().reset_index()
+#         monthsup = len(yearmonth[yearmonth.profit>0])
+#         monthsdown = len(yearmonth[yearmonth.profit<0])
+        monthsup = 0
+        monthsdown = 0
+        timedump('5')
         df = {'c':pr_c,'cu':pr_c_u,'cd':pr_c_d,'p_sm':pr_sum,
               'maxd':pr_maxdown,'maxd2':pr_maxdown2,'mu':monthsup,'md':monthsdown,'avgsl':avgsl
              }
@@ -1289,8 +1424,10 @@ def calculatestats2(trades,params,seq):
             elif (imode == 2):
                 ifrom = seq[kk][1]
                 df[kk+'from'] = str(ifrom)
+        
     else:
         df = None
+    timedump('6')    
     return df
 
 
@@ -1950,6 +2087,8 @@ def opentrades_brut(mode,df):
 
 
 def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
+    tpr = 0.5
+    
     if (stoploss<=0.09):
         df['sl'] = stoploss   * 10000
         df['tp'] = takeprofit * 10000
@@ -1987,40 +2126,51 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
         df['nextbar_high'] = df.high.shift(i)
         df['nextbar_id'] = df.id.shift(i)
         #SL buy
-        df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),'slprice'] = df.nextbar_low
-        df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),'slindex'] = df.nextbar_id
-        df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),'closeprice'] = df.stoploss
-        df.loc[(df.tradetype==1) & (df.closeindex==-1)&(df.nextbar_low<=df.stoploss),'profit'] = df.closeprice - df.openprice
-        df.loc[(df.tradetype==1) & (df.closeindex==-2)&(df.nextbar_low<=df.stoploss),'profit'] = df.profit + (df.closeprice - df.openprice)/2
-        df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),'closeindex'] = df.nextbar_id
+        df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),  'slprice']    = df.nextbar_low
+        df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),  'slindex']    = df.nextbar_id
+        df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),  'closeprice'] = df.stoploss
+        df.loc[(df.tradetype==1) & (df.closeindex==-1)&(df.nextbar_low<=df.stoploss),'profit']     = df.stoploss - df.openprice
+        df.loc[(df.tradetype==1) & (df.closeindex==-2)&(df.nextbar_low<=df.stoploss),'profit']     = df.profit + ((df.stoploss - df.openprice) * (1-tpr))
+        df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),  'closeindex'] = df.nextbar_id
 
         #SL sell
-        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),'slprice'] = df.nextbar_high
-        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),'slindex'] = df.nextbar_id
-        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),'closeprice'] = df.stoploss
-        df.loc[(df.tradetype==-1) & (df.closeindex==-1)&(df.nextbar_high>=df.stoploss),'profit'] = df.openprice - df.closeprice
-        df.loc[(df.tradetype==-1) & (df.closeindex==-2)&(df.nextbar_high>=df.stoploss),'profit'] = df.profit + (df.openprice - df.closeprice)/2
-        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),'closeindex'] = df.nextbar_id
+        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),  'slprice']    = df.nextbar_high
+        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),  'slindex']    = df.nextbar_id
+        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),  'closeprice'] = df.stoploss
+        df.loc[(df.tradetype==-1) & (df.closeindex==-1)&(df.nextbar_high>=df.stoploss),'profit']     = df.openprice - df.stoploss
+        df.loc[(df.tradetype==-1) & (df.closeindex==-2)&(df.nextbar_high>=df.stoploss),'profit']     = df.profit + ((df.openprice - df.stoploss) * (1-tpr))
+        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),  'closeindex'] = df.nextbar_id
         
         #TP buy
         df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'tpcloseprice'] = df.nextbar_high
         df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'tpcloseindex'] = df.nextbar_id
-        df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'profit'] = df.tp_val/2
-        df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'closeindex'] = -2
+        if (trailsl>0):
+            df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'profit']     = df.tp_val * tpr
+            df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'closeindex'] = -2
+        else:
+            df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'closeprice'] = df.takeprofit
+            df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'profit']     = df.tp_val
+            df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'closeindex'] = df.nextbar_id
+            
         #TP sell
         df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'tpcloseprice'] = df.nextbar_low
         df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'tpcloseindex'] = df.nextbar_id
-        df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'profit'] = df.tp_val/2
-        df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'closeindex'] = -2
+        if (trailsl>0):
+            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'profit']     = df.tp_val * tpr
+            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'closeindex'] = -2
+        else:
+            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'closeprice'] = df.takeprofit
+            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'profit']     = df.tp_val
+            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'closeindex'] = df.nextbar_id
+            
         
         #update SL - trailing SL
-        if (takeprofit==100):
-            df.loc[(df.tradetype==1) & (df.closeindex<0) & (df.nextbar_close - df.sl_val > df.stoploss),'stoploss'] = df.nextbar_close - df.sl_val
-            df.loc[(df.tradetype==-1) & (df.closeindex<0) & (df.nextbar_close + df.sl_val < df.stoploss),'stoploss'] = df.nextbar_close + df.sl_val
-        else:
-            df.loc[(df.tradetype==1)  & (df.closeindex==-2) & (df.nextbar_close - df.tsl_val > df.stoploss),'stoploss'] = df.nextbar_close - df.tsl_val
-            df.loc[(df.tradetype==-1) & (df.closeindex==-2) & (df.nextbar_close + df.tsl_val < df.stoploss),'stoploss'] = df.nextbar_close + df.tsl_val
-
+        if (takeprofit==100):#podnoś SL po każdnym barze
+            df.loc[(df.tradetype==1)&(df.closeindex<0)&(df.nextbar_close-df.sl_val > df.stoploss),'stoploss']=df.nextbar_close - df.sl_val
+            df.loc[(df.tradetype==-1)&(df.closeindex<0)&(df.nextbar_close+df.sl_val<df.stoploss),'stoploss'] =df.nextbar_close + df.sl_val
+        elif (trailsl>0):#podnoś SL tylko gdy już był profit
+            df.loc[(df.tradetype==1)&(df.closeindex==-2)&(df.nextbar_close-df.tsl_val>df.stoploss),'stoploss']=df.nextbar_close - df.tsl_val
+            df.loc[(df.tradetype==-1)&(df.closeindex==-2)&(df.nextbar_close+df.tsl_val<df.stoploss),'stoploss']= df.nextbar_close + df.tsl_val
         
         i-=1
     
@@ -2736,11 +2886,145 @@ def runstats_ma_test1(alltrades,a,b,c,d,aa,bb,cc,atr='atr140atr_prev',sl=[],tp=[
     params[a]    =        [3,[-1000],[1000]]
     params[b]    =        [3,[-1000],[1000]]
     params[c]    =        [3,[0],[1000]]
-    params[d]    =        [3,[-1000],[1000]]
+    params[d]    =        [3,[0],[1000]]
     params[aa]   =        [3,[-1000],[1000]]
     params[bb]   =        [3,[-1000],[0]]
     params[cc]   =        [3,[-1000],[1000]]
-    conf['filename'] =    'ma_29_2003_2021_1_'+atr+'_'+d
+    conf['filename'] =    'ma_t1_2003_2021_1_'+atr+'_'+d
     print(conf['filename'])
     stats = stathyperparams2(alltrades,params,conf)
     return stats
+
+
+def runstats30(alltrades,ma1,atrperiod,sl,tp,tsl):
+    ma2 = '5'
+    runstats_ma_v30(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,tp,tsl,'x1')
+    runstats_ma_v30(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,[100],[0],'x2')
+    return 
+
+def runstats_ma_v30(alltrades,a,b,c,d,aa,bb,cc,atr='atr140atr_prev',sl=[],tp=[],tsl=[],ff=''):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [2,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params['tsl'] =       [2,tsl]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[d]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[aa]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[cc]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] =    'ma_30_2003_2021_1_'+atr+'_'+d+ff
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return 
+
+def runstats31(alltrades,ma1,atrperiod,sl,tp,tsl):
+    ma2 = '10'
+    runstats_ma_v31(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,tp,tsl,'x1')
+    runstats_ma_v31(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,[100],[0],'x2')
+    return 
+
+def runstats_ma_v31(alltrades,a,b,c,d,aa,bb,cc,atr='atr140atr_prev',sl=[],tp=[],tsl=[],ff=''):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [2,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params['tsl'] =       [2,tsl]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[c]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[d]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[aa]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[cc]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] =    'ma_31_2003_2021_1_'+atr+'_'+d+ff
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return 
+
+
+def runstats_test2(alltrades,ma1,atrperiod,sl,tp,tsl):
+    ma2 = '5'
+    runstats_ma_test2(alltrades,'ma'+ma1+'SMAdiffseq_prev', 'ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev',atrperiod,sl,tp,tsl)
+    return 
+
+def runstats_ma_test2(alltrades,a,b,vs,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [1,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params['tsl'] =       [2,tsl]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [0,[1,2],[1000]]
+    params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+#     params[c]    =        [3,[0],[1000]]
+    params[vs]    =        [3,[0],[1000]]
+    params[aa]   =        [3,[2],[1000]]
+    params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+#     params[cc]   =        [3,[-1000],[1000]]
+    conf['filename'] =    'ma_t2_2003_2021_1_'+atr+'_'+vs
+    print(conf['filename'])
+    stathyperparams2(alltrades,params,conf)
+    return 
+
+
+def runstats32(alltrades,ma1,atrperiod,sl,tp,tsl):
+    ma2 = '5'
+#     runstats_ma_v32(alltrades,'ma'+ma1+'SMAdiffseq_prev', 'ma'+ma1+'SMAdiffdiff_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev', atrperiod,sl,tp,tsl,'x1')
+    runstats_ma_v32(alltrades,'ma'+ma1+'SMAdiffseq_prev','ma'+ma1+'SMAdiffdiff_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev', atrperiod,sl,[100],[0],'x2')
+    return 
+
+def runstats_ma_v32(alltrades,a,b,sv,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl=[],ff=''):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [2,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params['tsl'] =       [2,tsl]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [0,[-1000,-1,1,2,3,4,5],[1000]]
+    params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[sv]    =       [0,[-1000,0,1000],[-1000,0,1000]]
+    params[aa]   =        [0,[-1000,-1,1,2,3,4,5],[1000]]
+    params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] =    'ma_32_2003_2021_1_'+atr+'_'+sv+ff
+    print(conf['filename'])
+    stats = stathyperparams2(alltrades,params,conf)
+    return 
+
+
+def runstats33(alltrades,ma1,atrperiod,sl,tp,tsl):
+    ma2 = '5'
+    runstats_ma_v33(alltrades,'ma'+ma1+'SMAdiffseq_prev', 'ma'+ma1+'SMAdiffdiff_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev', atrperiod,sl,tp,tsl,'x1')
+    runstats_ma_v33(alltrades,'ma'+ma1+'SMAdiffseq_prev','ma'+ma1+'SMAdiffdiff_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev', atrperiod,sl,[100],[0],'x2')
+    return 
+
+def runstats_ma_v33(alltrades,a,b,sv,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl=[],ff=''):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [2,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params['tsl'] =       [2,tsl]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [0,[-5,-4,-3,-2,-1,1,2,3,4,5],[-4,-3,-2,-1,1,2,3,4,5,1000]]
+    params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[sv]    =       [0,[-1000,0,1000],[-1000,0,1000]]
+    params[aa]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] =    'ma_33_2003_2021_1_'+atr+'_'+sv+ff
+    print(conf['filename'])
+    stathyperparams2(alltrades,params,conf)
+    return 
