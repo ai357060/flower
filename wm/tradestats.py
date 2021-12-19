@@ -3130,3 +3130,28 @@ def runstats_ma_v36(alltrades,a,b,atr='atr140atr_prev',sl=[],tp=[],tsl=[],ff='')
     stathyperparams2(alltrades,params,conf)
     return 
 
+def runstats40(alltrades,ma1,atrperiod,sl,tp,tsl,ma2=5):
+    ma2 = str(ma2)
+    runstats_ma_v40(alltrades,'ma'+ma1+'SMAdiffseq_prev', 'ma'+ma1+'SMAdiffdiff_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev', atrperiod,sl,tp,tsl,'x1')
+    runstats_ma_v40(alltrades,'ma'+ma1+'SMAdiffseq_prev', 'ma'+ma1+'SMAdiffdiff_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev', atrperiod,sl,[100],[0],'x2')
+
+    return 
+
+def runstats_ma_v40(alltrades,a,b,sv,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl=[],ff=''):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [2,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params['tsl'] =       [2,tsl]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [0,[-5,1,2,3,4,5],[1,2,3,4,5,1000]]
+    params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[sv]    =       [0,[-1000,0,1000],[-1000,0,1000]]
+    params[aa]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] =    'ma_40_2003_2021_1_'+atr+'_'+sv+ff
+    print(conf['filename'])
+    stathyperparams2(alltrades,params,conf)
+    return 
