@@ -2307,10 +2307,10 @@ def closetrades_tp(df,stoploss,takeprofit,atr=''):
 
 
 
-def cleartrades_brut(df,save=False):
+def cleartrades_brut(df,save=False,stamp=''):
     
     if (save==True):
-        df.to_csv(sep=';',path_or_buf='../Data/trades.csv',date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.5f')
+        df.to_csv(sep=';',path_or_buf='../Data/trades'+stamp+'.csv',date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.5f')
     
     df = df[df.closeindex!=-1]
     df = df.drop(columns='date')
