@@ -144,6 +144,27 @@ def rsi(prices, periods):
     rsidf['ma_down1'] = rsidf.ma_down.shift(1)*(1-1/period)
     rsidf['rsi1'] = 100 - (100/(1 + rsidf['ma_up1'] / rsidf['ma_down1']))
 
+    
+    rsidf['rsidiff1n'] = rsidf.rsi.diff(1)
+    rsidf['rsidiff2n'] = rsidf.rsi.shift(1) - rsidf.rsi.shift(2)
+    rsidf['rsidiff3n'] = rsidf.rsi.shift(2) - rsidf.rsi.shift(3)
+    rsidf['rsidiff4n'] = rsidf.rsi.shift(3) - rsidf.rsi.shift(4)
+    rsidf['rsidiff5n'] = rsidf.rsi.shift(4) - rsidf.rsi.shift(5)
+
+    rsidf['rsidiffseq'] = 0
+    rsidf.loc[rsidf.rsidiff1n>=0,'rsidiffseq'] = 1
+    rsidf.loc[(rsidf.rsidiff1n>=0) & (rsidf.rsidiff2n>=0),'rsidiffseq'] = 2
+    rsidf.loc[(rsidf.rsidiff1n>=0) & (rsidf.rsidiff2n>=0) & (rsidf.rsidiff3n>=0),'rsidiffseq'] = 3
+    rsidf.loc[(rsidf.rsidiff1n>=0) & (rsidf.rsidiff2n>=0) & (rsidf.rsidiff3n>=0) & (rsidf.rsidiff4n>=0),'rsidiffseq'] = 4
+    rsidf.loc[(rsidf.rsidiff1n>=0) & (rsidf.rsidiff2n>=0) & (rsidf.rsidiff3n>=0) & (rsidf.rsidiff4n>=0) & (rsidf.rsidiff5n>=0),'rsidiffseq'] = 5
+    rsidf.loc[rsidf.rsidiff1n<0,'rsidiffseq'] = -1
+    rsidf.loc[(rsidf.rsidiff1n<0) & (rsidf.rsidiff2n<0),'rsidiffseq'] = -2
+    rsidf.loc[(rsidf.rsidiff1n<0) & (rsidf.rsidiff2n<0) & (rsidf.rsidiff3n<0),'rsidiffseq'] = -3
+    rsidf.loc[(rsidf.rsidiff1n<0) & (rsidf.rsidiff2n<0) & (rsidf.rsidiff3n<0) & (rsidf.rsidiff4n<0),'rsidiffseq'] = -4
+    rsidf.loc[(rsidf.rsidiff1n<0) & (rsidf.rsidiff2n<0) & (rsidf.rsidiff3n<0) & (rsidf.rsidiff4n<0) &(rsidf.rsidiff5n<0),'rsidiffseq'] = -5
+
+    rsidf['rsi_prev'] = rsidf.rsi.shift(1)
+    rsidf['rsidiffseq_prev'] = rsidf.rsidiffseq.shift(1)
         
     rsidf = rsidf.drop(columns='close_delta')
     rsidf = rsidf.drop(columns='up')
@@ -153,6 +174,13 @@ def rsi(prices, periods):
     rsidf = rsidf.drop(columns='ma_up1')
     rsidf = rsidf.drop(columns='ma_down1')
 
+    rsidf = rsidf.drop(columns='rsi')
+    rsidf = rsidf.drop(columns='rsidiff1n')
+    rsidf = rsidf.drop(columns='rsidiff2n')
+    rsidf = rsidf.drop(columns='rsidiff3n')
+    rsidf = rsidf.drop(columns='rsidiff4n')
+    rsidf = rsidf.drop(columns='rsidiff5n')
+    rsidf = rsidf.drop(columns='rsidiffseq')
     
     dict = {}
     dict[periods[0]] = rsidf
@@ -1229,44 +1257,45 @@ def stathyperparams2(trades,params,conf):
 
 #     stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='')
     if (len(stats)==0):
-        print('no profit')
-    #scalanie
-    statsgb = stats.groupby(by=list(groupbycolumns))
-    stats = statsgb.size().to_frame(name='xx')
+        print('!!!!!!!!!!!!!!!!no profitable strategy')
+    else:
+        #scalanie
+        statsgb = stats.groupby(by=list(groupbycolumns))
+        stats = statsgb.size().to_frame(name='xx')
+
+        for key in params.keys():
+            mode = params[key][0]
+            if ( (mode == 0) or (mode == 3)):
+                stats = stats.join(statsgb.agg({key+'from': 'min',key+'to': 'max'}))
+        stats = stats.reset_index()    
+
+        stats['cc'] = stats.cu-stats.cd
+        stats['mm'] = stats.mu-stats.md
+        stats['r']  = stats.p_sm/stats.avgsl
+        stats['d']  = stats.maxd2/stats.avgsl
+        stats['rd'] = -1*stats.p_sm/stats.maxd2
+
+        top = 500
+        stats0 = stats.sort_values("c",ascending=False).head(top)
+        stats0 = stats0.append(stats.sort_values("p_sm",ascending=False).head(top))
+        stats0 = stats0.append(stats.sort_values("maxd",ascending=True).head(top))
+        stats0 = stats0.append(stats.sort_values("maxd2",ascending=True).head(top))
+        stats0 = stats0.append(stats.sort_values("cc",ascending=False).head(top))
+        stats0 = stats0.append(stats.sort_values("mu",ascending=False).head(top))
+        stats0 = stats0.append(stats.sort_values("md",ascending=True).head(top))
+        stats0 = stats0.append(stats.sort_values("mm",ascending=False).head(top))
+        stats0 = stats0.append(stats.sort_values("r",ascending=False).head(top))
+        stats0 = stats0.append(stats.sort_values("d",ascending=True).head(top))
+        stats0 = stats0.append(stats.sort_values("rd",ascending=False).head(top))
+        stats0 = stats0.drop_duplicates()
     
-    for key in params.keys():
-        mode = params[key][0]
-        if ( (mode == 0) or (mode == 3)):
-            stats = stats.join(statsgb.agg({key+'from': 'min',key+'to': 'max'}))
-    stats = stats.reset_index()    
-    
-    stats['cc'] = stats.cu-stats.cd
-    stats['mm'] = stats.mu-stats.md
-    stats['r']  = stats.p_sm/stats.avgsl
-    stats['d']  = stats.maxd2/stats.avgsl
-    stats['rd'] = -1*stats.p_sm/stats.maxd2
-    
-    top = 500
-    stats0 = stats.sort_values("c",ascending=False).head(top)
-    stats0 = stats0.append(stats.sort_values("p_sm",ascending=False).head(top))
-    stats0 = stats0.append(stats.sort_values("maxd",ascending=True).head(top))
-    stats0 = stats0.append(stats.sort_values("maxd2",ascending=True).head(top))
-    stats0 = stats0.append(stats.sort_values("cc",ascending=False).head(top))
-    stats0 = stats0.append(stats.sort_values("mu",ascending=False).head(top))
-    stats0 = stats0.append(stats.sort_values("md",ascending=True).head(top))
-    stats0 = stats0.append(stats.sort_values("mm",ascending=False).head(top))
-    stats0 = stats0.append(stats.sort_values("r",ascending=False).head(top))
-    stats0 = stats0.append(stats.sort_values("d",ascending=True).head(top))
-    stats0 = stats0.append(stats.sort_values("rd",ascending=False).head(top))
-    stats0 = stats0.drop_duplicates()
-    
-#     statscolumns = np.append(statscolumns,['xx'])
-    stats0 = stats0[statscolumns]
-    
-    stats0['fn']=conf['filename']
-    stats0.to_csv(sep=';',
-                  path_or_buf='../Data/stats_v2_'+str(conf['filename'])+'.csv',
-                  date_format="%Y-%m-%d",index = False,na_rep='')
+#         statscolumns = np.append(statscolumns,['xx'])
+        stats0 = stats0[statscolumns]
+
+        stats0['fn']=conf['filename']
+        stats0.to_csv(sep=';',
+                      path_or_buf='../Data/stats_v2_'+str(conf['filename'])+'.csv',
+                      date_format="%Y-%m-%d",index = False,na_rep='')
     endtime = datetime.now()
     print('finish:        ',str(datetime.now()))
     print('duration:      ',str(endtime - starttime))
@@ -1325,7 +1354,7 @@ def execstats2(trades,stats,params,seq):
 #         if ((seq['execs'] % 1000)==0):
         if ((datetime.now() - seq['lastrun']).total_seconds()>30):
             progress = (1.0*seq['execs']/seq['allexecs'])
-            print('____progress:  ', "{:.4f}".format(progress*100.00))
+            print('____progress:  ', "{:.2f}".format(progress*100.00),'%')
             elapsedtime = datetime.now() - seq['starttime']
             print('elapsed:       ',str(elapsedtime))
             print('last run:      ',str(datetime.now() - seq['lastrun']))
@@ -3080,3 +3109,22 @@ def runstats_ma_v35(alltrades,a,b,sv,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl=
     print(conf['filename'])
     stathyperparams2(alltrades,params,conf)
     return 
+
+
+def runstats_ma_v36(alltrades,a,b,atr='atr140atr_prev',sl=[],tp=[],tsl=[],ff=''):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [2,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params['tsl'] =       [2,tsl]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [0,[-5,1,2,3,4,5],[1,2,3,4,5,1000]]
+    params[b]    =        [0,[0,10,20,30,40,50,60,70,80,90],[10,20,30,40,50,60,70,80,90,100]]
+#     params[b]    =        [3,[0],[30]]
+    conf['filename'] =    'ma_36_2003_2021_1_'+atr+'_'+ff
+    print(conf['filename'])
+    stathyperparams2(alltrades,params,conf)
+    return 
+
