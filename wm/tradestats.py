@@ -1,43 +1,41 @@
 import numpy as np
 import pandas as pd
+import modin.pandas as md
 from datetime import datetime
-import math
+# import math
 from datetime import timedelta
 import itertools
-from time import time
-"""
-from scipy import stats
-import scipy.optimize
-from scipy.optimize  import OptimizeWarning
-import warnings
-import math
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
-from datetime import datetime
-from arch import arch_model
-import datetime as dt
-from statsmodels.tsa.arima_model import ARIMA
-import statsmodels.api as sm
-from sklearn.metrics import mean_squared_error
-from sklearn.preprocessing import MinMaxScaler
-from datetime import timedelta
+# from time import time
 
-import pandas as pd
-from pandasql import sqldf
-"""
+# from scipy import stats
+# import scipy.optimize
+# from scipy.optimize  import OptimizeWarning
+# import warnings
+# import math
+# import matplotlib.pyplot as plt
+# from sklearn.linear_model import LinearRegression
+# from datetime import datetime
+# from arch import arch_model
+# import datetime as dt
+# from statsmodels.tsa.arima_model import ARIMA
+# import statsmodels.api as sm
+# from sklearn.metrics import mean_squared_error
+# from sklearn.preprocessing import MinMaxScaler
+# from datetime import timedelta
 
-'''
-from numpy import mean
-from sklearn.datasets import make_blobs
-from sklearn.model_selection import cross_val_score
-from sklearn.neighbors import KNeighborsClassifier
-from skopt.space import Integer
-from skopt.space import Categorical
-from skopt.utils import use_named_args
-from skopt import gp_minimize
-from warnings import catch_warnings
-from warnings import simplefilter
-'''
+# import pandas as pd
+# from pandasql import sqldf
+
+# from numpy import mean
+# from sklearn.datasets import make_blobs
+# from sklearn.model_selection import cross_val_score
+# from sklearn.neighbors import KNeighborsClassifier
+# from skopt.space import Integer
+# from skopt.space import Categorical
+# from skopt.utils import use_named_args
+# from skopt import gp_minimize
+# from warnings import catch_warnings
+# from warnings import simplefilter
 
 class holder:
     1
@@ -400,15 +398,15 @@ def ma(prices,periods):
     return results
 
 
-def ma2(prices,periods):
+def ma2(prices,periods,m1= 5,m2= 10,m3= 20):
     '''
     :param prices; dataframe of OHLC currency data
     :param periods; ema1, ema2, signal period
     :return; macd
     '''
-    m1 = '5'
-    m2 = '10'
-    m3 = '20'
+    m1 = str(m1)
+    m2 = str(m2)
+    m3 = str(m3)
     results = holder()
     dict = {}
     for i in range(0,len(periods)):
@@ -1338,13 +1336,11 @@ def execstats2(trades,stats,params,seq):
             print('estimated end: ',str(datetime.now()+timedelta(seconds=remainingtime)))
         
     return stats
-
+# tutu
 def calculatestats2(trades,params,seq):
-    
-    stats0 = trades.copy()
-#     print('oryg',len(stats0))
     timedump('1')
 
+    stats0 = trades.copy()
 #     for kk in params.keys():
 #         imode = seq[kk][0]
 #         if ((imode == 0) or (imode == 3)):
@@ -1356,7 +1352,6 @@ def calculatestats2(trades,params,seq):
 #         elif (imode == 2):
 #             stats0 = stats0[stats0[kk]==seq[kk][1]]
 #             timedump('1c')
-
     conditions = None            
     for kk in params.keys():
         imode = seq[kk][0]
@@ -3019,12 +3014,70 @@ def runstats_ma_v33(alltrades,a,b,sv,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl=
     params['tp'] =        [2,tp]
     params['tsl'] =       [2,tsl]
     params[atr]  =        [3,[-1000],[0.015]]
-    params[a]    =        [0,[-5,-4,-3,-2,-1,1,2,3,4,5],[-4,-3,-2,-1,1,2,3,4,5,1000]]
+    params[a]    =        [0,[-5,1,2,3,4,5],[1,2,3,4,5,1000]]
     params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
     params[sv]    =       [0,[-1000,0,1000],[-1000,0,1000]]
     params[aa]   =        [0,[-1000,0,1000],[-1000,0,1000]]
     params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
     conf['filename'] =    'ma_33_2003_2021_1_'+atr+'_'+sv+ff
+    print(conf['filename'])
+    stathyperparams2(alltrades,params,conf)
+    return 
+
+def runstats34(alltrades,ma1,atrperiod,sl,tp,tsl):
+    ma2 = '3'
+    runstats_ma_v34(alltrades,'ma'+ma1+'SMAdiffseq_prev', 'ma'+ma1+'SMAdiffdiff_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev', atrperiod,sl,tp,tsl,'x1')
+    ma2 = '5'
+    runstats_ma_v34(alltrades,'ma'+ma1+'SMAdiffseq_prev', 'ma'+ma1+'SMAdiffdiff_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev', atrperiod,sl,tp,tsl,'x1')
+    ma2 = '7'
+    runstats_ma_v34(alltrades,'ma'+ma1+'SMAdiffseq_prev', 'ma'+ma1+'SMAdiffdiff_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev', atrperiod,sl,tp,tsl,'x1')
+
+    return 
+
+def runstats_ma_v34(alltrades,a,b,sv,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl=[],ff=''):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [2,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params['tsl'] =       [2,tsl]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [0,[-5,1,2,3,4,5],[1,2,3,4,5,1000]]
+    params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[sv]    =       [0,[-1000,0,1000],[-1000,0,1000]]
+    params[aa]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] =    'ma_34_2003_2021_1_'+atr+'_'+sv+ff
+    print(conf['filename'])
+    stathyperparams2(alltrades,params,conf)
+    return 
+
+def runstats35(alltrades,ma1,atrperiod,sl,tp,tsl):
+    ma2 = '3'
+    runstats_ma_v35(alltrades,'ma'+ma1+'SMAdiffseq_prev', 'ma'+ma1+'SMAdiffdiff_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev', atrperiod,sl,tp,tsl,'x1')
+    ma2 = '5'
+    runstats_ma_v35(alltrades,'ma'+ma1+'SMAdiffseq_prev', 'ma'+ma1+'SMAdiffdiff_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev', atrperiod,sl,tp,tsl,'x1')
+    ma2 = '7'
+    runstats_ma_v35(alltrades,'ma'+ma1+'SMAdiffseq_prev', 'ma'+ma1+'SMAdiffdiff_prev', 'ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev', atrperiod,sl,tp,tsl,'x1')
+
+    return 
+
+def runstats_ma_v35(alltrades,a,b,sv,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl=[],ff=''):
+    conf   = {}
+    params = {}
+
+    params['tradetype'] = [2,[1]]
+    params['sl'] =        [2,sl]
+    params['tp'] =        [2,tp]
+    params['tsl'] =       [2,tsl]
+    params[atr]  =        [3,[-1000],[0.015]]
+    params[a]    =        [0,[-5,1,2,3,4,5],[1,2,3,4,5,1000]]
+    params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[sv]    =       [0,[-1000,0,1000],[-1000,0,1000]]
+    params[aa]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
+    conf['filename'] =    'ma_35_2003_2021_1_'+atr+'_'+sv+ff
     print(conf['filename'])
     stathyperparams2(alltrades,params,conf)
     return 
