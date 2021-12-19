@@ -1227,7 +1227,7 @@ def stathyperparams2(trades,params,conf):
     statscolumns = ['c','cu','cd','cc',
                                   'mu','md','mm',
                                   'p_sm','r',
-                                  'maxd','maxd2','d','rd','xx','avgsl'
+                                  'maxp','maxd2','d','rd','rd2','xx','avgsl'
                     ]
     groupbycolumns = ['c',
                              'cu',
@@ -1235,7 +1235,7 @@ def stathyperparams2(trades,params,conf):
                              'mu',
                              'md',
                              'p_sm',
-                             'maxd','maxd2','avgsl'
+                             'maxp','maxd2','avgsl'
                             ]
 
     for key in params.keys():
@@ -1274,11 +1274,12 @@ def stathyperparams2(trades,params,conf):
         stats['r']  = stats.p_sm/stats.avgsl
         stats['d']  = stats.maxd2/stats.avgsl
         stats['rd'] = -1*stats.p_sm/stats.maxd2
-
+        stats['rd2'] = -1*stats.maxp/stats.maxd2
+        
         top = 500
         stats0 = stats.sort_values("c",ascending=False).head(top)
         stats0 = stats0.append(stats.sort_values("p_sm",ascending=False).head(top))
-        stats0 = stats0.append(stats.sort_values("maxd",ascending=True).head(top))
+        stats0 = stats0.append(stats.sort_values("maxp",ascending=False).head(top))
         stats0 = stats0.append(stats.sort_values("maxd2",ascending=True).head(top))
         stats0 = stats0.append(stats.sort_values("cc",ascending=False).head(top))
         stats0 = stats0.append(stats.sort_values("mu",ascending=False).head(top))
@@ -1287,6 +1288,7 @@ def stathyperparams2(trades,params,conf):
         stats0 = stats0.append(stats.sort_values("r",ascending=False).head(top))
         stats0 = stats0.append(stats.sort_values("d",ascending=True).head(top))
         stats0 = stats0.append(stats.sort_values("rd",ascending=False).head(top))
+        stats0 = stats0.append(stats.sort_values("rd2",ascending=False).head(top))
         stats0 = stats0.drop_duplicates()
     
 #         statscolumns = np.append(statscolumns,['xx'])
@@ -1406,11 +1408,11 @@ def calculatestats2(trades,params,seq):
     pr_sum = stats0.profit.sum()
 #     print('pr_c',pr_c,'pr_sum',pr_sum)
     if ((pr_c>=seq['mintrades']) and (pr_sum>0)):
-#         pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
-        pr_maxdown = 0
+       
         cumsum        = stats0.profit.cumsum()
         cumsumcummax  = cumsum.cummax()
         cumsum_cummax = cumsum-cumsumcummax
+        pr_maxp       = cumsum.max()-cumsum.min()
         timedump('3')
 # 
 #         stats0['cumsum'] = cumsum
@@ -1418,9 +1420,8 @@ def calculatestats2(trades,params,seq):
 #         stats0['cumsum_cummax'] = cumsum_cummax
 #         stats0.to_csv(sep=';',path_or_buf='../Data/raw.csv',date_format="%Y-%m-%d",index = False,na_rep='')
 #         
+#         pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
         pr_maxdown2 = cumsum_cummax.min()
-        if (pr_maxdown>0):
-            pr_maxdown = 0
         if (pr_maxdown2>0):
             pr_maxdown2 = 0
         timedump('4')
@@ -1433,7 +1434,7 @@ def calculatestats2(trades,params,seq):
         monthsdown = 0
         timedump('5')
         df = {'c':pr_c,'cu':pr_c_u,'cd':pr_c_d,'p_sm':pr_sum,
-              'maxd':pr_maxdown,'maxd2':pr_maxdown2,'mu':monthsup,'md':monthsdown,'avgsl':avgsl
+              'maxp':pr_maxp,'maxd2':pr_maxdown2,'mu':monthsup,'md':monthsdown,'avgsl':avgsl
              }
         for kk in params.keys():
             imode = seq[kk][0]
