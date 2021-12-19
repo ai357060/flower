@@ -786,7 +786,7 @@ def closetrades(df,hour,stoploss):
 def cleartrades(df,save=False):
     
     if (save==True):
-        df.to_csv(sep=';',path_or_buf='../Data/trades.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+        df.to_csv(sep=';',path_or_buf='../Data/trades.csv',date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.5f')
     
     df = df[df.closeindex!=-1]
     df = df.drop(columns='date')
@@ -991,7 +991,7 @@ def stathyperparams(trades,params):
     
     stats0.to_csv(sep=';',
                   path_or_buf='../Data/stats_'+str(params['filename'])+'.csv',
-                  date_format="%Y-%m-%d",index = False,na_rep='')
+                  date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.3f')
     endtime = datetime.now()
     print('finish:        ',str(datetime.now()))
     print('duration:      ',str(endtime - starttime))
@@ -1255,7 +1255,7 @@ def stathyperparams2(trades,params,conf):
     stats = execstats2_r(trades,stats,params,seq)
     stats = pd.DataFrame(stats)
 
-#     stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+#     stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.3f')
     if (len(stats)==0):
         print('!!!!!!!!!!!!!!!!no profitable strategy')
     else:
@@ -1297,7 +1297,7 @@ def stathyperparams2(trades,params,conf):
         stats0['fn']=conf['filename']
         stats0.to_csv(sep=';',
                       path_or_buf='../Data/stats_v2_'+str(conf['filename'])+'.csv',
-                      date_format="%Y-%m-%d",index = False,na_rep='')
+                      date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.3f')
     endtime = datetime.now()
     print('finish:        ',str(datetime.now()))
     print('duration:      ',str(endtime - starttime))
@@ -1406,27 +1406,28 @@ def calculatestats2(trades,params,seq):
     
     avgsl = stats0.sl_val.mean()
     pr_sum = stats0.profit.sum()
-#     print('pr_c',pr_c,'pr_sum',pr_sum)
-    if ((pr_c>=seq['mintrades']) and (pr_sum>0)):
-       
-        cumsum        = stats0.profit.cumsum()
-        cumsumcummax  = cumsum.cummax()
-        cumsum_cummax = cumsum-cumsumcummax
-        pr_maxp       = cumsum.max()-cumsum.min()
-        timedump('3')
-# 
-#         stats0['cumsum'] = cumsum
-#         stats0['cumsumcummax'] = cumsumcummax
-#         stats0['cumsum_cummax'] = cumsum_cummax
-#         stats0.to_csv(sep=';',path_or_buf='../Data/raw.csv',date_format="%Y-%m-%d",index = False,na_rep='')
-#         
-#         pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
-        pr_maxdown2 = cumsum_cummax.min()
-        if (pr_maxdown2>0):
-            pr_maxdown2 = 0
-        timedump('4')
+    
+    cumsum        = stats0.profit.cumsum()
+    cumsumcummax  = cumsum.cummax()
+    cumsum_cummax = cumsum-cumsumcummax
+    pr_maxdown2   = cumsum_cummax.min()
+#     pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
+
+    cumsumcummin  = cumsum.cummin()
+    cumsum_cummin = cumsum-cumsumcummin
+    pr_maxp       = cumsum_cummin.max()
+    timedump('3')
+        
+#     stats0['cumsum'] = cumsum
+#     stats0['cumsumcummax'] = cumsumcummax
+#     stats0['cumsum_cummax'] = cumsum_cummax
+#     stats0.to_csv(sep=';',path_or_buf='../Data/raw.csv',date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.3f')
+
+    if ((pr_c>=seq['mintrades']) and (pr_maxp>0)):
+#     if ((pr_c>=seq['mintrades']) and (pr_sum>0)):
         pr_c_u = len(stats0[stats0.profit>=0])
         pr_c_d = len(stats0[stats0.profit<0])            
+        timedump('4')
 #         yearmonth = stats0.groupby(['year','month'])['profit'].sum().reset_index()
 #         monthsup = len(yearmonth[yearmonth.profit>0])
 #         monthsdown = len(yearmonth[yearmonth.profit<0])
@@ -1975,7 +1976,7 @@ def closetrades_pa(df,stoploss):
 def cleartrades_pa(df,save=False):
     
     if (save==True):
-        df.to_csv(sep=';',path_or_buf='../Data/trades.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+        df.to_csv(sep=';',path_or_buf='../Data/trades.csv',date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.5f')
     
     df = df[df.closeindex!=-1]
     df = df.drop(columns='date')
@@ -2309,7 +2310,7 @@ def closetrades_tp(df,stoploss,takeprofit,atr=''):
 def cleartrades_brut(df,save=False):
     
     if (save==True):
-        df.to_csv(sep=';',path_or_buf='../Data/trades.csv',date_format="%Y-%m-%d",index = False,na_rep='')
+        df.to_csv(sep=';',path_or_buf='../Data/trades.csv',date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.5f')
     
     df = df[df.closeindex!=-1]
     df = df.drop(columns='date')
