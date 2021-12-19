@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import modin.pandas as md
 from datetime import datetime
 # import math
 from datetime import timedelta
