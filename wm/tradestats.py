@@ -3155,3 +3155,6 @@ def runstats_ma_v40(alltrades,a,b,sv,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl=
     print(conf['filename'])
     stathyperparams2(alltrades,params,conf)
     return 
+
+
+
