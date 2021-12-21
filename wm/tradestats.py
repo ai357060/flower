@@ -4,7 +4,6 @@ from datetime import datetime
 # import math
 from datetime import timedelta
 import itertools
-# from time import time
 
 # from scipy import stats
 # import scipy.optimize
@@ -41,15 +40,16 @@ class holder:
     
 def timedump(stamp):
     return    
-'''
-global tt
-tt = time()
 
-def timedump(stamp):
-    global tt
-    print(stamp,time()-tt)
-    tt=time()
-'''
+# from time import time
+# global tt
+# tt = time()
+
+# def timedump(stamp):
+#     global tt
+#     print(stamp,time()-tt)
+#     tt=time()
+
 
     
 # ducascopy
@@ -1213,6 +1213,7 @@ def stathyperparams2(trades,params,conf):
         tradecolumns = np.append(tradecolumns,key)
     trades = trades[tradecolumns]    
     seq = {}
+    fx = {}
     stats = pd.DataFrame()
 
     seq['execs'] = 0
@@ -1221,7 +1222,7 @@ def stathyperparams2(trades,params,conf):
     alldays = len(trades.drop_duplicates(['year','month','day']))
     seq['mintrades'] = alldays/25 #once a month
     seq['dryrun'] = True
-    stats = execstats2_r(trades,stats,params,seq)
+    stats = execstats2_r(trades,stats,params,seq,fx)
     print('allexecs: ',seq['allexecs'])
 #index=range(10000),
     statscolumns = ['c','cu','cd','cc',
@@ -1252,7 +1253,8 @@ def stathyperparams2(trades,params,conf):
     seq['starttime'] = datetime.now()
     seq['lastrun'] = datetime.now()
     stats = stats.values.tolist()
-    stats = execstats2_r(trades,stats,params,seq)
+    fx = {}
+    stats = execstats2_r(trades,stats,params,seq,fx)
     stats = pd.DataFrame(stats)
 
 #     stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.3f')
@@ -1303,8 +1305,33 @@ def stathyperparams2(trades,params,conf):
     print('duration:      ',str(endtime - starttime))
     return 
 
-def execstats2_r(trades,stats,params,seq,cursor=0):
-#     print(cursor)
+def execstats2_r(trades,stats,params,seq,fx,cursor=0,isBig=True):
+#     filterlimit = 100000
+#     if((isBig==True) & (seq['dryrun']==False)):
+#         print('trades len1: ', len(trades))
+#         conditions = None            
+#         for kk in fx.keys():
+#             imode = fx[kk][0]
+#             if ((imode == 0) or (imode == 3)):
+#                 cond = (trades[kk].values>=fx[kk][1])&(trades[kk].values<fx[kk][2])
+#                 timedump('1x')
+#             elif (imode == 1):
+#                 cond = trades[kk].isin(fx[kk][1])
+#                 timedump('1y')
+#             elif (imode == 2):
+#                 cond = trades[kk].values==fx[kk][1]
+#                 timedump('1z')
+#             if conditions is None:
+#                 conditions = cond
+#             else:
+#                 conditions = conditions & cond            
+#         if (not conditions is None):
+#             trades = trades[conditions]   
+            
+#             print('trades len2: ', len(trades))
+#             if (len(trades)<filterlimit):
+#                 isBig = False
+    cond = None        
     if (cursor<len(params)):
         key = list(params.keys())[cursor]
         imode = params[key][0]
@@ -1312,8 +1339,11 @@ def execstats2_r(trades,stats,params,seq,cursor=0):
             for ifrom in params[key][1]:
                 for ito in params[key][2]:
                     if (ito>ifrom):
-                        seq[key] = [imode,ifrom,ito]
-                        stats = execstats2_r(trades,stats,params,seq,cursor+1)
+                        fx[key] = [imode,ifrom,ito]
+                        cond = (trades[key].values>=fx[key][1])&(trades[key].values<fx[key][2])#
+                        trades1 = trades[cond]#
+#                         print('trades len2: ', len(trades1))
+                        stats = execstats2_r(trades1,stats,params,seq,fx,cursor+1,isBig)
         elif (imode == 1):
             froms = params[key][1]
             a = []
@@ -1321,37 +1351,46 @@ def execstats2_r(trades,stats,params,seq,cursor=0):
                 for subset in itertools.combinations(froms, L):
                     a.append(subset)
             for ifrom in a:
-                seq[key] = [imode,ifrom]
-                stats = execstats2_r(trades,stats,params,seq,cursor+1)
+                fx[key] = [imode,ifrom]
+                cond = trades[key].isin(fx[key][1])#
+                trades1 = trades[cond]#
+#                 print('trades len2: ', len(trades1))
+                stats = execstats2_r(trades1,stats,params,seq,fx,cursor+1,isBig)
         elif (imode == 2):
             for ifrom in params[key][1]:
-                seq[key] = [imode,ifrom]
-                stats = execstats2_r(trades,stats,params,seq,cursor+1)
+                fx[key] = [imode,ifrom]
+                cond = trades[key].values==fx[key][1]#
+                trades1 = trades[cond]#
+#                 print('trades len2: ', len(trades1))
+                stats = execstats2_r(trades1,stats,params,seq,fx,cursor+1,isBig)
         elif (imode == 3):
             for ii in range(0, len(params[key][1])):
                 ifrom = params[key][1][ii]
                 ito   = params[key][2][ii]
                 if (ito>ifrom):
-                    seq[key] = [imode,ifrom,ito]
-                    stats = execstats2_r(trades,stats,params,seq,cursor+1)
+                    fx[key] = [imode,ifrom,ito]
+                    cond = (trades[key].values>=fx[key][1])&(trades[key].values<fx[key][2])#
+                    trades1 = trades[cond]#
+#                     print('trades len2: ', len(trades1))
+                    stats = execstats2_r(trades1,stats,params,seq,fx,cursor+1,isBig)
                 
     else:
-        stats = execstats2(trades,stats,params,seq)
+        stats = execstats2(trades,stats,params,seq,fx)
     return stats
     
-def execstats2(trades,stats,params,seq):
+def execstats2(trades,stats,params,seq,fx):
     
     if (seq['dryrun']):
         seq['allexecs'] = seq['allexecs'] + 1
     else:
         seq['execs'] = seq['execs'] + 1
-        df = calculatestats2(trades,params,seq)                  
+        df = calculatestats2(trades,params,seq,fx)                  
         if (not df is None):
             seq['locs'] = seq['locs'] + 1
-            timedump('10')
+#             timedump('10')
 #             stats = stats.append(df, ignore_index=True)
             stats.append(df)
-            timedump('11')
+#             timedump('11')
             
 #         if ((seq['execs'] % 1000)==0):
         if ((datetime.now() - seq['lastrun']).total_seconds()>30):
@@ -1367,8 +1406,8 @@ def execstats2(trades,stats,params,seq):
         
     return stats
 # tutu
-def calculatestats2(trades,params,seq):
-    timedump('1')
+def calculatestats2(stats0,params,seq,fx):
+#     timedump('1')
 
 #     stats0 = trades.copy()
 #     for kk in params.keys():
@@ -1382,26 +1421,27 @@ def calculatestats2(trades,params,seq):
 #         elif (imode == 2):
 #             stats0 = stats0[stats0[kk]==seq[kk][1]]
 #             timedump('1c')
-    conditions = None            
-    for kk in params.keys():
-        imode = seq[kk][0]
-        if ((imode == 0) or (imode == 3)):
-            cond = (trades[kk].values>=seq[kk][1])&(trades[kk].values<seq[kk][2])
-            timedump('1a')
-        elif (imode == 1):
-            cond = trades[kk].isin(seq[kk][1])
-            timedump('1b')
-        elif (imode == 2):
-            cond = trades[kk].values==seq[kk][1]
-            timedump('1c')
-        if conditions is None:
-            conditions = cond
-        else:
-            conditions = conditions & cond            
+    
+#     conditions = None            
+#     for kk in params.keys():
+#         imode = fx[kk][0]
+#         if ((imode == 0) or (imode == 3)):
+#             cond = (trades[kk].values>=fx[kk][1])&(trades[kk].values<fx[kk][2])
+# #             timedump('1a')
+#         elif (imode == 1):
+#             cond = trades[kk].isin(fx[kk][1])
+# #             timedump('1b')
+#         elif (imode == 2):
+#             cond = trades[kk].values==fx[kk][1]
+# #             timedump('1c')
+#         if conditions is None:
+#             conditions = cond
+#         else:
+#             conditions = conditions & cond            
 
-    stats0 = trades[conditions]        
+#     stats0 = trades[conditions]        
             
-    timedump('2')
+#     timedump('2')
     pr_c = len(stats0)
     
     avgsl = stats0.sl_val.mean()
@@ -1416,7 +1456,7 @@ def calculatestats2(trades,params,seq):
     cumsumcummin  = cumsum.cummin()
     cumsum_cummin = cumsum-cumsumcummin
     pr_maxp       = cumsum_cummin.max()
-    timedump('3')
+#     timedump('3')
         
 #     stats0['cumsum'] = cumsum
 #     stats0['cumsumcummax'] = cumsumcummax
@@ -1427,32 +1467,32 @@ def calculatestats2(trades,params,seq):
 #     if ((pr_c>=seq['mintrades']) and (pr_sum>0)):
         pr_c_u = len(stats0[stats0.profit>=0])
         pr_c_d = len(stats0[stats0.profit<0])            
-        timedump('4')
+#         timedump('4')
 #         yearmonth = stats0.groupby(['year','month'])['profit'].sum().reset_index()
 #         monthsup = len(yearmonth[yearmonth.profit>0])
 #         monthsdown = len(yearmonth[yearmonth.profit<0])
         monthsup = 0
         monthsdown = 0
-        timedump('5')
+#         timedump('5')
         df = {'c':pr_c,'cu':pr_c_u,'cd':pr_c_d,'p_sm':pr_sum,
               'maxp':pr_maxp,'maxd2':pr_maxdown2,'mu':monthsup,'md':monthsdown,'avgsl':avgsl
              }
         for kk in params.keys():
-            imode = seq[kk][0]
+            imode = fx[kk][0]
             if ((imode == 0) or (imode == 3)):
-                df[kk+'from'] = seq[kk][1]
-                df[kk+'to'] = seq[kk][2]
+                df[kk+'from'] = fx[kk][1]
+                df[kk+'to'] = fx[kk][2]
             elif (imode == 1):
-                ifrom = seq[kk][1]
+                ifrom = fx[kk][1]
                 str1 = ','.join(str(e) for e in ifrom)
                 df[kk+'from'] = str1
             elif (imode == 2):
-                ifrom = seq[kk][1]
+                ifrom = fx[kk][1]
                 df[kk+'from'] = str(ifrom)
         
     else:
         df = None
-    timedump('6')    
+#     timedump('6')    
     return df
 
 
