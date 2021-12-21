@@ -2107,7 +2107,7 @@ def runstats_pa_v3(alltrades):
 
 
 
-def preparetrades_brut_tsl(masterFrame, trtypes, sls, tps, tsls, yearfrom, yearto,atr=''):
+def preparetrades_brut_tsl0(masterFrame, trtypes, sls, tps, tsls, yearfrom, yearto,atr=''):
     if (tsls==[]):
         return preparetrades_brut_tp(masterFrame, trtypes, sls, tps, yearfrom, yearto,atr)
     first = True
@@ -2120,7 +2120,7 @@ def preparetrades_brut_tsl(masterFrame, trtypes, sls, tps, tsls, yearfrom, yeart
                     df = opentrades_brut(trtype,df)
                     df = closetrades_tsl(df,sl,tp,0,atr)
                     if (first==True): 
-                        trades=df 
+                        trades=df
                         first = False
                     else:
                         trades=trades.append(df)
@@ -2130,11 +2130,36 @@ def preparetrades_brut_tsl(masterFrame, trtypes, sls, tps, tsls, yearfrom, yeart
                         df = opentrades_brut(trtype,df)
                         df = closetrades_tsl(df,sl,tp,tsl,atr)
                         if (first==True): 
-                            trades=df 
+                            trades=df
                             first = False
                         else:
                             trades=trades.append(df)
+
     return trades
+
+def preparetrades_brut_tsl(masterFrame, trtypes, sls, tps, tsls, yearfrom, yearto,atr=''):
+    if (tsls==[]):
+        return preparetrades_brut_tp(masterFrame, trtypes, sls, tps, yearfrom, yearto,atr)
+    masterFrame = masterFrame[(masterFrame.year>=yearfrom)&(masterFrame.year<=yearto)]
+    trades = []
+    for trtype in trtypes:
+        for sl in sls:                
+            for tp in tps:
+                if (tp==100):
+                    df = masterFrame.copy()
+                    df = opentrades_brut(trtype,df)
+                    df = closetrades_tsl(df,sl,tp,0,atr)
+                    trades.append(df)
+                else:
+                    for tsl in tsls:                
+                        df = masterFrame.copy()
+                        df = opentrades_brut(trtype,df)
+                        df = closetrades_tsl(df,sl,tp,tsl,atr)
+                        trades.append(df)
+
+    trades1 = pd.concat(trades, ignore_index=True)
+    return trades1
+
 
 def preparetrades_brut_tp(masterFrame, trtypes, sls, tps, yearfrom, yearto,atr=''):
     first = True
@@ -2162,7 +2187,8 @@ def opentrades_brut(mode,df):
 
 def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
     tpr = 0.5
-    
+#     df = df0[['id','tradetype','openprice','open','close','low','high',atr]]
+#     df = df0
     if (stoploss<=0.09):
         df['sl'] = stoploss   * 10000
         df['tp'] = takeprofit * 10000
@@ -2186,7 +2212,6 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
     df['tpcloseindex'] = -1
     df['closeprice'] = -1
     df['tpcloseprice'] = -1
-#     df['closehour'] = 0
     df['slindex'] = -1
     df['slprice'] = -1
     df['profit'] = 0
@@ -2254,7 +2279,7 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
     df['tsl_val'] = df.tsl_val * 10000
 
     df['profit'] = df.profit * 10000
-    df['profit1'] = np.where(df.profit>=20,1,-1)
+#     df['profit1'] = np.where(df.profit>=20,1,-1)
 
     df = df.drop(columns='nextbar_close')
     df = df.drop(columns='nextbar_open')
@@ -2267,6 +2292,9 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
 #     df = df.drop(columns='tp_val')
 #     df = df.drop(columns='tsl_val')
 #     df = df.drop(columns='takeprofit')
+    
+#     df0[['sl','tp','tsl','sl_val','tp_val','tsl_val','stoploss','takeprofit', 'closeindex','tpcloseindex','closeprice','tpcloseprice','slindex','slprice','profit']] = df[['sl','tp','tsl','sl_val','tp_val','tsl_val','stoploss','takeprofit', 'closeindex','tpcloseindex','closeprice','tpcloseprice','slindex','slprice','profit']]
+#     return df0
     
     return df
 
