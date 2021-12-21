@@ -1222,7 +1222,8 @@ def stathyperparams2(trades,params,conf):
     alldays = len(trades.drop_duplicates(['year','month','day']))
     seq['mintrades'] = alldays/25 #once a month
     seq['dryrun'] = True
-    stats = execstats2_r(trades,stats,params,seq,fx)
+    emptydf = pd.DataFrame(columns=tradecolumns)
+    stats = execstats2_r(emptydf,stats,params,seq,fx)
     print('allexecs: ',seq['allexecs'])
 #index=range(10000),
     statscolumns = ['c','cu','cd','cc',
