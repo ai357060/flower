@@ -1370,7 +1370,7 @@ def execstats2(trades,stats,params,seq):
 def calculatestats2(trades,params,seq):
     timedump('1')
 
-    stats0 = trades.copy()
+#     stats0 = trades.copy()
 #     for kk in params.keys():
 #         imode = seq[kk][0]
 #         if ((imode == 0) or (imode == 3)):
@@ -1386,13 +1386,13 @@ def calculatestats2(trades,params,seq):
     for kk in params.keys():
         imode = seq[kk][0]
         if ((imode == 0) or (imode == 3)):
-            cond = (stats0[kk].values>=seq[kk][1])&(stats0[kk].values<seq[kk][2])
+            cond = (trades[kk].values>=seq[kk][1])&(trades[kk].values<seq[kk][2])
             timedump('1a')
         elif (imode == 1):
-            cond = stats0[kk].isin(seq[kk][1])
+            cond = trades[kk].isin(seq[kk][1])
             timedump('1b')
         elif (imode == 2):
-            cond = stats0[kk].values==seq[kk][1]
+            cond = trades[kk].values==seq[kk][1]
             timedump('1c')
         if conditions is None:
             conditions = cond
@@ -2330,6 +2330,7 @@ def cleartrades_brut(df,save=False,stamp=''):
     df = df.drop(columns='slindex')
     df = df.drop(columns='slprice')
     df = df.drop(columns='id')
+    print('trades_len: ',len(df))
     return df
 
 
@@ -2976,31 +2977,7 @@ def runstats_ma_v31(alltrades,a,b,c,d,aa,bb,cc,atr='atr140atr_prev',sl=[],tp=[],
     return 
 
 
-def runstats_test2(alltrades,ma1,atrperiod,sl,tp,tsl):
-    ma2 = '5'
-    runstats_ma_test2(alltrades,'ma'+ma1+'SMAdiffseq_prev', 'ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAvs'+ma2+'_prev', 'ma'+ma2+'SMAdiffseq_prev', 'ma'+ma2+'SMAdiffdiff_prev',atrperiod,sl,tp,tsl)
-    return 
 
-def runstats_ma_test2(alltrades,a,b,vs,aa,bb,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
-    conf   = {}
-    params = {}
-
-    params['tradetype'] = [1,[1]]
-    params['sl'] =        [2,sl]
-    params['tp'] =        [2,tp]
-    params['tsl'] =       [2,tsl]
-    params[atr]  =        [3,[-1000],[0.015]]
-    params[a]    =        [0,[1,2],[1000]]
-    params[b]    =        [0,[-1000,0,1000],[-1000,0,1000]]
-#     params[c]    =        [3,[0],[1000]]
-    params[vs]    =        [3,[0],[1000]]
-    params[aa]   =        [3,[2],[1000]]
-    params[bb]   =        [0,[-1000,0,1000],[-1000,0,1000]]
-#     params[cc]   =        [3,[-1000],[1000]]
-    conf['filename'] =    'ma_t2_2003_2021_1_'+atr+'_'+vs
-    print(conf['filename'])
-    stathyperparams2(alltrades,params,conf)
-    return 
 
 
 def runstats32(alltrades,ma1,atrperiod,sl,tp,tsl):
