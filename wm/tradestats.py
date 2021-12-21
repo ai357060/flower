@@ -1253,8 +1253,8 @@ def stathyperparams2(trades,params,conf):
     seq['dryrun'] = False
     seq['starttime'] = datetime.now()
     seq['lastrun'] = datetime.now()
-    stats = stats.values.tolist()
     fx = {}
+    stats = stats.values.tolist()
     stats = execstats2_r(trades,stats,params,seq,fx)
     stats = pd.DataFrame(stats)
 
@@ -1306,7 +1306,7 @@ def stathyperparams2(trades,params,conf):
     print('duration:      ',str(endtime - starttime))
     return 
 
-def execstats2_r(trades,stats,params,seq,fx,cursor=0,isBig=True):
+def execstats2_r(trades,stats,params,seq,fx,cursor=0):
 #     filterlimit = 100000
 #     if((isBig==True) & (seq['dryrun']==False)):
 #         print('trades len1: ', len(trades))
@@ -1341,10 +1341,12 @@ def execstats2_r(trades,stats,params,seq,fx,cursor=0,isBig=True):
                 for ito in params[key][2]:
                     if (ito>ifrom):
                         fx[key] = [imode,ifrom,ito]
-                        cond = (trades[key].values>=fx[key][1])&(trades[key].values<fx[key][2])#
-                        trades1 = trades[cond]#
-#                         print('trades len2: ', len(trades1))
-                        stats = execstats2_r(trades1,stats,params,seq,fx,cursor+1,isBig)
+                        if (not seq['dryrun']):
+                            cond = (trades[key].values>=fx[key][1])&(trades[key].values<fx[key][2])#
+                            trades1 = trades[cond]#
+                        else:
+                            trades1 = trades
+                        stats = execstats2_r(trades1,stats,params,seq,fx,cursor+1)
         elif (imode == 1):
             froms = params[key][1]
             a = []
@@ -1353,27 +1355,33 @@ def execstats2_r(trades,stats,params,seq,fx,cursor=0,isBig=True):
                     a.append(subset)
             for ifrom in a:
                 fx[key] = [imode,ifrom]
-                cond = trades[key].isin(fx[key][1])#
-                trades1 = trades[cond]#
-#                 print('trades len2: ', len(trades1))
-                stats = execstats2_r(trades1,stats,params,seq,fx,cursor+1,isBig)
+                if (not seq['dryrun']):
+                    cond = trades[key].isin(fx[key][1])#
+                    trades1 = trades[cond]#
+                else:
+                    trades1 = trades
+                stats = execstats2_r(trades1,stats,params,seq,fx,cursor+1)
         elif (imode == 2):
             for ifrom in params[key][1]:
                 fx[key] = [imode,ifrom]
-                cond = trades[key].values==fx[key][1]#
-                trades1 = trades[cond]#
-#                 print('trades len2: ', len(trades1))
-                stats = execstats2_r(trades1,stats,params,seq,fx,cursor+1,isBig)
+                if (not seq['dryrun']):
+                    cond = trades[key].values==fx[key][1]#
+                    trades1 = trades[cond]#
+                else:
+                    trades1 = trades
+                stats = execstats2_r(trades1,stats,params,seq,fx,cursor+1)
         elif (imode == 3):
             for ii in range(0, len(params[key][1])):
                 ifrom = params[key][1][ii]
                 ito   = params[key][2][ii]
                 if (ito>ifrom):
                     fx[key] = [imode,ifrom,ito]
-                    cond = (trades[key].values>=fx[key][1])&(trades[key].values<fx[key][2])#
-                    trades1 = trades[cond]#
-#                     print('trades len2: ', len(trades1))
-                    stats = execstats2_r(trades1,stats,params,seq,fx,cursor+1,isBig)
+                    if (not seq['dryrun']):
+                        cond = (trades[key].values>=fx[key][1])&(trades[key].values<fx[key][2])#
+                        trades1 = trades[cond]#
+                    else:
+                        trades1 = trades
+                    stats = execstats2_r(trades1,stats,params,seq,fx,cursor+1)
                 
     else:
         stats = execstats2(trades,stats,params,seq,fx)
