@@ -4,6 +4,8 @@ from datetime import datetime
 # import math
 from datetime import timedelta
 import itertools
+import json 
+import matplotlib.pyplot as plt
 
 # from scipy import stats
 # import scipy.optimize
@@ -1214,22 +1216,24 @@ def stathyperparams2(trades,params,conf):
     trades = trades[tradecolumns]    
     seq = {}
     fx = {}
-    stats = pd.DataFrame()
+    stats = []
 
     seq['execs'] = 0
-    seq['locs'] = 0
+#     seq['locs'] = 0
     seq['allexecs'] = 0
     alldays = len(trades.drop_duplicates(['year','month','day']))
     seq['mintrades'] = alldays/25 #once a month
     seq['dryrun'] = True
-    emptydf = pd.DataFrame(columns=tradecolumns)
-    stats = execstats2_r(emptydf,stats,params,seq,fx)
+    stats = execstats2_r(trades,stats,params,seq,fx)
     print('allexecs: ',seq['allexecs'])
-#index=range(10000),
-    statscolumns = ['c','cu','cd','cc',
+    if (conf['fxs']==True):
+        stats = pd.DataFrame(stats)
+        return stats
+
+    statscolumns = ['ii','c','cu','cd','cc',
                                   'mu','md','mm',
                                   'p_sm','r',
-                                  'maxp','maxd2','d','rd','rd2','xx','avgsl'
+                                  'maxp','maxd2','d','rd','rd2','avgsl'#,'fx'
                     ]
     groupbycolumns = ['c',
                              'cu',
@@ -1248,13 +1252,13 @@ def stathyperparams2(trades,params,conf):
         else:
             groupbycolumns = np.append(groupbycolumns,key+'from')
     
-    stats = pd.DataFrame(columns=statscolumns)
+    stats = []
     
     seq['dryrun'] = False
     seq['starttime'] = datetime.now()
     seq['lastrun'] = datetime.now()
     fx = {}
-    stats = stats.values.tolist()
+#     stats = stats.values.tolist()
     stats = execstats2_r(trades,stats,params,seq,fx)
     stats = pd.DataFrame(stats)
 
@@ -1263,14 +1267,14 @@ def stathyperparams2(trades,params,conf):
         print('!!!!!!!!!!!!!!!!no profitable strategy')
     else:
         #scalanie
-        statsgb = stats.groupby(by=list(groupbycolumns))
-        stats = statsgb.size().to_frame(name='xx')
+#         statsgb = stats.groupby(by=list(groupbycolumns))
+#         stats = statsgb.size().to_frame(name='xx')
 
-        for key in params.keys():
-            mode = params[key][0]
-            if ( (mode == 0) or (mode == 3)):
-                stats = stats.join(statsgb.agg({key+'from': 'min',key+'to': 'max'}))
-        stats = stats.reset_index()    
+#         for key in params.keys():
+#             mode = params[key][0]
+#             if ( (mode == 0) or (mode == 3)):
+#                 stats = stats.join(statsgb.agg({key+'from': 'min',key+'to': 'max'}))
+#         stats = stats.reset_index()    
 
         stats['cc'] = stats.cu-stats.cd
         stats['mm'] = stats.mu-stats.md
@@ -1293,10 +1297,10 @@ def stathyperparams2(trades,params,conf):
         stats0 = stats0.append(stats.sort_values("rd",ascending=False).head(top))
         stats0 = stats0.append(stats.sort_values("rd2",ascending=False).head(top))
         stats0 = stats0.drop_duplicates()
-    
+        
 #         statscolumns = np.append(statscolumns,['xx'])
         stats0 = stats0[statscolumns]
-
+        stats0 = stats0.sort_values("rd2",ascending=False)
         stats0['fn']=conf['filename']
         stats0.to_csv(sep=';',
                       path_or_buf='../Data/stats_v2_'+str(conf['filename'])+'.csv',
@@ -1391,11 +1395,14 @@ def execstats2(trades,stats,params,seq,fx):
     
     if (seq['dryrun']):
         seq['allexecs'] = seq['allexecs'] + 1
+        fx1=fx.copy()
+        df = {'ii':seq['allexecs'],'fx':fx1}
+        stats.append(df)
     else:
         seq['execs'] = seq['execs'] + 1
         df = calculatestats2(trades,params,seq,fx)                  
         if (not df is None):
-            seq['locs'] = seq['locs'] + 1
+#             seq['locs'] = seq['locs'] + 1
 #             timedump('10')
 #             stats = stats.append(df, ignore_index=True)
             stats.append(df)
@@ -1483,8 +1490,8 @@ def calculatestats2(stats0,params,seq,fx):
         monthsup = 0
         monthsdown = 0
 #         timedump('5')
-        df = {'c':pr_c,'cu':pr_c_u,'cd':pr_c_d,'p_sm':pr_sum,
-              'maxp':pr_maxp,'maxd2':pr_maxdown2,'mu':monthsup,'md':monthsdown,'avgsl':avgsl
+        df = {'ii':seq['execs'],'c':pr_c,'cu':pr_c_u,'cd':pr_c_d,'p_sm':pr_sum,
+              'maxp':pr_maxp,'maxd2':pr_maxdown2,'mu':monthsup,'md':monthsdown,'avgsl':avgsl#,'fx':json.dumps(fx)
              }
         for kk in params.keys():
             imode = fx[kk][0]
@@ -1504,7 +1511,80 @@ def calculatestats2(stats0,params,seq,fx):
 #     timedump('6')    
     return df
 
+def printfx(fx):
+    for kk in fx.keys():
+        imode = fx[kk][0]
+        if ((imode == 0) or (imode == 3)):
+            print(kk.rjust(20),str(fx[kk][1]).rjust(6),str(fx[kk][2]).rjust(6))
+        else:
+            print(kk.rjust(20),str(fx[kk][1]).rjust(6))
 
+def calcandplot(trades,fxs,fxlist):
+    conditions = None            
+    for f in fxlist:
+        fx = (fxs[fxs.ii==f]['fx']).values[0]
+        printfx(fx)
+        cond = prepareconditions(trades,fx,f)
+        calcfx(trades,cond)
+        print('--------------OR--------------')
+        if conditions is None:
+            conditions = cond
+        else:
+            conditions = conditions | cond            
+    
+    stats0 = calcfx(trades,conditions)
+
+    
+    ct = trades[['date','close']]
+    ct = ct.drop_duplicates()
+
+    ct = ct.merge(stats0[['date','profit']],left_on=['date'],right_on=['date'],how='left')
+    ct.profit=ct.profit.fillna(0)
+    ct['cumprofit']        = ct.profit.cumsum()
+    
+    xx = ct.cumprofit.max()/ct.close.max()
+    ct.close = ct.close*xx    
+    x = np.array(ct.date)
+    y = np.array(ct.cumprofit)
+    c = np.array(ct.close)
+    plt.figure(figsize=(20,10))
+    plt.plot(x,y)
+    plt.plot(x,c)
+    plt.show()
+    return stats0
+
+def calcfx(trades,conditions):
+    stats0 = trades[conditions] 
+    stats0 = stats0.sort_values("date",ascending=True)
+    seq = {}
+    params = {}
+    seq['mintrades'] = 0
+    seq['execs'] = 0
+    df = calculatestats2(stats0,{},seq,{})
+    df['r']=df['p_sm']/df['avgsl']
+    df['d']=df['maxd2']/df['avgsl']
+    df['rd2']=-1*df['maxp']/df['maxd2']
+    print(df)
+    return stats0
+
+def prepareconditions(trades,fx,f):
+    conditions = None            
+    for kk in fx.keys():
+        imode = fx[kk][0]
+        if ((imode == 0) or (imode == 3)):
+            cond = (trades[kk].values>=fx[kk][1])&(trades[kk].values<fx[kk][2])
+        elif (imode == 1):
+            cond = trades[kk].isin(fx[kk][1])
+        elif (imode == 2):
+            cond = trades[kk].values==fx[kk][1]
+        if conditions is None:
+            conditions = cond
+        else:
+            conditions = conditions & cond            
+
+    return conditions
+        
+        
 def statsall(trades):
     df = trades[trades.tradetype!=0]
     df = df.reset_index()
