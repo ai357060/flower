@@ -1234,7 +1234,7 @@ def stathyperparams2(trades,params,conf):
     statscolumns = ['ii','c','cu','cd','cc',
                                   'mu','md','mm',
                                   'p_sm','r',
-                                  'maxp','maxd2','d','rd','rd2','avgsl'#,'fx'
+                                  'maxp','maxd2','d','rd','rd2','avgsl','fx'
                     ]
     groupbycolumns = ['c',
                              'cu',
@@ -1492,7 +1492,7 @@ def calculatestats2(stats0,params,seq,fx):
         monthsdown = 0
 #         timedump('5')
         df = {'ii':seq['execs'],'c':pr_c,'cu':pr_c_u,'cd':pr_c_d,'p_sm':pr_sum,
-              'maxp':pr_maxp,'maxd2':pr_maxdown2,'mu':monthsup,'md':monthsdown,'avgsl':avgsl#,'fx':json.dumps(fx)
+              'maxp':pr_maxp,'maxd2':pr_maxdown2,'mu':monthsup,'md':monthsdown,'avgsl':avgsl,'fx':json.dumps(fx)
              }
         for kk in params.keys():
             imode = fx[kk][0]
