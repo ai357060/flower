@@ -1226,9 +1226,10 @@ def stathyperparams2(trades,params,conf):
     seq['dryrun'] = True
     stats = execstats2_r(trades,stats,params,seq,fx)
     print('allexecs: ',seq['allexecs'])
-    if (conf['fxs']==True):
-        stats = pd.DataFrame(stats)
-        return stats
+    if ('fxs' in conf):
+        if (conf['fxs']==True):
+            stats = pd.DataFrame(stats)
+            return stats
 
     statscolumns = ['ii','c','cu','cd','cc',
                                   'mu','md','mm',
