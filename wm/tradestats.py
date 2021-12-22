@@ -1396,9 +1396,9 @@ def execstats2(trades,stats,params,seq,fx):
     
     if (seq['dryrun']):
         seq['allexecs'] = seq['allexecs'] + 1
-        fx1=fx.copy()
-        df = {'ii':seq['allexecs'],'fx':fx1}
-        stats.append(df)
+#         fx1=fx.copy()
+#         df = {'ii':seq['allexecs'],'fx':fx1}
+#         stats.append(df)
     else:
         seq['execs'] = seq['execs'] + 1
         df = calculatestats2(trades,params,seq,fx)                  
