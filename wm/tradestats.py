@@ -1224,11 +1224,12 @@ def stathyperparams2(trades,params,conf):
     alldays = len(trades.drop_duplicates(['year','month','day']))
     seq['mintrades'] = alldays/25 #once a month
     seq['dryrun'] = True
+    if ('fxs' in conf):
+        seq['fxs'] = conf['fxs']
     stats = execstats2_r(trades,stats,params,seq,fx)
     print('allexecs: ',seq['allexecs'])
-    if ('fxs' in conf):
-        if (conf['fxs']==True):
-            stats = pd.DataFrame(stats)
+    if ('fxs' in seq):
+        if (seq['fxs'] != []):
             return stats
 
     statscolumns = ['ii','c','cu','cd','cc',
@@ -1396,9 +1397,12 @@ def execstats2(trades,stats,params,seq,fx):
     
     if (seq['dryrun']):
         seq['allexecs'] = seq['allexecs'] + 1
-#         fx1=fx.copy()
-#         df = {'ii':seq['allexecs'],'fx':fx1}
-#         stats.append(df)
+        if ('fxs' in seq):
+            if (seq['allexecs'] in seq['fxs']):
+                fx1 = fx.copy()
+                df = {'ii':seq['allexecs'],'fx':fx1}
+                stats.append(df)
+                
     else:
         seq['execs'] = seq['execs'] + 1
         df = calculatestats2(trades,params,seq,fx)                  
@@ -1520,12 +1524,13 @@ def printfx(fx):
         else:
             print(kk.rjust(20),str(fx[kk][1]).rjust(6))
 
-def calcandplot(trades,fxs,fxlist):
+def calcandplot(trades,fxs):
     conditions = None            
-    for f in fxlist:
-        fx = (fxs[fxs.ii==f]['fx']).values[0]
+    for f in fxs:
+#         fx = (fxs[fxs.ii==f]['fx']).values[0]
+        fx = f['fx']
         printfx(fx)
-        cond = prepareconditions(trades,fx,f)
+        cond = prepareconditions(trades,fx)
         calcfx(trades,cond)
         print('--------------OR--------------')
         if conditions is None:
@@ -1543,7 +1548,8 @@ def calcandplot(trades,fxs,fxlist):
     ct.profit=ct.profit.fillna(0)
     ct['cumprofit']        = ct.profit.cumsum()
     
-    xx = ct.cumprofit.max()/ct.close.max()
+    xx = max(abs(ct.cumprofit.max()),abs(ct.cumprofit.min()))/ct.close.max()
+    xx = (ct.cumprofit.max()-ct.cumprofit.min())/ct.close.max()
     ct.close = ct.close*xx    
     x = np.array(ct.date)
     y = np.array(ct.cumprofit)
@@ -1568,7 +1574,7 @@ def calcfx(trades,conditions):
     print(df)
     return stats0
 
-def prepareconditions(trades,fx,f):
+def prepareconditions(trades,fx):
     conditions = None            
     for kk in fx.keys():
         imode = fx[kk][0]
