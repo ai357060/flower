@@ -1310,7 +1310,7 @@ def stathyperparams2(trades,params,conf):
     return 
 
 def execstats2_r(trades,stats,params,seq,fx,cursor=0):
-    cond = None        
+            
     if (cursor<len(params)):
         key = list(params.keys())[cursor]
         imode = params[key][0]
@@ -1486,6 +1486,23 @@ def calcandplot(trades,fxs):
     
     return stats0
 
+def prepareconditions(trades,fx):
+    conditions = None            
+    for kk in fx.keys():
+        imode = fx[kk][0]
+        if ((imode == 0) or (imode == 3)):
+            cond = (trades[kk].values>=fx[kk][1])&(trades[kk].values<fx[kk][2])
+        elif (imode == 1):
+            cond = trades[kk].isin(fx[kk][1])
+        elif (imode == 2):
+            cond = trades[kk].values==fx[kk][1]
+        if conditions is None:
+            conditions = cond
+        else:
+            conditions = conditions & cond            
+
+    return conditions
+
 def plottrades(trades,stats0):
     ct = trades[['date','close']]
     ct = ct.drop_duplicates()
@@ -1527,22 +1544,7 @@ def calcfx(trades,conditions):
         print('{}')
     return stats0
 
-def prepareconditions(trades,fx):
-    conditions = None            
-    for kk in fx.keys():
-        imode = fx[kk][0]
-        if ((imode == 0) or (imode == 3)):
-            cond = (trades[kk].values>=fx[kk][1])&(trades[kk].values<fx[kk][2])
-        elif (imode == 1):
-            cond = trades[kk].isin(fx[kk][1])
-        elif (imode == 2):
-            cond = trades[kk].values==fx[kk][1]
-        if conditions is None:
-            conditions = cond
-        else:
-            conditions = conditions & cond            
 
-    return conditions
         
         
 def statsall(trades):
