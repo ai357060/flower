@@ -1526,21 +1526,41 @@ def printfx(fx):
 
 def calcandplot(trades,fxs):
     conditions = None            
+    i=1
+    if (len(fxs)>1):
+        for f in fxs:
+            if ('fx' in f):
+                break
+            else:
+                jj = fxs
+                fxs = []
+                for j in jj:
+                    j1 = {'ii':0,'fx':json.loads(j.replace('""', '\"'))}
+                    fxs.append(j1)                
+                break
+        
     for f in fxs:
-#         fx = (fxs[fxs.ii==f]['fx']).values[0]
         fx = f['fx']
+        print('ii',f['ii'])
         printfx(fx)
         cond = prepareconditions(trades,fx)
-        calcfx(trades,cond)
-        print('--------------OR--------------')
+        stats0 = calcfx(trades,cond)
+        if (i<len(fxs)):
+            print('--------------OR--------------')
         if conditions is None:
             conditions = cond
         else:
             conditions = conditions | cond            
+        i+=1
     
-    stats0 = calcfx(trades,conditions)
+    if (len(fxs)>1):
+        print('--------------=--------------')
+        stats0 = calcfx(trades,conditions)
+        plottrades(trades,stats0)
+    
+    return stats0
 
-    
+def plottrades(trades,stats0):
     ct = trades[['date','close']]
     ct = ct.drop_duplicates()
 
@@ -1549,8 +1569,10 @@ def calcandplot(trades,fxs):
     ct['cumprofit']        = ct.profit.cumsum()
     
     xx = max(abs(ct.cumprofit.max()),abs(ct.cumprofit.min()))/ct.close.max()
-    xx = (ct.cumprofit.max()-ct.cumprofit.min())/ct.close.max()
+    xx = (ct.cumprofit.max()-ct.cumprofit.min())/(ct.close.max()-ct.close.min())
     ct.close = ct.close*xx    
+    offset = ct.cumprofit.min() - ct.close.min()
+    ct.close = ct.close + offset    
     x = np.array(ct.date)
     y = np.array(ct.cumprofit)
     c = np.array(ct.close)
@@ -1558,7 +1580,7 @@ def calcandplot(trades,fxs):
     plt.plot(x,y)
     plt.plot(x,c)
     plt.show()
-    return stats0
+    return
 
 def calcfx(trades,conditions):
     stats0 = trades[conditions] 
@@ -1568,10 +1590,15 @@ def calcfx(trades,conditions):
     seq['mintrades'] = 0
     seq['execs'] = 0
     df = calculatestats2(stats0,{},seq,{})
-    df['r']=df['p_sm']/df['avgsl']
-    df['d']=df['maxd2']/df['avgsl']
-    df['rd2']=-1*df['maxp']/df['maxd2']
-    print(df)
+    if (not df is None):
+        df['r']=df['p_sm']/df['avgsl']
+        df['d']=df['maxd2']/df['avgsl']
+        df['rd2']=-1*df['maxp']/df['maxd2']
+        print(df)
+    else:
+        print('{}')
+        print('no data for filter')
+        print('{}')
     return stats0
 
 def prepareconditions(trades,fx):
