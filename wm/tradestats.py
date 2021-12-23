@@ -1219,7 +1219,6 @@ def stathyperparams2(trades,params,conf):
     stats = []
 
     seq['execs'] = 0
-#     seq['locs'] = 0
     seq['allexecs'] = 0
     alldays = len(trades.drop_duplicates(['year','month','day']))
     seq['mintrades'] = alldays/25 #once a month
@@ -1254,19 +1253,18 @@ def stathyperparams2(trades,params,conf):
         else:
             groupbycolumns = np.append(groupbycolumns,key+'from')
     
-    stats = []
     
     seq['dryrun'] = False
     seq['starttime'] = datetime.now()
     seq['lastrun'] = datetime.now()
     fx = {}
-#     stats = stats.values.tolist()
+    stats = []
     stats = execstats2_r(trades,stats,params,seq,fx)
     stats = pd.DataFrame(stats)
 
 #     stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.3f')
     if (len(stats)==0):
-        print('!!!!!!!!!!!!!!!!no profitable strategy')
+        print('--no profitable strategy')
     else:
         #scalanie
 #         statsgb = stats.groupby(by=list(groupbycolumns))
@@ -1300,9 +1298,8 @@ def stathyperparams2(trades,params,conf):
         stats0 = stats0.append(stats.sort_values("rd2",ascending=False).head(top))
         stats0 = stats0.drop_duplicates()
         
-#         statscolumns = np.append(statscolumns,['xx'])
         stats0 = stats0[statscolumns]
-        stats0 = stats0.sort_values("rd2",ascending=False)
+#         stats0 = stats0.sort_values("rd2",ascending=False)
         stats0['fn']=conf['filename']
         stats0.to_csv(sep=';',
                       path_or_buf='../Data/stats_v2_'+str(conf['filename'])+'.csv',
@@ -1313,31 +1310,6 @@ def stathyperparams2(trades,params,conf):
     return 
 
 def execstats2_r(trades,stats,params,seq,fx,cursor=0):
-#     filterlimit = 100000
-#     if((isBig==True) & (seq['dryrun']==False)):
-#         print('trades len1: ', len(trades))
-#         conditions = None            
-#         for kk in fx.keys():
-#             imode = fx[kk][0]
-#             if ((imode == 0) or (imode == 3)):
-#                 cond = (trades[kk].values>=fx[kk][1])&(trades[kk].values<fx[kk][2])
-#                 timedump('1x')
-#             elif (imode == 1):
-#                 cond = trades[kk].isin(fx[kk][1])
-#                 timedump('1y')
-#             elif (imode == 2):
-#                 cond = trades[kk].values==fx[kk][1]
-#                 timedump('1z')
-#             if conditions is None:
-#                 conditions = cond
-#             else:
-#                 conditions = conditions & cond            
-#         if (not conditions is None):
-#             trades = trades[conditions]   
-            
-#             print('trades len2: ', len(trades))
-#             if (len(trades)<filterlimit):
-#                 isBig = False
     cond = None        
     if (cursor<len(params)):
         key = list(params.keys())[cursor]
@@ -1407,13 +1379,10 @@ def execstats2(trades,stats,params,seq,fx):
         seq['execs'] = seq['execs'] + 1
         df = calculatestats2(trades,params,seq,fx)                  
         if (not df is None):
-#             seq['locs'] = seq['locs'] + 1
-#             timedump('10')
-#             stats = stats.append(df, ignore_index=True)
+            timedump('10')
             stats.append(df)
-#             timedump('11')
+            timedump('11')
             
-#         if ((seq['execs'] % 1000)==0):
         if ((datetime.now() - seq['lastrun']).total_seconds()>30):
             progress = (1.0*seq['execs']/seq['allexecs'])
             print('____progress:  ', "{:.2f}".format(progress*100.00),'%')
@@ -1428,43 +1397,8 @@ def execstats2(trades,stats,params,seq,fx):
     return stats
 # tutu
 def calculatestats2(stats0,params,seq,fx):
-#     timedump('1')
-
-#     stats0 = trades.copy()
-#     for kk in params.keys():
-#         imode = seq[kk][0]
-#         if ((imode == 0) or (imode == 3)):
-#             stats0 = stats0[(stats0[kk]>=seq[kk][1])&(stats0[kk]<seq[kk][2])]
-#             timedump('1a')
-#         elif (imode == 1):
-#             stats0 = stats0[stats0[kk].isin(seq[kk][1])]
-#             timedump('1b')
-#         elif (imode == 2):
-#             stats0 = stats0[stats0[kk]==seq[kk][1]]
-#             timedump('1c')
-    
-#     conditions = None            
-#     for kk in params.keys():
-#         imode = fx[kk][0]
-#         if ((imode == 0) or (imode == 3)):
-#             cond = (trades[kk].values>=fx[kk][1])&(trades[kk].values<fx[kk][2])
-# #             timedump('1a')
-#         elif (imode == 1):
-#             cond = trades[kk].isin(fx[kk][1])
-# #             timedump('1b')
-#         elif (imode == 2):
-#             cond = trades[kk].values==fx[kk][1]
-# #             timedump('1c')
-#         if conditions is None:
-#             conditions = cond
-#         else:
-#             conditions = conditions & cond            
-
-#     stats0 = trades[conditions]        
-            
-#     timedump('2')
+    timedump('1')
     pr_c = len(stats0)
-    
     avgsl = stats0.sl_val.mean()
     pr_sum = stats0.profit.sum()
     
@@ -1472,29 +1406,22 @@ def calculatestats2(stats0,params,seq,fx):
     cumsumcummax  = cumsum.cummax()
     cumsum_cummax = cumsum-cumsumcummax
     pr_maxdown2   = cumsum_cummax.min()
-#     pr_maxdown = (stats0.groupby((stats0['profit'] * stats0['profit'].shift(1) <=0).cumsum())['profit'].cumsum()).min()
 
     cumsumcummin  = cumsum.cummin()
     cumsum_cummin = cumsum-cumsumcummin
     pr_maxp       = cumsum_cummin.max()
-#     timedump('3')
+    timedump('2')
         
-#     stats0['cumsum'] = cumsum
-#     stats0['cumsumcummax'] = cumsumcummax
-#     stats0['cumsum_cummax'] = cumsum_cummax
-#     stats0.to_csv(sep=';',path_or_buf='../Data/raw.csv',date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.3f')
 
     if ((pr_c>=seq['mintrades']) and (pr_maxp>0)):
-#     if ((pr_c>=seq['mintrades']) and (pr_sum>0)):
         pr_c_u = len(stats0[stats0.profit>=0])
         pr_c_d = len(stats0[stats0.profit<0])            
-#         timedump('4')
 #         yearmonth = stats0.groupby(['year','month'])['profit'].sum().reset_index()
 #         monthsup = len(yearmonth[yearmonth.profit>0])
 #         monthsdown = len(yearmonth[yearmonth.profit<0])
         monthsup = 0
         monthsdown = 0
-#         timedump('5')
+        timedump('3')
         df = {'ii':seq['execs'],'c':pr_c,'cu':pr_c_u,'cd':pr_c_d,'p_sm':pr_sum,
               'maxp':pr_maxp,'maxd2':pr_maxdown2,'mu':monthsup,'md':monthsdown,'avgsl':avgsl,'fx':json.dumps(fx)
              }
@@ -1513,7 +1440,7 @@ def calculatestats2(stats0,params,seq,fx):
         
     else:
         df = None
-#     timedump('6')    
+    timedump('4')    
     return df
 
 def printfx(fx):
@@ -1527,17 +1454,16 @@ def printfx(fx):
 def calcandplot(trades,fxs):
     conditions = None            
     i=1
-    if (len(fxs)>1):
-        for f in fxs:
-            if ('fx' in f):
-                break
-            else:
-                jj = fxs
-                fxs = []
-                for j in jj:
-                    j1 = {'ii':0,'fx':json.loads(j.replace('""', '\"'))}
-                    fxs.append(j1)                
-                break
+    for f in fxs:
+        if ('fx' in f):
+            break
+        else:
+            jj = fxs
+            fxs = []
+            for j in jj:
+                j1 = {'ii':0,'fx':json.loads(j.replace('""', '\"'))}
+                fxs.append(j1)                
+            break
         
     for f in fxs:
         fx = f['fx']
@@ -1556,7 +1482,7 @@ def calcandplot(trades,fxs):
     if (len(fxs)>1):
         print('--------------=--------------')
         stats0 = calcfx(trades,conditions)
-        plottrades(trades,stats0)
+    plottrades(trades,stats0)
     
     return stats0
 
