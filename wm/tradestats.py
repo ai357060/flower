@@ -167,7 +167,8 @@ def rsi(prices, periods):
 
     rsidf['rsi_prev'] = rsidf.rsi.shift(1)
     rsidf['rsidiffseq_prev'] = rsidf.rsidiffseq.shift(1)
-        
+    rsidf['rsidiff1n_prev'] = rsidf.rsidiff1n.shift(1)
+    
     rsidf = rsidf.drop(columns='close_delta')
     rsidf = rsidf.drop(columns='up')
     rsidf = rsidf.drop(columns='down')
@@ -368,15 +369,15 @@ def priceaction(prices,periods):
     results.df = dict
     return results
 
-def ma(prices,periods):
+def ma(prices,periods,m1= 5,m2= 10,m3= 20):
     '''
     :param prices; dataframe of OHLC currency data
     :param periods; ema1, ema2, signal period
     :return; macd
     '''
-    m1 = '5'
-    m2 = '10'
-    m3 = '20'
+    m1 = str(m1)
+    m2 = str(m2)
+    m3 = str(m3)
     results = holder()
     dict = {}
     for i in range(0,len(periods)):
@@ -1452,7 +1453,8 @@ def printfx(fx):
             print(kk.rjust(20),str(fx[kk][1]).rjust(6))
 
 def calcandplot(trades,fxs):
-    conditions = None            
+    conditions = None   
+    stats0 = pd.DataFrame()
     i=1
     for f in fxs:
         if ('fx' in f):
@@ -1482,7 +1484,8 @@ def calcandplot(trades,fxs):
     if (len(fxs)>1):
         print('--------------=--------------')
         stats0 = calcfx(trades,conditions)
-    plottrades(trades,stats0)
+    if (len(fxs)>0):
+        plottrades(trades,stats0)
     
     return stats0
 
