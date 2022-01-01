@@ -504,7 +504,47 @@ def ma2(prices,periods,m1= 5,m2= 10,m3= 20):
     results.df = dict
     return results
 
+def ma3(prices,periods,m1= 3,m2= 5,m3= 7):
+    m1 = str(m1)
+    m2 = str(m2)
+    m3 = str(m3)
+    results = holder()
+    dict = {}
+    for i in range(0,len(periods)):
+        madf = pd.DataFrame(index=prices.index)
+        madf['SMA'] = prices.close.rolling(window=periods[i]).mean()
+        madf['SMA'+m1] = prices.close.rolling(window=int(m1)).mean()
+        madf['SMA'+m2] = prices.close.rolling(window=int(m2)).mean()
+        madf['SMA'+m3] = prices.close.rolling(window=int(m3)).mean()
+        madf['SMAdiff1n'] = madf.SMA.diff(1)
+        madf['SMAdiffdiff'] = madf.SMAdiff1n.diff(1)
+        madf['SMAvs'+m1] = madf['SMA'+m1]-madf.SMA
+        madf['SMAvs'+m2] = madf['SMA'+m2]-madf.SMA
+        madf['SMAvs'+m3] = madf['SMA'+m3]-madf.SMA
 
+        madf['SMAdiffseq'] = 0
+        madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff>0),'SMAdiffseq_prev'] = 1
+        madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff<0),'SMAdiffseq_prev'] = 2
+        madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff<0),'SMAdiffseq_prev'] = 3
+        madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff>0),'SMAdiffseq_prev'] = 4
+
+        madf['SMA_prev'] = madf.SMA.shift(1)
+        madf['SMAdiffseq_prev'] = madf['SMAdiffseq'].shift(1)
+        madf['SMAvs'+m1+'_prev'] = madf['SMAvs'+m1].shift(1)
+        madf['SMAvs'+m2+'_prev'] = madf['SMAvs'+m2].shift(1)
+        madf['SMAvs'+m3+'_prev'] = madf['SMAvs'+m3].shift(1)
+
+        madf = madf.drop(columns='SMA')
+        madf = madf.drop(columns='SMAdiff1n')
+        madf = madf.drop(columns='SMAdiffdiff')
+        madf = madf.drop(columns='SMAdiffseq')
+        madf = madf.drop(columns='SMAvs'+m1)
+        madf = madf.drop(columns='SMAvs'+m2)
+        madf = madf.drop(columns='SMAvs'+m3)
+
+        dict[periods[i]] = madf.copy()
+    results.df = dict
+    return results
 
 def atr(prices, periods):
     results = holder()
