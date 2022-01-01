@@ -6,7 +6,7 @@
 #property copyright   "2005-2014, MetaQuotes Software Corp."
 #property link        "http://www.mql4.com"
 
-input double StopLoss      =0.65;
+input double StopLoss      =0.6;
 input double TakeProfit    =0.8;
 input double Lots          =0.1;
 //+------------------------------------------------------------------+
@@ -32,6 +32,7 @@ void OnTick(void)
 
       if(neworder)
       {
+         //Print(atr);
          //
          if(AccountFreeMargin()<(1000*Lots))
          {
@@ -42,18 +43,18 @@ void OnTick(void)
          if(Signall==1)
          {
             ticket=OrderSend(Symbol(),OP_BUY,Lots,Ask,3,Bid-StopLossV,Bid+TakeProfitV,"ma12rsi",magic_no,0,Green);
-            if(ticket>0)
-            {
-              if(OrderSelect(ticket,SELECT_BY_TICKET,MODE_TRADES))
-                  Print("BUY order opened : ",OrderOpenPrice());
-                  
-            }
-            else
-            {
-               Print("Error opening BUY order : ",GetLastError());
-               
-            }   
-            return;
+//            if(ticket>0)
+//            {
+//              if(OrderSelect(ticket,SELECT_BY_TICKET,MODE_TRADES))
+//                  Print("BUY order opened : ",OrderOpenPrice());
+//                  
+//            }
+//            else
+//            {
+//               Print("Error opening BUY order : ",GetLastError());
+//              
+//            }   
+//            return;
          }
       }
    }  
