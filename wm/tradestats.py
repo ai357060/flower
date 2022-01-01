@@ -523,10 +523,10 @@ def ma3(prices,periods,m1= 3,m2= 5,m3= 7):
         madf['SMAvs'+m3] = madf['SMA'+m3]-madf.SMA
 
         madf['SMAdiffseq'] = 0
-        madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff>0),'SMAdiffseq_prev'] = 1
-        madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff<0),'SMAdiffseq_prev'] = 2
-        madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff<0),'SMAdiffseq_prev'] = 3
-        madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff>0),'SMAdiffseq_prev'] = 4
+        madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff>0),'SMAdiffseq'] = 1
+        madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff<0),'SMAdiffseq'] = 2
+        madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff<0),'SMAdiffseq'] = 3
+        madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff>0),'SMAdiffseq'] = 4
 
         madf['SMA_prev'] = madf.SMA.shift(1)
         madf['SMAdiffseq_prev'] = madf['SMAdiffseq'].shift(1)
@@ -535,6 +535,9 @@ def ma3(prices,periods,m1= 3,m2= 5,m3= 7):
         madf['SMAvs'+m3+'_prev'] = madf['SMAvs'+m3].shift(1)
 
         madf = madf.drop(columns='SMA')
+        madf = madf.drop(columns='SMA'+m1)
+        madf = madf.drop(columns='SMA'+m2)
+        madf = madf.drop(columns='SMA'+m3)
         madf = madf.drop(columns='SMAdiff1n')
         madf = madf.drop(columns='SMAdiffdiff')
         madf = madf.drop(columns='SMAdiffseq')
@@ -2910,7 +2913,7 @@ def runstats_ma_v23(alltrades,a,b,c,d,atr='atr140atr_prev',sl=[],tp=[],tsl=[]):
     return stats    
 
 
-def runstats(alltrades,ma1,atrperiod,sl,tp,tsl):
+def runstats24(alltrades,ma1,atrperiod,sl,tp,tsl):
     ma2 = '5'
     stats1 = runstats_ma_v24(alltrades,'ma'+ma1+'SMAdiff_prev','ma'+ma1+'SMAdiffdiff_prev','ma'+ma1+'SMAdiff2_prev','ma'+ma1+'SMAvs'+ma2+'_prev','ma'+ma2+'SMAdiff_prev','ma'+ma2+'SMAdiffdiff_prev','ma'+ma2+'SMAdiff2_prev',atrperiod,sl,tp,tsl)
     ma2 = '10'
