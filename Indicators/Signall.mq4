@@ -36,7 +36,7 @@ int      Ma2DiffDiff_from = -1000;
 int      Ma2DiffDiff_to   = 0;
 
 int      Rsi_from = 0;
-int      Rsi_to   = 100;
+int      Rsi_to   = 60;
 int      RsiDiff_from = -1000;
 int      RsiDiff_to   = 0;
 
@@ -110,9 +110,9 @@ int OnCalculate(const int rates_total,
       atr = iATR(NULL,0,20,j);
       
       
-      if (Ma1Diff>Ma1Diff_from && Ma1Diff<=Ma1Diff_to && Ma1DiffDiff>Ma1DiffDiff_from && Ma1DiffDiff<=Ma1DiffDiff_to 
-      && Ma2Diff>Ma2Diff_from && Ma2Diff<=Ma2Diff_to && Ma2DiffDiff>Ma2DiffDiff_from && Ma2DiffDiff<=Ma2DiffDiff_to 
-      && RsiPrevious0>Rsi_from && RsiPrevious0<=Rsi_to && RsiDiff>RsiDiff_from && RsiDiff<=RsiDiff_to
+      if (Ma1Diff>=Ma1Diff_from && Ma1Diff<Ma1Diff_to && Ma1DiffDiff>=Ma1DiffDiff_from && Ma1DiffDiff<Ma1DiffDiff_to 
+      && Ma2Diff>=Ma2Diff_from && Ma2Diff<Ma2Diff_to && Ma2DiffDiff>=Ma2DiffDiff_from && Ma2DiffDiff<Ma2DiffDiff_to 
+      && RsiPrevious0>=Rsi_from && RsiPrevious0<Rsi_to && RsiDiff>=RsiDiff_from && RsiDiff<RsiDiff_to
       && atr<=0.015)
       {
          SignalBarBuffer[i]=1;
