@@ -524,9 +524,13 @@ def ma3(prices,periods,m1= 3,m2= 5,m3= 7):
 
         madf['SMAdiffseq'] = 0
         madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff>0),'SMAdiffseq'] = 1
-        madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff<0),'SMAdiffseq'] = 2
-        madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff<0),'SMAdiffseq'] = 3
-        madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff>0),'SMAdiffseq'] = 4
+        madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff<=0),'SMAdiffseq'] = 2
+        madf.loc[(madf.SMAdiff1n<=0) & (madf.SMAdiffdiff<=0),'SMAdiffseq'] = 3
+        madf.loc[(madf.SMAdiff1n<=0) & (madf.SMAdiffdiff>0),'SMAdiffseq'] = 4
+#         madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff>0),'SMAdiffseq'] = 1
+#         madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff<0),'SMAdiffseq'] = 2
+#         madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff<0),'SMAdiffseq'] = 3
+#         madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff>0),'SMAdiffseq'] = 4
 
         madf['SMA_prev'] = madf.SMA.shift(1)
         madf['SMAdiffseq_prev'] = madf['SMAdiffseq'].shift(1)
