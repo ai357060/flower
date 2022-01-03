@@ -21,7 +21,7 @@ void OnTick(void)
    bool neworder;
    int magic_no;
 //---
-   Signall = iCustom(NULL,0,"Signall",0,1);
+   Signall = iCustom(NULL,0,"Signall1",0,1);
    magic_no = 43251;
    if(Signall==1)
    {
