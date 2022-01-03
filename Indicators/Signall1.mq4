@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                                      Signall.mq4 |
+//|                                                      Signall1.mq4 |
 //|                        Copyright 2021, MetaQuotes Software Corp. |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
@@ -25,21 +25,21 @@
 int      MA1=35;
 int      MA2=3;
 int      RSI=14;
-double      Ma1Diff_from = 0;
-double      Ma1Diff_to   = 1000;
-double      Ma1DiffDiff_from = -1000;
-double      Ma1DiffDiff_to   = 1000;
+int      ATR=20;
 
-double      Ma2Diff_from = -1000;
-double      Ma2Diff_to   = 1000;
-double      Ma2DiffDiff_from = -1000;
-double      Ma2DiffDiff_to   = 1000;
+double   MinMADiff = 0;//0.0001;
+double   MinMADiffDiff = 0;//0.001;
+double   MinRSIDiff = 0;//1;
+double   MinRSIDiffDiff = 0;//10;
 
-double      Rsi_from = 0;
-double      Rsi_to   = 60;
-double      RsiDiff_from = -1000;
-double      RsiDiff_to   = 0;
+double   Atr_from = -1000;
+double   Atr_to   = 0.015;
 
+string   MA1dt = "12";
+string   MA2dt = "1234";
+string   RSIdt = "34";
+double   Rsi_from = 0;
+double   Rsi_to   = 60;
 
 //--- indicator buffers
 double         SignalBarBuffer[];
@@ -76,14 +76,22 @@ int OnCalculate(const int rates_total,
    double RsiPrevious0,RsiPrevious1,RsiPrevious2;
    double Ma1Diff,Ma2Diff;
    double Ma1DiffDiff,Ma2DiffDiff;
-   double RsiDiff;
+   double RsiDiff,RsiDiffDiff;
    double atr;
    int i,j,limit;
+   int signal;
 
 //---
    limit=rates_total-prev_calculated;
    if(prev_calculated>0)
       limit++;
+   
+   string difftype;
+   difftype = "123";
+   if(StringFind(difftype,"1",0)>-1)
+   {
+      Print("ok");
+   }
 
    for(i=0; i<limit; i++)
    {
@@ -104,26 +112,42 @@ int OnCalculate(const int rates_total,
       RsiPrevious1=iRSI(NULL,0,RSI,0,j+1);
       RsiPrevious2=iRSI(NULL,0,RSI,0,j+2);
       RsiDiff = RsiPrevious0-RsiPrevious1;
+      RsiDiffDiff = RsiPrevious0-RsiPrevious1 - (RsiPrevious1-RsiPrevious2);
       
-      TempBuffer[i]=Ma2DiffDiff;
+//      TempBuffer[i]=Ma2DiffDiff;
       
-      atr = iATR(NULL,0,20,j);
+      atr = iATR(NULL,0,ATR,j);
       
-      
-      if (Ma1Diff>=Ma1Diff_from && Ma1Diff<Ma1Diff_to && Ma1DiffDiff>=Ma1DiffDiff_from && Ma1DiffDiff<Ma1DiffDiff_to 
-      && Ma2Diff>=Ma2Diff_from && Ma2Diff<Ma2Diff_to && Ma2DiffDiff>=Ma2DiffDiff_from && Ma2DiffDiff<Ma2DiffDiff_to 
-      && RsiPrevious0>=Rsi_from && RsiPrevious0<Rsi_to && RsiDiff>=RsiDiff_from && RsiDiff<RsiDiff_to
-      && atr<0.015)
-      {
-         SignalBarBuffer[i]=1;
-      }
-      else
-      {
-         SignalBarBuffer[i]=0;
-      }
+      signal = CheckDiffType(MA1dt,Ma1Diff,Ma1DiffDiff,MinMADiff,MinMADiffDiff);
+      if (signal!=0)
+         signal = CheckDiffType(MA2dt,Ma2Diff,Ma2DiffDiff,MinMADiff,MinMADiffDiff);
+      if (signal!=0)
+         signal = CheckDiffType(RSIdt,RsiDiff,RsiDiffDiff,MinRSIDiff,MinRSIDiffDiff);
+      if (signal!=0)
+         if (RsiPrevious0>=Rsi_from && RsiPrevious0<Rsi_to && atr>=Atr_from && atr<Atr_to)
+            signal = 1;
+         else
+            signal = 0;   
+
+      SignalBarBuffer[i]=signal;
    }   
    
 //--- return value of prev_calculated for next call
    return(rates_total);
   }
 //+------------------------------------------------------------------+
+
+int CheckDiffType(string dt,double diff,double diffdiff,double mindiff,double mindiffdiff)
+{
+   int signal = 0;
+   if(     StringFind(dt,"1",0)>-1 && diff>=mindiff && diffdiff>=mindiffdiff)
+      signal = 1;
+   else if(StringFind(dt,"2",0)>-1 && diff>=mindiff && diffdiff<-mindiffdiff)
+      signal = 1;
+   else if(StringFind(dt,"3",0)>-1 && diff<-mindiff && diffdiff<-mindiffdiff)
+      signal = 1;
+   else if(StringFind(dt,"4",0)>-1 && diff<-mindiff && diffdiff>=mindiffdiff)
+      signal = 1;
+
+   return signal;
+}
