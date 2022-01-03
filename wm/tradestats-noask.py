@@ -523,14 +523,14 @@ def ma3(prices,periods,m1= 3,m2= 5,m3= 7):
         madf['SMAvs'+m3] = madf['SMA'+m3]-madf.SMA
 
         madf['SMAdiffseq'] = 0
-        madf.loc[(madf.SMAdiff1n>=0) & (madf.SMAdiffdiff>=0),'SMAdiffseq'] = 1
-        madf.loc[(madf.SMAdiff1n>=0) & (madf.SMAdiffdiff< 0),'SMAdiffseq'] = 2
-        madf.loc[(madf.SMAdiff1n< 0) & (madf.SMAdiffdiff< 0),'SMAdiffseq'] = 3
-        madf.loc[(madf.SMAdiff1n< 0) & (madf.SMAdiffdiff>=0),'SMAdiffseq'] = 4
 #         madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff>0),'SMAdiffseq'] = 1
-#         madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff<0),'SMAdiffseq'] = 2
-#         madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff<0),'SMAdiffseq'] = 3
-#         madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff>0),'SMAdiffseq'] = 4
+#         madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff<=0),'SMAdiffseq'] = 2
+#         madf.loc[(madf.SMAdiff1n<=0) & (madf.SMAdiffdiff<=0),'SMAdiffseq'] = 3
+#         madf.loc[(madf.SMAdiff1n<=0) & (madf.SMAdiffdiff>0),'SMAdiffseq'] = 4
+        madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff>0),'SMAdiffseq'] = 1
+        madf.loc[(madf.SMAdiff1n>0) & (madf.SMAdiffdiff<0),'SMAdiffseq'] = 2
+        madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff<0),'SMAdiffseq'] = 3
+        madf.loc[(madf.SMAdiff1n<0) & (madf.SMAdiffdiff>0),'SMAdiffseq'] = 4
 
         madf['SMA_prev'] = madf.SMA.shift(1)
         madf['SMAdiffseq_prev'] = madf['SMAdiffseq'].shift(1)
@@ -2271,7 +2271,7 @@ def preparetrades_brut_tp(masterFrame, trtypes, sls, tps, yearfrom, yearto,atr='
 
 def opentrades_brut(mode,df):
     df['tradetype'] = mode
-    df.loc[df.tradetype==1,'openprice'] = df.openASK
+    df.loc[df.tradetype==1,'openprice'] = df.open
     df.loc[df.tradetype==-1,'openprice'] = df.open
     df.loc[df.tradetype!=0,'openindex'] = df.id
     return df
@@ -2315,10 +2315,6 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
         df['nextbar_close'] = df.close.shift(i)
         df['nextbar_low'] = df.low.shift(i)
         df['nextbar_high'] = df.high.shift(i)
-        df['nextbar_openASK'] = df.openASK.shift(i)
-        df['nextbar_closeASK'] = df.closeASK.shift(i)
-        df['nextbar_lowASK'] = df.lowASK.shift(i)
-        df['nextbar_highASK'] = df.highASK.shift(i)
         df['nextbar_id'] = df.id.shift(i)
         #SL buy
         df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),  'slprice']    = df.nextbar_low
@@ -2329,12 +2325,12 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
         df.loc[(df.tradetype==1) & (df.closeindex<0)&(df.nextbar_low<=df.stoploss),  'closeindex'] = df.nextbar_id
 
         #SL sell
-        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_highASK>=df.stoploss),  'slprice']    = df.nextbar_highASK
-        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_highASK>=df.stoploss),  'slindex']    = df.nextbar_id
-        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_highASK>=df.stoploss),  'closeprice'] = df.stoploss
-        df.loc[(df.tradetype==-1) & (df.closeindex==-1)&(df.nextbar_highASK>=df.stoploss),'profit']     = df.openprice - df.stoploss
-        df.loc[(df.tradetype==-1) & (df.closeindex==-2)&(df.nextbar_highASK>=df.stoploss),'profit']     = df.profit + ((df.openprice - df.stoploss) * (1-tpr))
-        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_highASK>=df.stoploss),  'closeindex'] = df.nextbar_id
+        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),  'slprice']    = df.nextbar_high
+        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),  'slindex']    = df.nextbar_id
+        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),  'closeprice'] = df.stoploss
+        df.loc[(df.tradetype==-1) & (df.closeindex==-1)&(df.nextbar_high>=df.stoploss),'profit']     = df.openprice - df.stoploss
+        df.loc[(df.tradetype==-1) & (df.closeindex==-2)&(df.nextbar_high>=df.stoploss),'profit']     = df.profit + ((df.openprice - df.stoploss) * (1-tpr))
+        df.loc[(df.tradetype==-1) & (df.closeindex<0)&(df.nextbar_high>=df.stoploss),  'closeindex'] = df.nextbar_id
         
         #TP buy
         df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'tpcloseprice'] = df.nextbar_high
@@ -2348,23 +2344,23 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
             df.loc[(df.tradetype==1)  & (df.closeindex==-1) & (df.nextbar_high>=df.takeprofit),'closeindex'] = df.nextbar_id
             
         #TP sell
-        df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_lowASK <=df.takeprofit),'tpcloseprice'] = df.nextbar_lowASK
-        df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_lowASK <=df.takeprofit),'tpcloseindex'] = df.nextbar_id
+        df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'tpcloseprice'] = df.nextbar_low
+        df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'tpcloseindex'] = df.nextbar_id
         if (trailsl>0):
-            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_lowASK <=df.takeprofit),'profit']     = df.tp_val * tpr
-            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_lowASK <=df.takeprofit),'closeindex'] = -2
+            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'profit']     = df.tp_val * tpr
+            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'closeindex'] = -2
         else:
-            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_lowASK <=df.takeprofit),'closeprice'] = df.takeprofit
-            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_lowASK <=df.takeprofit),'profit']     = df.tp_val
-            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_lowASK <=df.takeprofit),'closeindex'] = df.nextbar_id
+            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'closeprice'] = df.takeprofit
+            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'profit']     = df.tp_val
+            df.loc[(df.tradetype==-1) & (df.closeindex==-1) & (df.nextbar_low <=df.takeprofit),'closeindex'] = df.nextbar_id
             
         
         #update SL - trailing SL
         if (takeprofit==100):#podnoś SL po każdnym barze
-            df.loc[(df.tradetype==1)&(df.closeindex<0)&(df.nextbar_closeASK-df.sl_val > df.stoploss),'stoploss']=df.nextbar_closeASK - df.sl_val
+            df.loc[(df.tradetype==1)&(df.closeindex<0)&(df.nextbar_close-df.sl_val > df.stoploss),'stoploss']=df.nextbar_close - df.sl_val
             df.loc[(df.tradetype==-1)&(df.closeindex<0)&(df.nextbar_close+df.sl_val<df.stoploss),'stoploss'] =df.nextbar_close + df.sl_val
         elif (trailsl>0):#podnoś SL tylko gdy już był profit
-            df.loc[(df.tradetype==1)&(df.closeindex==-2)&(df.nextbar_closeASK-df.tsl_val>df.stoploss),'stoploss']=df.nextbar_closeASK - df.tsl_val
+            df.loc[(df.tradetype==1)&(df.closeindex==-2)&(df.nextbar_close-df.tsl_val>df.stoploss),'stoploss']=df.nextbar_close - df.tsl_val
             df.loc[(df.tradetype==-1)&(df.closeindex==-2)&(df.nextbar_close+df.tsl_val<df.stoploss),'stoploss']= df.nextbar_close + df.tsl_val
         
         i-=1
@@ -2381,10 +2377,6 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
     df = df.drop(columns='nextbar_open')
     df = df.drop(columns='nextbar_low')
     df = df.drop(columns='nextbar_high')
-    df = df.drop(columns='nextbar_closeASK')
-    df = df.drop(columns='nextbar_openASK')
-    df = df.drop(columns='nextbar_lowASK')
-    df = df.drop(columns='nextbar_highASK')
     df = df.drop(columns='nextbar_id')
     
     
