@@ -1323,6 +1323,7 @@ def stathyperparams2(trades,params,conf):
 #             if ( (mode == 0) or (mode == 3)):
 #                 stats = stats.join(statsgb.agg({key+'from': 'min',key+'to': 'max'}))
 #         stats = stats.reset_index()    
+        stats.drop_duplicates(subset=groupbycolumns,inplace=True)
 
         stats['cc'] = stats.cu-stats.cd
         stats['mm'] = stats.mu-stats.md
@@ -1331,23 +1332,25 @@ def stathyperparams2(trades,params,conf):
         stats['rd'] = -1*stats.p_sm/stats.maxd2
         stats['rd2'] = -1*stats.maxp/stats.maxd2
         
-        top = 500
-        stats0 = stats.sort_values("c",ascending=False).head(top)
-        stats0 = stats0.append(stats.sort_values("p_sm",ascending=False).head(top))
-        stats0 = stats0.append(stats.sort_values("maxp",ascending=False).head(top))
-        stats0 = stats0.append(stats.sort_values("maxd2",ascending=True).head(top))
-        stats0 = stats0.append(stats.sort_values("cc",ascending=False).head(top))
-        stats0 = stats0.append(stats.sort_values("mu",ascending=False).head(top))
-        stats0 = stats0.append(stats.sort_values("md",ascending=True).head(top))
-        stats0 = stats0.append(stats.sort_values("mm",ascending=False).head(top))
-        stats0 = stats0.append(stats.sort_values("r",ascending=False).head(top))
-        stats0 = stats0.append(stats.sort_values("d",ascending=True).head(top))
-        stats0 = stats0.append(stats.sort_values("rd",ascending=False).head(top))
-        stats0 = stats0.append(stats.sort_values("rd2",ascending=False).head(top))
-        stats0 = stats0.drop_duplicates()
+#         top = 500
+#         stats0 = stats.sort_values("c",ascending=False).head(top)
+#         stats0 = stats0.append(stats.sort_values("p_sm",ascending=False).head(top))
+#         stats0 = stats0.append(stats.sort_values("maxp",ascending=False).head(top))
+#         stats0 = stats0.append(stats.sort_values("maxd2",ascending=True).head(top))
+#         stats0 = stats0.append(stats.sort_values("cc",ascending=False).head(top))
+#         stats0 = stats0.append(stats.sort_values("mu",ascending=False).head(top))
+#         stats0 = stats0.append(stats.sort_values("md",ascending=True).head(top))
+#         stats0 = stats0.append(stats.sort_values("mm",ascending=False).head(top))
+#         stats0 = stats0.append(stats.sort_values("r",ascending=False).head(top))
+#         stats0 = stats0.append(stats.sort_values("d",ascending=True).head(top))
+#         stats0 = stats0.append(stats.sort_values("rd",ascending=False).head(top))
+#         stats0 = stats0.append(stats.sort_values("rd2",ascending=False).head(top))
+#         stats0 = stats0.drop_duplicates()
         
-        stats0 = stats0[statscolumns]
-#         stats0 = stats0.sort_values("rd2",ascending=False)
+#         stats0 = stats0[statscolumns]
+        
+        stats0 = stats[stats.maxp>3][statscolumns]
+
         stats0['fn']=conf['filename']
         stats0.to_csv(sep=';',
                       path_or_buf='../Data/stats_v2_'+str(conf['filename'])+'.csv',
