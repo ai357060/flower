@@ -1332,7 +1332,7 @@ def stathyperparams2(trades,params,conf):
         stats['rd'] = -1*stats.p_sm/stats.maxd2
         stats['rd2'] = -1*stats.maxp/stats.maxd2
         
-        top = 3000
+        top = 6000
         stats0 = stats.sort_values("rd2",ascending=False).head(top)
 #         stats0 = stats0.append(stats.sort_values("p_sm",ascending=False).head(top))
 #         stats0 = stats0.append(stats.sort_values("c",ascending=False).head(top))
@@ -1344,8 +1344,8 @@ def stathyperparams2(trades,params,conf):
 #         stats0 = stats0.append(stats.sort_values("r",ascending=False).head(top))
 #         stats0 = stats0.append(stats.sort_values("d",ascending=True).head(top))
 #         stats0 = stats0.append(stats.sort_values("rd",ascending=False).head(top))
-        stats0 = stats0.append(stats.sort_values("maxp",ascending=False).head(top))
-        stats0 = stats0.drop_duplicates()
+#         stats0 = stats0.append(stats.sort_values("maxp",ascending=False).head(top))
+#         stats0 = stats0.drop_duplicates()
         
         stats0 = stats0[statscolumns]
         
