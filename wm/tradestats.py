@@ -117,76 +117,68 @@ def rsi(prices, periods):
     Returns a pd.Series with the relative strength index.
     """
     ema = True
-    period = periods[0]
     results = holder()
-    rsidf = pd.DataFrame()
-
-    # Make two series: one for lower closes and one for higher closes
-    rsidf['close_delta'] = prices['close'].diff()
-    rsidf['up'] = rsidf.close_delta.clip(lower=0)
-    rsidf['down'] = -1 * rsidf.close_delta.clip(upper=0)
-    
-    # Use exponential moving average
-    rsidf['ma_up'] = rsidf.up.ewm(com = period-1,adjust=False).mean()
-    rsidf['ma_down'] = rsidf.down.ewm(com = period-1,adjust=False).mean()
-    rsidf['rsi'] = 100 - (100/(1 + rsidf['ma_up'] / rsidf['ma_down']))
-
-    rsidf['ma_up1'] = 0
-    rsidf['ma_down1'] = 0
-    """
-    for i in range(1,len(rsidf)): 
-#normal
-#        rsidf.iloc[i, rsidf.columns.get_loc('ma_up1')] = rsidf.iloc[i, rsidf.columns.get_loc('up')]*(1/period) + rsidf.iloc[i-1, rsidf.columns.get_loc('ma_up1')]*(1-1/period)
-#        rsidf.iloc[i, rsidf.columns.get_loc('ma_down1')] = rsidf.iloc[i, rsidf.columns.get_loc('down')]*(1/period) + rsidf.iloc[i-1, rsidf.columns.get_loc('ma_down1')]*(1-1/period)
-#on the start
-        rsidf.iloc[i, rsidf.columns.get_loc('ma_up1')] = 0 + rsidf.iloc[i-1, rsidf.columns.get_loc('ma_up')]*(1-1/period)
-        rsidf.iloc[i, rsidf.columns.get_loc('ma_down1')] = 0 + rsidf.iloc[i-1, rsidf.columns.get_loc('ma_down')]*(1-1/period)
-    """    
-    rsidf['ma_up1'] = rsidf.ma_up.shift(1)*(1-1/period) # this is faster than for loop
-    rsidf['ma_down1'] = rsidf.ma_down.shift(1)*(1-1/period)
-    rsidf['rsi1'] = 100 - (100/(1 + rsidf['ma_up1'] / rsidf['ma_down1']))
-
-    
-    rsidf['rsidiff1n'] = rsidf.rsi.diff(1)
-    rsidf['rsidiff2n'] = rsidf.rsi.shift(1) - rsidf.rsi.shift(2)
-    rsidf['rsidiff3n'] = rsidf.rsi.shift(2) - rsidf.rsi.shift(3)
-    rsidf['rsidiff4n'] = rsidf.rsi.shift(3) - rsidf.rsi.shift(4)
-    rsidf['rsidiff5n'] = rsidf.rsi.shift(4) - rsidf.rsi.shift(5)
-
-    rsidf['rsidiffseq'] = 0
-    rsidf.loc[rsidf.rsidiff1n>=0,'rsidiffseq'] = 1
-    rsidf.loc[(rsidf.rsidiff1n>=0) & (rsidf.rsidiff2n>=0),'rsidiffseq'] = 2
-    rsidf.loc[(rsidf.rsidiff1n>=0) & (rsidf.rsidiff2n>=0) & (rsidf.rsidiff3n>=0),'rsidiffseq'] = 3
-    rsidf.loc[(rsidf.rsidiff1n>=0) & (rsidf.rsidiff2n>=0) & (rsidf.rsidiff3n>=0) & (rsidf.rsidiff4n>=0),'rsidiffseq'] = 4
-    rsidf.loc[(rsidf.rsidiff1n>=0) & (rsidf.rsidiff2n>=0) & (rsidf.rsidiff3n>=0) & (rsidf.rsidiff4n>=0) & (rsidf.rsidiff5n>=0),'rsidiffseq'] = 5
-    rsidf.loc[rsidf.rsidiff1n<0,'rsidiffseq'] = -1
-    rsidf.loc[(rsidf.rsidiff1n<0) & (rsidf.rsidiff2n<0),'rsidiffseq'] = -2
-    rsidf.loc[(rsidf.rsidiff1n<0) & (rsidf.rsidiff2n<0) & (rsidf.rsidiff3n<0),'rsidiffseq'] = -3
-    rsidf.loc[(rsidf.rsidiff1n<0) & (rsidf.rsidiff2n<0) & (rsidf.rsidiff3n<0) & (rsidf.rsidiff4n<0),'rsidiffseq'] = -4
-    rsidf.loc[(rsidf.rsidiff1n<0) & (rsidf.rsidiff2n<0) & (rsidf.rsidiff3n<0) & (rsidf.rsidiff4n<0) &(rsidf.rsidiff5n<0),'rsidiffseq'] = -5
-
-    rsidf['rsi_prev'] = rsidf.rsi.shift(1)
-    rsidf['rsidiffseq_prev'] = rsidf.rsidiffseq.shift(1)
-    rsidf['rsidiff1n_prev'] = rsidf.rsidiff1n.shift(1)
-    
-    rsidf = rsidf.drop(columns='close_delta')
-    rsidf = rsidf.drop(columns='up')
-    rsidf = rsidf.drop(columns='down')
-    rsidf = rsidf.drop(columns='ma_up')
-    rsidf = rsidf.drop(columns='ma_down')
-    rsidf = rsidf.drop(columns='ma_up1')
-    rsidf = rsidf.drop(columns='ma_down1')
-
-    rsidf = rsidf.drop(columns='rsi')
-    rsidf = rsidf.drop(columns='rsidiff1n')
-    rsidf = rsidf.drop(columns='rsidiff2n')
-    rsidf = rsidf.drop(columns='rsidiff3n')
-    rsidf = rsidf.drop(columns='rsidiff4n')
-    rsidf = rsidf.drop(columns='rsidiff5n')
-    rsidf = rsidf.drop(columns='rsidiffseq')
-    
     dict = {}
-    dict[periods[0]] = rsidf
+    for i in range(0,len(periods)):
+        period = periods[i]
+        rsidf = pd.DataFrame()
+
+        # Make two series: one for lower closes and one for higher closes
+        rsidf['close_delta'] = prices['close'].diff()
+        rsidf['up'] = rsidf.close_delta.clip(lower=0)
+        rsidf['down'] = -1 * rsidf.close_delta.clip(upper=0)
+
+        # Use exponential moving average
+        rsidf['ma_up'] = rsidf.up.ewm(com = period-1,adjust=False).mean()
+        rsidf['ma_down'] = rsidf.down.ewm(com = period-1,adjust=False).mean()
+        rsidf['rsi'] = 100 - (100/(1 + rsidf['ma_up'] / rsidf['ma_down']))
+
+        rsidf['ma_up1'] = 0
+        rsidf['ma_down1'] = 0
+        rsidf['ma_up1'] = rsidf.ma_up.shift(1)*(1-1/period) # this is faster than for loop
+        rsidf['ma_down1'] = rsidf.ma_down.shift(1)*(1-1/period)
+        rsidf['rsi1'] = 100 - (100/(1 + rsidf['ma_up1'] / rsidf['ma_down1']))
+
+
+        rsidf['rsidiff1n'] = rsidf.rsi.diff(1)
+        rsidf['rsidiff2n'] = rsidf.rsi.shift(1) - rsidf.rsi.shift(2)
+        rsidf['rsidiff3n'] = rsidf.rsi.shift(2) - rsidf.rsi.shift(3)
+        rsidf['rsidiff4n'] = rsidf.rsi.shift(3) - rsidf.rsi.shift(4)
+        rsidf['rsidiff5n'] = rsidf.rsi.shift(4) - rsidf.rsi.shift(5)
+
+        rsidf['rsidiffseq'] = 0
+        rsidf.loc[rsidf.rsidiff1n>=0,'rsidiffseq'] = 1
+        rsidf.loc[(rsidf.rsidiff1n>=0) & (rsidf.rsidiff2n>=0),'rsidiffseq'] = 2
+        rsidf.loc[(rsidf.rsidiff1n>=0) & (rsidf.rsidiff2n>=0) & (rsidf.rsidiff3n>=0),'rsidiffseq'] = 3
+        rsidf.loc[(rsidf.rsidiff1n>=0) & (rsidf.rsidiff2n>=0) & (rsidf.rsidiff3n>=0) & (rsidf.rsidiff4n>=0),'rsidiffseq'] = 4
+        rsidf.loc[(rsidf.rsidiff1n>=0) & (rsidf.rsidiff2n>=0) & (rsidf.rsidiff3n>=0) & (rsidf.rsidiff4n>=0) & (rsidf.rsidiff5n>=0),'rsidiffseq'] = 5
+        rsidf.loc[rsidf.rsidiff1n<0,'rsidiffseq'] = -1
+        rsidf.loc[(rsidf.rsidiff1n<0) & (rsidf.rsidiff2n<0),'rsidiffseq'] = -2
+        rsidf.loc[(rsidf.rsidiff1n<0) & (rsidf.rsidiff2n<0) & (rsidf.rsidiff3n<0),'rsidiffseq'] = -3
+        rsidf.loc[(rsidf.rsidiff1n<0) & (rsidf.rsidiff2n<0) & (rsidf.rsidiff3n<0) & (rsidf.rsidiff4n<0),'rsidiffseq'] = -4
+        rsidf.loc[(rsidf.rsidiff1n<0) & (rsidf.rsidiff2n<0) & (rsidf.rsidiff3n<0) & (rsidf.rsidiff4n<0) &(rsidf.rsidiff5n<0),'rsidiffseq'] = -5
+
+        rsidf['rsi_prev'] = rsidf.rsi.shift(1)
+        rsidf['rsidiffseq_prev'] = rsidf.rsidiffseq.shift(1)
+#         rsidf['rsidiff1n_prev'] = rsidf.rsidiff1n.shift(1)
+
+        rsidf = rsidf.drop(columns='close_delta')
+        rsidf = rsidf.drop(columns='up')
+        rsidf = rsidf.drop(columns='down')
+        rsidf = rsidf.drop(columns='ma_up')
+        rsidf = rsidf.drop(columns='ma_down')
+        rsidf = rsidf.drop(columns='ma_up1')
+        rsidf = rsidf.drop(columns='ma_down1')
+
+        rsidf = rsidf.drop(columns='rsi')
+        rsidf = rsidf.drop(columns='rsidiff1n')
+        rsidf = rsidf.drop(columns='rsidiff2n')
+        rsidf = rsidf.drop(columns='rsidiff3n')
+        rsidf = rsidf.drop(columns='rsidiff4n')
+        rsidf = rsidf.drop(columns='rsidiff5n')
+        rsidf = rsidf.drop(columns='rsidiffseq')
+    
+        dict[periods[i]] = rsidf
     results.df = dict
     return results
 
@@ -1263,7 +1255,6 @@ def stathyperparams2(trades,params,conf):
         tradecolumns = np.append(tradecolumns,key)
     trades = trades[tradecolumns]    
     seq = {}
-    fx = {}
     stats = []
 
     seq['execs'] = 0
@@ -1271,13 +1262,8 @@ def stathyperparams2(trades,params,conf):
     alldays = len(trades.drop_duplicates(['year','month','day']))
     seq['mintrades'] = alldays/25 #once a month
     seq['dryrun'] = True
-    if ('fxs' in conf):
-        seq['fxs'] = conf['fxs']
-    stats = execstats2_r(trades,stats,params,seq,fx)
+    stats = execstats2_r(trades,stats,params,seq)
     print('allexecs: ',seq['allexecs'])
-    if ('fxs' in seq):
-        if (seq['fxs'] != []):
-            return stats
 
     statscolumns = ['ii','c','cu','cd','cc',
                                   'mu','md','mm',
@@ -1305,9 +1291,8 @@ def stathyperparams2(trades,params,conf):
     seq['dryrun'] = False
     seq['starttime'] = datetime.now()
     seq['lastrun'] = datetime.now()
-    fx = {}
     stats = []
-    stats = execstats2_r(trades,stats,params,seq,fx)
+    stats = execstats2_r(trades,stats,params,seq)
     stats = pd.DataFrame(stats)
 
 #     stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.3f')
@@ -1360,7 +1345,7 @@ def stathyperparams2(trades,params,conf):
     print('duration:      ',str(endtime - starttime))
     return 
 
-def execstats2_r(trades,stats,params,seq,fx,cursor=0):
+def execstats2_r(trades,stats,params,seq,fx={},cursor=0):
             
     if (cursor<len(params)):
         key = list(params.keys())[cursor]
@@ -1420,12 +1405,6 @@ def execstats2(trades,stats,params,seq,fx):
     
     if (seq['dryrun']):
         seq['allexecs'] = seq['allexecs'] + 1
-        if ('fxs' in seq):
-            if (seq['allexecs'] in seq['fxs']):
-                fx1 = fx.copy()
-                df = {'ii':seq['allexecs'],'fx':fx1}
-                stats.append(df)
-                
     else:
         seq['execs'] = seq['execs'] + 1
         df = calculatestats2(trades,params,seq,fx)                  
