@@ -33,13 +33,17 @@ double   MinRSIDiff = 0;//1;
 double   MinRSIDiffDiff = 0;//10;
 
 double   Atr_from = -1000;
-double   Atr_to   = 0.015;
+double   Atr_to   = 1000;//0.015;
 
 string   MA1dt = "12";
+double   MA2vsMA1_from = -1000;
+double   MA2vsMA1_to = 1000;
 string   MA2dt = "1234";
 string   RSIdt = "34";
 double   Rsi_from = 0;
 double   Rsi_to   = 60;
+
+
 
 //--- indicator buffers
 double         SignalBarBuffer[];
@@ -77,7 +81,7 @@ int OnCalculate(const int rates_total,
    double Ma1Diff,Ma2Diff;
    double Ma1DiffDiff,Ma2DiffDiff;
    double RsiDiff,RsiDiffDiff;
-   double atr;
+   double atr,MA2_MA1;
    int i,j,limit;
    int signal;
 
@@ -86,13 +90,6 @@ int OnCalculate(const int rates_total,
    if(prev_calculated>0)
       limit++;
    
-   string difftype;
-   difftype = "123";
-   if(StringFind(difftype,"1",0)>-1)
-   {
-      Print("ok");
-   }
-
    for(i=0; i<limit; i++)
    {
       j = i + 0;
@@ -118,13 +115,15 @@ int OnCalculate(const int rates_total,
       
       atr = iATR(NULL,0,ATR,j);
       
+      MA2_MA1 = Ma2Previous0 - Ma1Previous0;
+      
       signal = CheckDiffType(MA1dt,Ma1Diff,Ma1DiffDiff,MinMADiff,MinMADiffDiff);
       if (signal!=0)
          signal = CheckDiffType(MA2dt,Ma2Diff,Ma2DiffDiff,MinMADiff,MinMADiffDiff);
       if (signal!=0)
          signal = CheckDiffType(RSIdt,RsiDiff,RsiDiffDiff,MinRSIDiff,MinRSIDiffDiff);
       if (signal!=0)
-         if (RsiPrevious0>=Rsi_from && RsiPrevious0<Rsi_to && atr>=Atr_from && atr<Atr_to)
+         if (RsiPrevious0>=Rsi_from && RsiPrevious0<Rsi_to && atr>=Atr_from && atr<Atr_to && MA2_MA1>=MA2vsMA1_from && MA2_MA1<MA2vsMA1_to)
             signal = 1;
          else
             signal = 0;   
