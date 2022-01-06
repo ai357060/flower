@@ -42,7 +42,7 @@ void OnTick(void)
          //--- check for long position (BUY) possibility
          if(Signall==1)
          {
-            ticket=OrderSend(Symbol(),OP_BUY,Lots,Ask,3,Bid-StopLossV,Bid+TakeProfitV,"ma12rsi",magic_no,0,Green);
+            ticket=OrderSend(Symbol(),OP_BUY,Lots,Ask,3,Ask-StopLossV,Ask+TakeProfitV,"ma12rsi",magic_no,0,Green);
 //            if(ticket>0)
 //            {
 //              if(OrderSelect(ticket,SELECT_BY_TICKET,MODE_TRADES))
@@ -68,7 +68,15 @@ bool NoTradesToday(int magic_no)
   {
    datetime today = iTime(NULL,0,0);
 
-   for(int i=OrdersHistoryTotal()-1; i>=0; i--)
+   for(int i=OrdersTotal()-1; i>=0; i--)           
+     {
+      if(!OrderSelect(i,SELECT_BY_POS))  continue;  
+      if(OrderSymbol()      != _Symbol)  continue;  
+      if(OrderMagicNumber() != magic_no) continue;  
+      if(OrderOpenTime()    >= today)    return(false);
+     }
+
+   for(i=OrdersHistoryTotal()-1; i>=0; i--)
      {
       if(!OrderSelect(i,SELECT_BY_POS,MODE_HISTORY)) continue;
       if(OrderSymbol()      != _Symbol)  continue;
@@ -76,13 +84,6 @@ bool NoTradesToday(int magic_no)
       if(OrderOpenTime()    >= today)    return(false);
      }
 
-   for(i=OrdersTotal()-1; i>=0; i--)           
-     {
-      if(!OrderSelect(i,SELECT_BY_POS))  continue;  
-      if(OrderSymbol()      != _Symbol)  continue;  
-      if(OrderMagicNumber() != magic_no) continue;  
-      if(OrderOpenTime()    >= today)    return(false);
-     }
 
    return(true);
   }
