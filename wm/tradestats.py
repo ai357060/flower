@@ -1308,7 +1308,7 @@ def stathyperparams2(trades,params,conf):
 #             if ( (mode == 0) or (mode == 3)):
 #                 stats = stats.join(statsgb.agg({key+'from': 'min',key+'to': 'max'}))
 #         stats = stats.reset_index()    
-        stats.drop_duplicates(subset=groupbycolumns,inplace=True)
+        stats.drop_duplicates(subset=groupbycolumns,inplace=True, keep='last')
 
         stats['cc'] = stats.cu-stats.cd
         stats['mm'] = stats.mu-stats.md
