@@ -1256,13 +1256,13 @@ def stathyperparams2(trades,params,conf):
     trades = trades[tradecolumns]    
     seq = {}
     stats = []
-
+    fx={}
     seq['execs'] = 0
     seq['allexecs'] = 0
     alldays = len(trades.drop_duplicates(['year','month','day']))
     seq['mintrades'] = alldays/25 #once a month
     seq['dryrun'] = True
-    stats = execstats2_r(trades,stats,params,seq)
+    stats = execstats2_r(trades,stats,params,seq,fx)
     print('allexecs: ',seq['allexecs'])
 
     statscolumns = ['ii','c','cu','cd','cc',
@@ -1292,7 +1292,8 @@ def stathyperparams2(trades,params,conf):
     seq['starttime'] = datetime.now()
     seq['lastrun'] = datetime.now()
     stats = []
-    stats = execstats2_r(trades,stats,params,seq)
+    fx={}
+    stats = execstats2_r(trades,stats,params,seq,fx)
     stats = pd.DataFrame(stats)
 
 #     stats.to_csv(sep=';',path_or_buf='../Data/stats00.csv',date_format="%Y-%m-%d",index = False,na_rep='',float_format='%.3f')
