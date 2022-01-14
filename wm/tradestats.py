@@ -1250,7 +1250,7 @@ def stathyperparams2(trades,params,conf):
 
     
     trades = trades[trades.tradetype!=0]
-    tradecolumns = ['year','month','day','profit','sl_val']
+    tradecolumns = ['year','month','day','profit','slrisk']
     for key in params.keys():
         tradecolumns = np.append(tradecolumns,key)
     trades = trades[tradecolumns]    
@@ -1430,7 +1430,8 @@ def execstats2(trades,stats,params,seq,fx):
 def calculatestats2(stats0,params,seq,fx):
     timedump('1')
     pr_c = len(stats0)
-    avgsl = stats0.sl_val.mean()
+#     avgsl = stats0.sl_val.mean()
+    avgsl = stats0.slrisk.mean()
     pr_sum = stats0.profit.sum()
     
     cumsum        = stats0.profit.cumsum()
@@ -2262,8 +2263,9 @@ def opentrades_brut(mode,df):
 
 def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
     tpr = 0.5
-#     df = df0[['id','tradetype','openprice','open','close','low','high',atr]]
-#     df = df0
+    lotsize = 100000
+    risk = 100
+    
     if (stoploss<=0.09):
         df['sl'] = stoploss   * 10000
         df['tp'] = takeprofit * 10000
@@ -2283,6 +2285,7 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
     df.loc[df.tradetype==-1,'stoploss'] = df.openprice + df.sl_val
     df.loc[df.tradetype==1,'takeprofit'] = df.openprice + df.tp_val
     df.loc[df.tradetype==-1,'takeprofit'] = df.openprice - df.tp_val
+
     df['closeindex'] = -1
     df['tpcloseindex'] = -1
     df['closeprice'] = -1
@@ -2290,6 +2293,9 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
     df['slindex'] = -1
     df['slprice'] = -1
     df['profit'] = 0
+    df['tsize'] = risk/(lotsize*df.sl_val)
+    df.tsize = np.floor(df.tsize*100)/100.0
+#     df.tsize = 0.1     # no size scaling
     
     i = 0
     df['nextbar_id'] = df.id.shift(i)
@@ -2353,12 +2359,12 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
         i-=1
     
     print(stoploss,':',takeprofit,':',trailsl,':',i,' open:',len(df[(df.tradetype!=0) & (df.closeindex<0)]))
-    df['sl_val'] = df.sl_val * 10000
-    df['tp_val'] = df.tp_val * 10000
-    df['tsl_val'] = df.tsl_val * 10000
+#     df['sl_val'] = df.sl_val * 10000
+#     df['tp_val'] = df.tp_val * 10000
+#     df['tsl_val'] = df.tsl_val * 10000
 
-    df['profit'] = df.profit * 10000
-#     df['profit1'] = np.where(df.profit>=20,1,-1)
+    df['slrisk'] = df.sl_val * df.tsize * lotsize
+    df['profit'] = df.profit * df.tsize * lotsize
 
     df = df.drop(columns='nextbar_close')
     df = df.drop(columns='nextbar_open')
@@ -2375,9 +2381,6 @@ def closetrades_tsl(df,stoploss,takeprofit,trailsl,atr=''):
 #     df = df.drop(columns='tp_val')
 #     df = df.drop(columns='tsl_val')
 #     df = df.drop(columns='takeprofit')
-    
-#     df0[['sl','tp','tsl','sl_val','tp_val','tsl_val','stoploss','takeprofit', 'closeindex','tpcloseindex','closeprice','tpcloseprice','slindex','slprice','profit']] = df[['sl','tp','tsl','sl_val','tp_val','tsl_val','stoploss','takeprofit', 'closeindex','tpcloseindex','closeprice','tpcloseprice','slindex','slprice','profit']]
-#     return df0
     
     return df
 
