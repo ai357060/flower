@@ -110,7 +110,51 @@ def loaddata_1D(datafile):
     df['id'] = df.index    
     return df
 
+def loaddata_1W(datafile):
+    df = pd.read_csv('../Data/'+datafile)
+    try:
+        df.date=pd.to_datetime(df.date,format='%Y-%m-%d')
+    except:
+        df.date=pd.to_datetime(df.date,format='%Y.%m.%d')    
 
+    df['year'] = pd.DatetimeIndex(df['date']).year
+    df['month'] = pd.DatetimeIndex(df['date']).month
+    df['week'] = pd.DatetimeIndex(df.date).isocalendar().week
+    df['day'] = pd.DatetimeIndex(df['date']).day 
+    df['weekday'] = df.date.dt.dayofweek
+    df=df[df.volume!=0] 
+    df.reset_index(inplace = True, drop = True)
+    df['id'] = df.index    
+    return df
+
+def rose(prices,periods):
+    results = holder()
+                
+    df = prices.loc[:,['open','high','low','close']]
+    df['open_prev']  = df['open'].shift(1)
+    df['high_prev']  = df['high'].shift(1)
+    df['low_prev']   = df['low'].shift(1)
+    df['close_prev'] = df['close'].shift(1)
+    
+    df['pa'] = 0
+    df.loc[(df.close>=df.high_prev) & (df.low<=df.low_prev) & (df.close>df.open)
+           ,'pa'] = 2
+    
+    
+    ''' 
+    df = df.drop(columns='open')
+    df = df.drop(columns='high')
+    df = df.drop(columns='low')
+    df = df.drop(columns='close')
+    df = df.drop(columns='open_prev')
+    df = df.drop(columns='high_prev')
+    df = df.drop(columns='low_prev')
+    df = df.drop(columns='close_prev')
+    '''
+    dict = {}
+    dict[periods[0]] = df
+    results.df = dict
+    return results
 
 def rsi(prices, periods):
     """
