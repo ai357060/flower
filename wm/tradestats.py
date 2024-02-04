@@ -136,9 +136,9 @@ def rose(prices,periods):
     df['low_prev']   = df['low'].shift(1)
     df['close_prev'] = df['close'].shift(1)
     
-    df['pa'] = 0
-    df.loc[(df.close>=df.high_prev) & (df.low<=df.low_prev) & (df.close>df.open)
-           ,'pa'] = 2
+    df['rose'] = 0
+    df.loc[(df.close>=df.high_prev),'rose'] = 1
+    df.loc[(df.close<=df.low_prev),'rose'] = -1
     
     
     ''' 
