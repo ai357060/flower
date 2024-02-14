@@ -131,14 +131,36 @@ def rose(prices,periods):
     results = holder()
                 
     df = prices.loc[:,['open','high','low','close']]
-    df['open_prev']  = df['open'].shift(1)
-    df['high_prev']  = df['high'].shift(1)
-    df['low_prev']   = df['low'].shift(1)
+#    df['open_prev']  = df['open'].shift(1)
+#    df['high_prev']  = df['high'].shift(1)
+#    df['low_prev']   = df['low'].shift(1)
     df['close_prev'] = df['close'].shift(1)
-    
+    df['close_prev2'] = df['close'].shift(2)
+
+#    df['open_next']  = df['open'].shift(-1)
+#    df['high_next']  = df['high'].shift(-1)
+#    df['low_next']   = df['low'].shift(-1)
+    df['close_next'] = df['close'].shift(-1)
+    df['close_next2'] = df['close'].shift(-2)
+
+    print("5")
     df['rose'] = 0
-    df.loc[(df.close>=df.high_prev),'rose'] = 1
-    df.loc[(df.close<=df.low_prev),'rose'] = -1
+    df.loc[(df.close>df.close_prev)&(df.close>df.close_next),'rose'] = 1
+    df.loc[(df.close<df.close_prev)&(df.close<df.close_next),'rose'] = -1
+
+    df.loc[(df.close==df.close_prev)&(df.close>df.close_next)&(df.close>df.close_prev2)&(df.rose==0),'rose'] = 1
+    df.loc[(df.close==df.close_prev)&(df.close<df.close_next)&(df.close<df.close_next)&(df.rose==0),'rose'] = -1
+
+
+    '''
+    prawdziwe ticki górne
+    dla każdego ticka górnego X sprawdzamy wstecz do momentu gdy close>X albo max zakres np.20wierszy albo close<tick-np.5%, jeżeli to ostatnie wtedy jest prawdziwy tick górny
+
+    szukanie górnego ticku
+    dla każdego wiersza X sprawdzamy po jednym wierszu do tyłu i szukamy pierwszego napotkanego prawdziwego ticka górnego
+
+    
+    '''
     
     
     ''' 
