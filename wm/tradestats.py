@@ -143,7 +143,7 @@ def rose(prices,periods):
     df['close_next'] = df['close'].shift(-1)
     df['close_next2'] = df['close'].shift(-2)
 
-    print("5")
+    print("6")
     df['rose'] = 0
     df.loc[(df.close>df.close_prev)&(df.close>df.close_next),'rose'] = 1
     df.loc[(df.close<df.close_prev)&(df.close<df.close_next),'rose'] = -1
