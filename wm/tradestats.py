@@ -117,47 +117,66 @@ def loaddata_1W(datafile):
     except:
         df.date=pd.to_datetime(df.date,format='%Y.%m.%d')    
 
+    df['date'] = df.date - timedelta(days=6)
     df['year'] = pd.DatetimeIndex(df['date']).year
     df['month'] = pd.DatetimeIndex(df['date']).month
     df['week'] = pd.DatetimeIndex(df.date).isocalendar().week
     df['day'] = pd.DatetimeIndex(df['date']).day 
     df['weekday'] = df.date.dt.dayofweek
     df=df[df.volume!=0] 
-    df.reset_index(inplace = True, drop = True)
+    df.reset_index(inplace = True, drop = False)
     df['id'] = df.index    
     return df
 
-def rose(prices,periods):
+def rose(prices,periods,history = 10,entry = 7):
     results = holder()
                 
-    df = prices.loc[:,['open','high','low','close']]
-#    df['open_prev']  = df['open'].shift(1)
-#    df['high_prev']  = df['high'].shift(1)
-#    df['low_prev']   = df['low'].shift(1)
-    df['close_prev'] = df['close'].shift(1)
-    df['close_prev2'] = df['close'].shift(2)
-
-#    df['open_next']  = df['open'].shift(-1)
-#    df['high_next']  = df['high'].shift(-1)
-#    df['low_next']   = df['low'].shift(-1)
-    df['close_next'] = df['close'].shift(-1)
-    df['close_next2'] = df['close'].shift(-2)
-
-    print("6")
+    df = prices.loc[:,['date','close']]
+    print("12")
+    realtick1 = (100 - periods[0])/100
+    realtick2 = (100 + periods[0])/100
+    
     df['rose'] = 0
-    df.loc[(df.close>df.close_prev)&(df.close>df.close_next),'rose'] = 1
-    df.loc[(df.close<df.close_prev)&(df.close<df.close_next),'rose'] = -1
+    df.loc[(df.rose==0),'rose'] = 1
+    for i in range(1,history+1):
+        df['close_prev'] = df['close'].shift(i)
+        df.loc[(df.rose==1)&(df.close_prev>df.close),'rose'] = 0
+        df.loc[(df.rose==1)&(df.close_prev<=df.close*realtick1),'rose'] = 2
 
-    df.loc[(df.close==df.close_prev)&(df.close>df.close_next)&(df.close>df.close_prev2)&(df.rose==0),'rose'] = 1
-    df.loc[(df.close==df.close_prev)&(df.close<df.close_next)&(df.close<df.close_next)&(df.rose==0),'rose'] = -1
+    df.loc[(df.rose==0),'rose'] = -1
+    for i in range(1,history+1):
+        df['close_prev'] = df['close'].shift(i)
+        df.loc[(df.rose==-1)&(df.close_prev<df.close),'rose'] = 0
+        df.loc[(df.rose==-1)&(df.close_prev>=df.close*realtick2),'rose'] = -2
 
-
+    history2 = history * 2
+    df['uptick'] = 0
+    df['uptick_date'] = 0
+    df['uptick_close'] = 0
+    df['downtick'] = 0
+    df['downtick_date'] = 0
+    df['downtick_close'] = 0
+    for i in range(1,history+1):
+        df['rose_prev'] = df['rose'].shift(i)
+        df['date_prev'] = df['date'].shift(i)
+        df['close_prev'] = df['close'].shift(i)
+        df.loc[(df.uptick==0)&(df.rose_prev==2),'uptick_date'] = df.date_prev
+        df.loc[(df.uptick==0)&(df.rose_prev==2),'uptick_close'] = df.close_prev
+        df.loc[(df.uptick==0)&(df.rose_prev==2),'uptick'] = 2
+        df.loc[(df.downtick==0)&(df.rose_prev==-2),'downtick_date'] = df.date_prev
+        df.loc[(df.downtick==0)&(df.rose_prev==-2),'downtick_close'] = df.close_prev
+        df.loc[(df.downtick==0)&(df.rose_prev==-2),'downtick'] = -2
+    
+    
     '''
-    prawdziwe ticki górne
-    dla każdego ticka górnego X sprawdzamy wstecz do momentu gdy close>X albo max zakres np.20wierszy albo close<tick-np.5%, jeżeli to ostatnie wtedy jest prawdziwy tick górny
-
-    szukanie górnego ticku
-    dla każdego wiersza X sprawdzamy po jednym wierszu do tyłu i szukamy pierwszego napotkanego prawdziwego ticka górnego
+    teraz trzeba wystaczyć dwie kolumny tradeup i tradedown
+    tradeup jest wtedy gdy close jest większe od ostatniego ticka -2 przynajmniej o entry
+    tradedown jest wtedy gdy close jest mniejsze od ostatniego ticka 2 przynajmniej o entry
+    
+    pętla idzie po kolei od początku historii
+    szuka tradeup i do niego trade down
+    potem kolejnego tradeup i do niego trade down
+    zapisuje entry_date, close_date, zysk/stratę w procentach
 
     
     '''
