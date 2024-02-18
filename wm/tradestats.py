@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime
+from datetime import date
 # import math
 from datetime import timedelta
 import itertools
@@ -128,67 +129,105 @@ def loaddata_1W(datafile):
     df['id'] = df.index    
     return df
 
-def rose(prices,periods,history = 10,entry = 7):
+def rose(prices,periods,ignore = 2, history = 10,entry = 7):
     results = holder()
-                
-    df = prices.loc[:,['date','close']]
-    print("12")
-    realtick1 = (100 - periods[0])/100
-    realtick2 = (100 + periods[0])/100
+    print("32")
     
+    df = prices.loc[:,['id','date','close']]
+
+    realtick_up = (100 - ignore)/100 #uptick
+    realtick_down = (100 + ignore)/100 #downtick
+    
+    entry_sell = (100 - entry)/100 #sell
+    entry_buy = (100 + entry)/100 #buy
+    
+    # oznacza 2 gdy to jest lokalny(history) najwyższy punkt i wystaje przynajmniej o realtick (procent)
     df['rose'] = 0
     df.loc[(df.rose==0),'rose'] = 1
     for i in range(1,history+1):
         df['close_prev'] = df['close'].shift(i)
         df.loc[(df.rose==1)&(df.close_prev>df.close),'rose'] = 0
-        df.loc[(df.rose==1)&(df.close_prev<=df.close*realtick1),'rose'] = 2
+        df.loc[(df.rose==1)&(df.close_prev<=df.close*realtick_up),'rose'] = 2
 
+    # oznacza -2 gdy to jest lokalny(history) najniższy punkt i dołuje przynajmniej o realtick (procent)
     df.loc[(df.rose==0),'rose'] = -1
     for i in range(1,history+1):
         df['close_prev'] = df['close'].shift(i)
         df.loc[(df.rose==-1)&(df.close_prev<df.close),'rose'] = 0
-        df.loc[(df.rose==-1)&(df.close_prev>=df.close*realtick2),'rose'] = -2
+        df.loc[(df.rose==-1)&(df.close_prev>=df.close*realtick_down),'rose'] = -2
 
+    # dla każdego szuka najświeższego ticka zarówno najwyższego jak i najniższego
+    # dodatkowy warunek: tick up nie może być niższej niż aktualny close
+    # tick down nie może być wyżej niż aktualny close
+    
     history2 = history * 2
     df['uptick'] = 0
-    df['uptick_date'] = 0
+    df['uptick_date'] = datetime(1900, 1, 1,0,0,0)
     df['uptick_close'] = 0
+    df['uptick_diff'] = 0
     df['downtick'] = 0
-    df['downtick_date'] = 0
+    df['downtick_date'] = datetime(1900, 1, 1,0,0,0)
     df['downtick_close'] = 0
+    df['downtick_diff'] = 0
     for i in range(1,history+1):
         df['rose_prev'] = df['rose'].shift(i)
         df['date_prev'] = df['date'].shift(i)
         df['close_prev'] = df['close'].shift(i)
-        df.loc[(df.uptick==0)&(df.rose_prev==2),'uptick_date'] = df.date_prev
-        df.loc[(df.uptick==0)&(df.rose_prev==2),'uptick_close'] = df.close_prev
-        df.loc[(df.uptick==0)&(df.rose_prev==2),'uptick'] = 2
-        df.loc[(df.downtick==0)&(df.rose_prev==-2),'downtick_date'] = df.date_prev
-        df.loc[(df.downtick==0)&(df.rose_prev==-2),'downtick_close'] = df.close_prev
-        df.loc[(df.downtick==0)&(df.rose_prev==-2),'downtick'] = -2
+        df.loc[(df.uptick==0)&(df.rose_prev==2)&(df.close_prev>df.close),'uptick_date'] =    df.date_prev
+        df.loc[(df.uptick==0)&(df.rose_prev==2)&(df.close_prev>df.close),'uptick_close'] =   df.close_prev
+        df.loc[(df.uptick==0)&(df.rose_prev==2)&(df.close_prev>df.close),'uptick_diff'] =    (df.close-df.close_prev)/df.close_prev
+        df.loc[(df.uptick==0)&(df.rose_prev==2)&(df.close_prev>df.close),'uptick'] =         df.rose_prev
+        
+        df.loc[(df.downtick==0)&(df.rose_prev==-2)&(df.close_prev<df.close),'downtick_date'] =   df.date_prev
+        df.loc[(df.downtick==0)&(df.rose_prev==-2)&(df.close_prev<df.close),'downtick_close'] =  df.close_prev
+        df.loc[(df.downtick==0)&(df.rose_prev==-2)&(df.close_prev<df.close),'downtick_diff'] =   (df.close-df.close_prev)/df.close_prev
+        df.loc[(df.downtick==0)&(df.rose_prev==-2)&(df.close_prev<df.close),'downtick'] =        df.rose_prev
+    
+    
+    df['entry'] = 0
+    # wejście gdy ostatnio była górka i spadło poniżej entry level
+    df.loc[(df.downtick_date>df.uptick_date)&(df.close>df.downtick_close*entry_buy),'entry'] = 1
+    # wyjście gdy ostatnio był dołek i wzrosło powyżej entry level
+    df.loc[(df.uptick_date>df.downtick_date)&(df.close<df.uptick_close*entry_sell),'entry'] = -1
     
     
     '''
-    teraz trzeba wystaczyć dwie kolumny tradeup i tradedown
-    tradeup jest wtedy gdy close jest większe od ostatniego ticka -2 przynajmniej o entry
-    tradedown jest wtedy gdy close jest mniejsze od ostatniego ticka 2 przynajmniej o entry
-    
     pętla idzie po kolei od początku historii
     szuka tradeup i do niego trade down
     potem kolejnego tradeup i do niego trade down
     zapisuje entry_date, close_date, zysk/stratę w procentach
-
-    
     '''
     
+    entry_state = -1
+    entry_date = datetime(1900,1,1,0,0,0)
+    entry_close = 0
+    df['open_trade_date'] = entry_date
+    df['open_trade_close'] = entry_close
+    for index, row in df.iterrows():
+        entry = row['entry']
+        if (entry_state == -1) & (entry == 1):
+            entry_state = 1
+            entry_date = row['date']
+            entry_close = row['close']
+        if (entry_state == 1) & (entry == -1):
+            entry_state = -1
+            df.loc[df.id == row['id'],'open_trade_date'] = entry_date
+            df.loc[df.id == row['id'],'open_trade_close'] = entry_close
+            
     
-    ''' 
-    df = df.drop(columns='open')
-    df = df.drop(columns='high')
-    df = df.drop(columns='low')
+    df['profit'] = 0
+    df.loc[df.open_trade_close != 0,'profit'] = (df.close - df.open_trade_close)/df.open_trade_close
+    
+     
+    df = df.drop(columns='id')
+    df = df.drop(columns='date')
+    df = df.drop(columns='rose_prev')
+    df = df.drop(columns='date_prev')
+    df = df.drop(columns='close_prev')
     df = df.drop(columns='close')
-    df = df.drop(columns='open_prev')
-    df = df.drop(columns='high_prev')
+    df = df.drop(columns='uptick')
+    df = df.drop(columns='downtick')
+    '''
     df = df.drop(columns='low_prev')
     df = df.drop(columns='close_prev')
     '''
