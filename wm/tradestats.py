@@ -89,7 +89,7 @@ def loaddata_4h(datafile):
     df['id'] = df.index    
     return df
 
-def loaddata_1D(datafile):
+def loaddata_1D_old(datafile):
     df = pd.read_csv('../Data/'+datafile)
     try:
         df.date=pd.to_datetime(df.date,format='%Y-%m-%d')
@@ -113,6 +113,7 @@ def loaddata_1D(datafile):
 
 def loaddata_1W(datafile):
     df = pd.read_csv('../Data/'+datafile)
+    df.rename(columns={'Data': 'date', 'Otwarcie': 'open', 'Zamkniecie': 'close', 'Najwyzszy': 'high', 'Najnizszy': 'low', 'Wolumen': 'volume'}, inplace=True)
     try:
         df.date=pd.to_datetime(df.date,format='%Y-%m-%d')
     except:
@@ -129,9 +130,27 @@ def loaddata_1W(datafile):
     df['id'] = df.index    
     return df
 
-def rose(prices,periods,ignore = 2, history = 10,entry = 7):
+def loaddata_1D(datafile):
+    df = pd.read_csv('../Data/'+datafile)
+    df.rename(columns={'Data': 'date', 'Otwarcie': 'open', 'Zamkniecie': 'close', 'Najwyzszy': 'high', 'Najnizszy': 'low', 'Wolumen': 'volume'}, inplace=True)
+    try:
+        df.date=pd.to_datetime(df.date,format='%Y-%m-%d')
+    except:
+        df.date=pd.to_datetime(df.date,format='%Y.%m.%d')    
+
+    df['year'] = pd.DatetimeIndex(df['date']).year
+    df['month'] = pd.DatetimeIndex(df['date']).month
+    df['week'] = pd.DatetimeIndex(df.date).isocalendar().week
+    df['day'] = pd.DatetimeIndex(df['date']).day 
+    df['weekday'] = df.date.dt.dayofweek
+    df=df[df.volume!=0] 
+    df.reset_index(inplace = True, drop = False)
+    df['id'] = df.index    
+    return df
+
+def rose(prices,periods, history = 10,ignore = 2, entry = 7):
     results = holder()
-    print("32")
+    #print("32")
     
     df = prices.loc[:,['id','date','close']]
 
