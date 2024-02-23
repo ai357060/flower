@@ -150,7 +150,7 @@ def loaddata_1D(datafile):
 
 def rose(prices,periods, history = 10,ignore = 2, entry = 7):
     results = holder()
-    #print("32")
+    print("34")
     
     df = prices.loc[:,['id','date','close']]
 
@@ -209,13 +209,15 @@ def rose(prices,periods, history = 10,ignore = 2, entry = 7):
     # wyjście gdy ostatnio był dołek i wzrosło powyżej entry level
     df.loc[(df.uptick_date>df.downtick_date)&(df.close<df.uptick_close*entry_sell),'entry'] = -1
     
-    
+
     '''
     pętla idzie po kolei od początku historii
     szuka tradeup i do niego trade down
     potem kolejnego tradeup i do niego trade down
     zapisuje entry_date, close_date, zysk/stratę w procentach
     '''
+    df['open_trade'] = 0
+    df['close_trade'] = 0
     
     entry_state = -1
     entry_date = datetime(1900,1,1,0,0,0)
@@ -228,14 +230,21 @@ def rose(prices,periods, history = 10,ignore = 2, entry = 7):
             entry_state = 1
             entry_date = row['date']
             entry_close = row['close']
+            df.loc[df.id == row['id'],'open_trade'] = row['close']#dowykresu
         if (entry_state == 1) & (entry == -1):
             entry_state = -1
             df.loc[df.id == row['id'],'open_trade_date'] = entry_date
             df.loc[df.id == row['id'],'open_trade_close'] = entry_close
+            df.loc[df.id == row['id'],'close_trade'] = row['close']#dowykresu
             
     
     df['profit'] = 0
     df.loc[df.open_trade_close != 0,'profit'] = (df.close - df.open_trade_close)/df.open_trade_close
+    
+    df['rosehigh'] = 0
+    df['roselow'] = 0
+    df.loc[df.rose == 2,'rosehigh'] = df.close
+    df.loc[df.rose == -2,'roselow'] = df.close
     
      
     df = df.drop(columns='id')
