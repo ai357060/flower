@@ -150,7 +150,7 @@ def loaddata_1D(datafile):
 
 def rose(prices,periods, history = 10,ignore = 2, entry = 7):
     results = holder()
-    print("34")
+    #print("34")
     
     df = prices.loc[:,['id','date','close']]
 
