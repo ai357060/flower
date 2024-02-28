@@ -148,17 +148,16 @@ def loaddata_1D(datafile):
     df['id'] = df.index    
     return df
 
-def rose(prices,periods, history = 10,ignore = 2, entry = 7):
+def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell_perc = 7):
     results = holder()
-    #print("34")
     
     df = prices.loc[:,['id','date','close']]
 
     realtick_up = (100 - ignore)/100 #uptick
     realtick_down = (100 + ignore)/100 #downtick
     
-    entry_sell = (100 - entry)/100 #sell
-    entry_buy = (100 + entry)/100 #buy
+    entry_sell = (100 - entry_sell_perc)/100 #sell
+    entry_buy = (100 + entry_buy_perc)/100 #buy
     
     # oznacza 2 gdy to jest lokalny(history) najwyższy punkt i wystaje przynajmniej o realtick (procent)
     df['rose'] = 0
@@ -263,6 +262,9 @@ def rose(prices,periods, history = 10,ignore = 2, entry = 7):
     dict[periods[0]] = df
     results.df = dict
     return results
+
+
+
 
 def rsi(prices, periods):
     """
