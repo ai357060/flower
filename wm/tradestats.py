@@ -150,7 +150,7 @@ def loaddata_1D(datafile):
 
 def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell_perc = 7):
     results = holder()
-    
+    print('04')
     df = prices.loc[:,['id','date','close']]
 
     realtick_up = (100 - ignore)/100 #uptick
@@ -178,23 +178,44 @@ def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell
     # dodatkowy warunek: tick up nie może być niższej niż aktualny close
     # tick down nie może być wyżej niż aktualny close
     
-    history2 = history * 2
+    history2 = history * 3
     df['uptick'] = 0
     df['uptick_date'] = datetime(1900, 1, 1,0,0,0)
     df['uptick_close'] = 0
     df['uptick_diff'] = 0
+    df['uptick2'] = 0
+    df['uptick2_date'] = datetime(1900, 1, 1,0,0,0)
+    df['uptick2_close'] = 0
+    df['uptick2_diff'] = 0
+
     df['downtick'] = 0
     df['downtick_date'] = datetime(1900, 1, 1,0,0,0)
     df['downtick_close'] = 0
     df['downtick_diff'] = 0
-    for i in range(1,history+1):
+    df['downtick2'] = 0
+    df['downtick2_date'] = datetime(1900, 1, 1,0,0,0)
+    df['downtick2_close'] = 0
+    df['downtick2_diff'] = 0
+    for i in range(1,history2+1):
         df['rose_prev'] = df['rose'].shift(i)
         df['date_prev'] = df['date'].shift(i)
         df['close_prev'] = df['close'].shift(i)
+
+        # tu trzeba dorobić downtick1 - czyli zwykle downtick i uptick2 dopiero po zwyklym downticku
+        df.loc[(df.downtick==-2)&(df.uptick2==0)&(df.rose_prev==2),'uptick2_date'] =    df.date_prev
+        df.loc[(df.downtick==-2)&(df.uptick2==0)&(df.rose_prev==2),'uptick2_close'] =   df.close_prev
+        df.loc[(df.downtick==-2)&(df.uptick2==0)&(df.rose_prev==2),'uptick2_diff'] =    (df.close-df.close_prev)/df.close_prev
+        df.loc[(df.downtick==-2)&(df.uptick2==0)&(df.rose_prev==2),'uptick2'] =         df.rose_prev
+
         df.loc[(df.uptick==0)&(df.rose_prev==2)&(df.close_prev>df.close),'uptick_date'] =    df.date_prev
         df.loc[(df.uptick==0)&(df.rose_prev==2)&(df.close_prev>df.close),'uptick_close'] =   df.close_prev
         df.loc[(df.uptick==0)&(df.rose_prev==2)&(df.close_prev>df.close),'uptick_diff'] =    (df.close-df.close_prev)/df.close_prev
         df.loc[(df.uptick==0)&(df.rose_prev==2)&(df.close_prev>df.close),'uptick'] =         df.rose_prev
+        
+        df.loc[(df.uptick==2)&(df.downtick2==0)&(df.rose_prev==-2),'downtick2_date'] =   df.date_prev
+        df.loc[(df.uptick==2)&(df.downtick2==0)&(df.rose_prev==-2),'downtick2_close'] =  df.close_prev
+        df.loc[(df.uptick==2)&(df.downtick2==0)&(df.rose_prev==-2),'downtick2_diff'] =   (df.close-df.close_prev)/df.close_prev
+        df.loc[(df.uptick==2)&(df.downtick2==0)&(df.rose_prev==-2 ),'downtick2'] =        df.rose_prev
         
         df.loc[(df.downtick==0)&(df.rose_prev==-2)&(df.close_prev<df.close),'downtick_date'] =   df.date_prev
         df.loc[(df.downtick==0)&(df.rose_prev==-2)&(df.close_prev<df.close),'downtick_close'] =  df.close_prev
@@ -221,11 +242,17 @@ def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell
     entry_state = -1
     entry_date = datetime(1900,1,1,0,0,0)
     entry_close = 0
+    climate = -1
     df['open_trade_date'] = entry_date
     df['open_trade_close'] = entry_close
+    df['climate'] = 0
+    df.loc[(df.close>df.uptick2_close)&(df.uptick2_close!=0),'climate'] = 1
+    df.loc[(df.close<df.downtick2_close)&(df.downtick2_close!=0),'climate'] = -1
     for index, row in df.iterrows():
         entry = row['entry']
-        if (entry_state == -1) & (entry == 1):
+        if (row['climate'] != 0): 
+            climate = row['climate']
+        if (entry_state == -1) & (entry == 1) & (climate == 1):
             entry_state = 1
             entry_date = row['date']
             entry_close = row['close']
