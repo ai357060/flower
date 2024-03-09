@@ -148,11 +148,11 @@ def loaddata_1D(datafile):
     df['id'] = df.index    
     return df
 
-def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell_perc = 7, onlytry=0):
+def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell_perc = 7, onlytry = 0, takeclimate = False):
     results = holder()
     
     if (onlytry==1): 
-        print('08')
+        print('09')
         return
     
     df = prices.loc[:,['id','date','close']]
@@ -188,7 +188,11 @@ def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell
     # to są ticki bez dodatkowego warunku że uptick musi być wyższy od aktulnego close
     # i że downtick musi być niższy od aktualnego close
     
-    history2 = history * 3
+    if takeclimate:
+        history2 = history * 3
+    else:
+        history2 = history * 2
+        
     df['uptick'] = 0
     df['uptick_date'] = datetime(1900, 1, 1,0,0,0)
     df['uptick_close'] = 0
@@ -225,15 +229,16 @@ def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell
         df.loc[(df.downtick==0)&(df.rose_prev==-2)&(df.close_prev<df.close),'downtick_diff'] =   (df.close-df.close_prev)/df.close_prev
         df.loc[(df.downtick==0)&(df.rose_prev==-2)&(df.close_prev<df.close),'downtick'] =        df.rose_prev
 
-        df.loc[(df.uptick_a2==0)&(df.downtick_a1==-2)&(df.rose_prev==2),'uptick_a2_close'] =   df.close_prev
-        df.loc[(df.uptick_a2==0)&(df.downtick_a1==-2)&(df.rose_prev==2),'uptick_a2'] =         df.rose_prev
-        df.loc[(df.downtick_a2==0)&(df.uptick_a1==2)&(df.rose_prev==-2),'downtick_a2_close'] =   df.close_prev
-        df.loc[(df.downtick_a2==0)&(df.uptick_a1==2)&(df.rose_prev==-2),'downtick_a2'] =         df.rose_prev
+        if takeclimate:
+            df.loc[(df.uptick_a2==0)&(df.downtick_a1==-2)&(df.rose_prev==2),'uptick_a2_close'] =   df.close_prev
+            df.loc[(df.uptick_a2==0)&(df.downtick_a1==-2)&(df.rose_prev==2),'uptick_a2'] =         df.rose_prev
+            df.loc[(df.downtick_a2==0)&(df.uptick_a1==2)&(df.rose_prev==-2),'downtick_a2_close'] =   df.close_prev
+            df.loc[(df.downtick_a2==0)&(df.uptick_a1==2)&(df.rose_prev==-2),'downtick_a2'] =         df.rose_prev
 
-        df.loc[(df.uptick_a1==0)&(df.rose_prev==2),'uptick_a1_close'] =   df.close_prev
-        df.loc[(df.uptick_a1==0)&(df.rose_prev==2),'uptick_a1'] =         df.rose_prev
-        df.loc[(df.downtick_a1==0)&(df.rose_prev==-2),'downtick_a1_close'] =   df.close_prev
-        df.loc[(df.downtick_a1==0)&(df.rose_prev==-2),'downtick_a1'] =         df.rose_prev
+            df.loc[(df.uptick_a1==0)&(df.rose_prev==2),'uptick_a1_close'] =   df.close_prev
+            df.loc[(df.uptick_a1==0)&(df.rose_prev==2),'uptick_a1'] =         df.rose_prev
+            df.loc[(df.downtick_a1==0)&(df.rose_prev==-2),'downtick_a1_close'] =   df.close_prev
+            df.loc[(df.downtick_a1==0)&(df.rose_prev==-2),'downtick_a1'] =         df.rose_prev
 
     
     
@@ -259,11 +264,15 @@ def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell
     climate = -1
     df['open_trade_date'] = entry_date
     df['open_trade_close'] = entry_close
-    # climate  1 gdy jesteśmy wyżej niż ostatni szczyt - od tej pory można wchodzić
-    # climate -1 gdy jestśmy niżej niż ostatni dołek - od tej pory nie można wchodzić
-    df['climate'] = 0
-    df.loc[(df.close>df.uptick_a2_close)&(df.uptick_a2_close!=0),'climate'] = 1
-    df.loc[(df.close<df.downtick_a2_close)&(df.downtick_a2_close!=0),'climate'] = -1
+    if takeclimate:
+        df['climate'] = 0
+        # climate  1 gdy jesteśmy wyżej niż ostatni szczyt - od tej pory można wchodzić
+        # climate -1 gdy jestśmy niżej niż ostatni dołek - od tej pory nie można wchodzić
+        df.loc[(df.close>df.uptick_a2_close)&(df.uptick_a2_close!=0),'climate'] = 1
+        df.loc[(df.close<df.downtick_a2_close)&(df.downtick_a2_close!=0),'climate'] = -1
+    else:
+        df['climate'] = 1
+        
     for index, row in df.iterrows():
         entry = row['entry']
         if (row['climate'] != 0): 
