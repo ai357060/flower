@@ -152,7 +152,7 @@ def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell
     results = holder()
     
     if (onlytry==1): 
-        print('09')
+        print('10')
         return
     
     df = prices.loc[:,['id','date','close']]
