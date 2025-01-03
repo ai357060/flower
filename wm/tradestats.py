@@ -153,7 +153,7 @@ def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell
     
     if (onlytry==1): 
         print('10')
-        return
+        returnp
     
     df = prices.loc[:,['id','date','close']]
 
@@ -195,13 +195,13 @@ def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell
         
     df['uptick'] = 0
     df['uptick_date'] = datetime(1900, 1, 1,0,0,0)
-    df['uptick_close'] = 0
-    df['uptick_diff'] = 0
+    df['uptick_close'] = 0.0
+    df['uptick_diff'] = 0.0
 
     df['downtick'] = 0
     df['downtick_date'] = datetime(1900, 1, 1,0,0,0)
-    df['downtick_close'] = 0
-    df['downtick_diff'] = 0
+    df['downtick_close'] = 0.0
+    df['downtick_diff'] = 0.0
     
     df['uptick_a1'] = 0
     df['uptick_a1_close'] = 0
@@ -255,12 +255,12 @@ def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell
     potem kolejnego tradeup i do niego trade down
     zapisuje entry_date, close_date, zysk/stratę w procentach
     '''
-    df['open_trade'] = 0
-    df['close_trade'] = 0
+    df['open_trade'] = 0.0
+    df['close_trade'] = 0.0
     
     entry_state = -1
     entry_date = datetime(1900,1,1,0,0,0)
-    entry_close = 0
+    entry_close = 0.0
     climate = -1
     df['open_trade_date'] = entry_date
     df['open_trade_close'] = entry_close
@@ -289,16 +289,16 @@ def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell
             df.loc[df.id == row['id'],'close_trade'] = row['close']#dowykresu
             
     
-    df['profit'] = 0
+    df['profit'] = 0.0
     df.loc[df.open_trade_close != 0,'profit'] = (df.close - df.open_trade_close)/df.open_trade_close
     
     #do wykresu
-    df['rosehigh'] = 0
-    df['roselow'] = 0
+    df['rosehigh'] = 0.0
+    df['roselow'] = 0.0
     df.loc[df.rose == 2,'rosehigh'] = df.close
     df.loc[df.rose == -2,'roselow'] = df.close
-    df['climateU'] = 0
-    df['climateD'] = 0
+    df['climateU'] = 0.0
+    df['climateD'] = 0.0
     df.loc[df.climate == 1,'climateU'] = df.close
     df.loc[df.climate == -1,'climateD'] = df.close
     
