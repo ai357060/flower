@@ -8,7 +8,7 @@ import math
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from datetime import datetime
-from arch import arch_model
+#from arch import arch_model
 import datetime as dt
 from statsmodels.tsa.arima_model import ARIMA
 import statsmodels.api as sm
@@ -17,7 +17,7 @@ from sklearn.preprocessing import MinMaxScaler
 from datetime import timedelta
 
 import pandas as pd
-from pandasql import sqldf
+#from pandasql import sqldf
 
 class holder:
     1
@@ -1241,6 +1241,39 @@ def historyM1(prices,periods):
     return results
 
 
+def historySnake(prices,periods, onlytry = 0):
+    '''
+    :param prices; dataframe of OHLC currency data
+    :param periods - how long the history should be
+    '''
+    
+    if (onlytry==1): 
+        print('1')
+        return
 
+    results = holder()
+
+    df = pd.DataFrame(index=prices.index)
+    for i in range(1,3,1):
+        columnname_hist = 'W1hist_low_'+str(i)
+        df[columnname_hist] = prices.low.shift(periods=i)
+        columnname_hist = 'W1hist_high_'+str(i)
+        df[columnname_hist] = prices.high.shift(periods=i)
+        columnname_hist = 'W1hist_close_'+str(i)
+        df[columnname_hist] = prices.close.shift(periods=i)
+        columnname_hist = 'W1hist_open_'+str(i)
+        df[columnname_hist] = prices.open.shift(periods=i)
+        columnname_hist = 'W1hist_volume_'+str(i)
+        df[columnname_hist] = prices.volume.shift(periods=i)
+        
+    for i in range(3,periods[0]+1,1):
+        columnname_hist = 'W1hist_close_'+str(i)
+        df[columnname_hist] = prices.close.shift(periods=i)
+        columnname_hist = 'W1hist_volume_'+str(i)
+        df[columnname_hist] = prices.volume.shift(periods=i)
+    dict = {}
+    dict[periods[0]] = df
+    results.df = dict
+    return results
 
 

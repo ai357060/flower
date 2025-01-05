@@ -148,19 +148,7 @@ def loaddata_1D(datafile):
     df['id'] = df.index    
     return df
 
-def snake(prices,periods, onlytry = 0):
-    results = holder()
-    
-    if (onlytry==1): 
-        print('1')
-        return
 
-    df = prices.loc[:,['id','date','close']]
-
-    dict = {}
-    dict[periods[0]] = df
-    results.df = dict
-    return results
 
 def rose(prices,periods, history = 10,ignore = 2, entry_buy_perc = 7, entry_sell_perc = 7, onlytry = 0, takeclimate = False):
     results = holder()
