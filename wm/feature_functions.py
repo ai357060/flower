@@ -1252,25 +1252,32 @@ def historySnake(prices,periods, onlytry = 0):
         return
 
     results = holder()
-
+    j = 0
     df = pd.DataFrame(index=prices.index)
-    for i in range(1,3,1):
+    df['rollingHigh'] = prices.high.rolling(periods[j]).max()
+    df['volumeCumMax'] = prices.volume.cummax()
+    
+    for i in range(0,2,1):
         columnname_hist = 'W1hist_low_'+str(i)
-        df[columnname_hist] = prices.low.shift(periods=i)
+        df[columnname_hist] = prices.low.shift(periods=i)/df.rollingHigh
         columnname_hist = 'W1hist_high_'+str(i)
-        df[columnname_hist] = prices.high.shift(periods=i)
+        df[columnname_hist] = prices.high.shift(periods=i)/df.rollingHigh
         columnname_hist = 'W1hist_close_'+str(i)
-        df[columnname_hist] = prices.close.shift(periods=i)
+        df[columnname_hist] = prices.close.shift(periods=i)/df.rollingHigh
         columnname_hist = 'W1hist_open_'+str(i)
-        df[columnname_hist] = prices.open.shift(periods=i)
+        df[columnname_hist] = prices.open.shift(periods=i)/df.rollingHigh
         columnname_hist = 'W1hist_volume_'+str(i)
-        df[columnname_hist] = prices.volume.shift(periods=i)
+        df[columnname_hist] = prices.volume.shift(periods=i)/df.volumeCumMax
         
-    for i in range(3,periods[0]+1,1):
+    for i in range(2,periods[j],1):
         columnname_hist = 'W1hist_close_'+str(i)
-        df[columnname_hist] = prices.close.shift(periods=i)
+        df[columnname_hist] = prices.close.shift(periods=i)/df.rollingHigh
         columnname_hist = 'W1hist_volume_'+str(i)
-        df[columnname_hist] = prices.volume.shift(periods=i)
+        df[columnname_hist] = prices.volume.shift(periods=i)/df.volumeCumMax
+        df = df.copy()
+    
+    df = df.drop(['rollingHigh','volumeCumMax'], axis=1)
+    
     dict = {}
     dict[periods[0]] = df
     results.df = dict
